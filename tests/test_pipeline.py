@@ -366,7 +366,8 @@ class TestRegistry(unittest.TestCase):
         for asset in assets:
             self.assertTrue(asset.name, f"{asset.symbol} 名称为空")
             self.assertTrue(asset.group, f"{asset.symbol} 缺少分组")
-            self.assertGreaterEqual(asset.from_year, 1990)
+            # 恒生指数自 1986 年起（腾讯接口给到 1989-01），所以下限放到 1980
+            self.assertGreaterEqual(asset.from_year, 1980, f"{asset.symbol} 起始年份异常")
             # 基金、汇率、中证指数与派生序列都不走东方财富的 secid
             needs_secid = asset.type.value not in ("fund", "fx") and asset.source not in (
                 "csindex",
