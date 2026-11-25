@@ -222,9 +222,12 @@ async function renderSingle() {
   chartsHost.innerHTML = "";
 
   try {
+    const isFx = asset.type === "fx";
     const [series, benchResult] = await Promise.all([
       loadSeries(asset),
-      benchmarkSeries(state.assets, asset),
+      isFx
+        ? Promise.resolve([null, benchmarkFor(asset)])
+        : benchmarkSeries(state.assets, asset),
     ]);
     const [bench, benchInfo] = benchResult;
     if (token !== seq) return;
@@ -242,7 +245,7 @@ async function renderSingle() {
     }
 
     const benchWin =
-      bench && bench.dates.length
+      !isFx && bench && bench.dates.length
         ? sliceWindow(bench.dates, bench.prices, win.dates[0], win.dates[win.dates.length - 1])
         : null;
 
@@ -270,7 +273,6 @@ async function renderSingle() {
     }
 
     const isBenchmark = state.key === benchInfo.key;
-    const isFx = asset.type === "fx";
     metricsHost.innerHTML = metricsHtml(
       metricsFor(result, series, benchInfo.name, isBenchmark, isFx)
     );
