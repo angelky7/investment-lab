@@ -76,7 +76,7 @@ def main() -> int:
             "type": asset.type.value,
             "group": asset.group,
             "market": asset.market.value,
-            "currency": "USD" if asset.market.value == "US" else "CNY",
+            "currency": {"US": "USD", "HK": "HKD"}.get(asset.market.value, "CNY"),
             "source": asset.source,
         }
 

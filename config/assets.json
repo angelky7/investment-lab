@@ -120,9 +120,11 @@
       "name": "纳斯达克100指数",
       "group": "海外指数",
       "market": "US",
-      "from": 2010,
+      "from": 2005,
       "source": "tencent",
-      "em_secid": "100.NDX"
+      "em_secid": "100.NDX",
+      "from_date": "2005-01-01",
+      "note": "腾讯美股指数接口可回溯到 2002-12，本站自 2005 年起使用；2021-05 存在源端空洞。"
     },
     {
       "symbol": "us.INX",
@@ -131,9 +133,11 @@
       "name": "标普500",
       "group": "海外指数",
       "market": "US",
-      "from": 2010,
+      "from": 2005,
       "source": "tencent",
-      "em_secid": "100.SPX"
+      "em_secid": "100.SPX",
+      "from_date": "2005-01-01",
+      "note": "腾讯美股指数接口可回溯到 2002-12，本站自 2005 年起使用。"
     },
     {
       "symbol": "us.DJI",
@@ -142,9 +146,35 @@
       "name": "道琼斯工业平均指数",
       "group": "海外指数",
       "market": "US",
-      "from": 2010,
+      "from": 2009,
       "source": "tencent",
-      "em_secid": "100.DJIA"
+      "em_secid": "100.DJIA",
+      "note": "腾讯美股指数接口最早只提供到 2009-05，因此历史比其他两个美股指数短。"
+    },
+    {
+      "symbol": "000510",
+      "type": "index",
+      "code": "sh000510",
+      "em_secid": "1.000510",
+      "name": "中证A500",
+      "group": "宽基指数",
+      "market": "CN",
+      "from": 2024,
+      "source": "tencent",
+      "note": "2024-09-23 正式发布；更早的回溯模拟历史未被采用。",
+      "from_date": "2024-09-23"
+    },
+    {
+      "symbol": "hkHSI",
+      "type": "index",
+      "code": "hkHSI",
+      "em_secid": "100.HSI",
+      "name": "恒生指数",
+      "group": "海外指数",
+      "market": "HK",
+      "from": 2005,
+      "source": "tencent",
+      "note": "港股交易日历与 A 股不同（佛诞、圣诞等休市），跨市场对比时会取日期交集。"
     },
     {
       "symbol": "601318",

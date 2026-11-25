@@ -129,6 +129,20 @@ body {
 .stack {
   display: grid;
   gap: var(--il-gap);
+  /* 关键：默认的 min-width:auto 会让包含宽表格/矩阵的卡片撑破容器 */
+  min-width: 0;
+}
+
+.stack > * {
+  min-width: 0;
+}
+
+/* 横向滚动容器：内容超宽时自己在内部滚动，绝不撑破页面 */
+.hscroll {
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 0.35rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .row {
@@ -145,6 +159,7 @@ body {
 
 .card {
   --il-card-pad: 1.15rem;
+  min-width: 0;
   padding: var(--il-card-pad);
   border-radius: var(--mdui-shape-corner-large);
   background: rgb(var(--mdui-color-surface-container-low));
@@ -310,6 +325,7 @@ mdui-card.card {
 
 .tbl-wrap {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   border-radius: var(--mdui-shape-corner-medium);
 }
@@ -352,6 +368,16 @@ table.tbl tbody tr:hover td:first-child {
   background: rgb(var(--mdui-color-surface-container-low));
 }
 
+code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.notice span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .caption {
   font-size: 0.72rem;
   line-height: 1.6;
@@ -363,9 +389,12 @@ table.tbl tbody tr:hover td:first-child {
 
 .heatmap {
   display: grid;
+  /* 列数由 --hm-cols 指定；宽屏单元格更大，窄屏自动收紧 */
+  grid-template-columns: minmax(4rem, auto) repeat(var(--hm-cols, 4), minmax(2.2rem, 1fr));
   gap: 2px;
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
+  width: 100%;
 }
 
 .heatmap .hm-cell {
@@ -948,17 +977,262 @@ table.tbl tbody tr:hover td:first-child {
   color: rgb(var(--mdui-color-on-surface-variant));
 }
 
+/* ==========================================================================
+   竖屏 / 移动端适配
+   --------------------------------------------------------------------------
+   目标设备：iPhone 12–16（390×844）、主流安卓（360×800–412×915）、
+   以及最窄的 320×568。竖屏优先，同时处理横屏手机（高度受限）。
+   ========================================================================== */
+
+/* 标签栏
+   --------------------------------------------------------------------------
+   MDUI 的 mdui-tabs 是 display:flex 的容器，默认既不换行也不滚动：
+   标签一多就会溢出容器、被页面裁掉（窄屏上表现为最后几个标签"消失"）。
+   这里把宿主变成横向滚动容器，并让标签不压缩，任何宽度下都能滑到最后一个。 */
+mdui-tabs {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+mdui-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+mdui-tabs > mdui-tab {
+  flex: 0 0 auto;
+  min-width: auto;
+  padding: 0 0.9rem;
+  white-space: nowrap;
+}
+
 @media (max-width: 599px) {
   .page {
-    padding: 0.85rem 0.75rem 3rem;
+    padding: 0.85rem 0.75rem calc(3rem + env(safe-area-inset-bottom, 0px));
   }
+
+  /* iOS 刘海与底部指示条 */
+  .site-footer {
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 指标卡：两列，数字不允许撑破容器 */
   .metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
   }
+
+  .metric {
+    padding: 0.75rem 0.8rem;
+    min-width: 0;
+  }
+
   .metric .metric-value {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
+    overflow-wrap: anywhere;
   }
+
+  .metric .metric-label,
+  .metric .metric-sub {
+    overflow-wrap: anywhere;
+  }
+
+  /* 标签栏：字号与内边距收紧，4–5 个中文标签也能一屏放下；放不下时可横向滑动 */
+  mdui-tabs > mdui-tab {
+    font-size: 0.84rem;
+    padding: 0 0.55rem;
+  }
+
+  /* 卡片与区块更紧凑 */
+  .card {
+    --il-card-pad: 0.95rem;
+  }
+
+  .section {
+    margin-bottom: 1.6rem;
+  }
+
+  .section-title {
+    font-size: 1.02rem;
+  }
+
+  .section-desc {
+    font-size: 0.82rem;
+  }
+
+  /* 图表：竖屏时高度略增，靠 44vh 保证在 844 高的屏幕上够用 */
+  .chart {
+    height: clamp(210px, 44vh, 320px);
+  }
+
+  .chart.tall {
+    height: clamp(240px, 52vh, 380px);
+  }
+
+  .chart-tip {
+    font-size: 0.7rem;
+    max-width: 65vw;
+  }
+
+  /* 表单控件一律独占一行，避免窄屏被压成 60px 宽 */
+  .row {
+    gap: 0.6rem;
+  }
+
+  .row > * {
+    flex: 1 1 100% !important;
+    min-width: 0;
+  }
+
+  mdui-text-field,
+  mdui-select {
+    width: 100% !important;
+  }
+
+  /* 权重输入：名称与输入框同排，但输入框更窄 */
+  .weight-row {
+    gap: 0.5rem;
+  }
+
+  .weight-row mdui-text-field {
+    flex: 0 0 5.5rem;
+    width: 5.5rem !important;
+  }
+
+  /* 相关矩阵：列头更窄、单元格更小，整体仍可横向滚动 */
   .heatmap {
-    font-size: 0.62rem;
+    font-size: 0.58rem;
+    grid-template-columns: minmax(2.7rem, auto) repeat(var(--hm-cols, 4), minmax(1.7rem, 1fr));
+  }
+
+  .heatmap .hm-cell {
+    min-width: 1.7rem;
+    border-radius: 3px;
+  }
+
+  .heatmap .hm-head {
+    font-size: 0.58rem;
+  }
+
+  /* 表格：首列更紧凑，数字列允许换行避免被截断 */
+  table.tbl {
+    font-size: 0.76rem;
+  }
+
+  table.tbl th,
+  table.tbl td {
+    padding: 0.45rem 0.5rem;
+  }
+
+  /* 多选清单：更矮，保证下面还有内容可见 */
+  .pick-list {
+    max-height: 13rem;
+  }
+
+  .pick-item {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 0.1rem;
+  }
+
+  .pick-meta {
+    grid-column: 2;
+    font-size: 0.66rem;
+  }
+
+  /* 课程卡片与测验 */
+  .course-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz {
+    padding: 0.9rem;
+  }
+
+  .quiz .quiz-opts mdui-button {
+    width: 100%;
+  }
+
+  /* 首页 */
+  .hero {
+    padding: 0.75rem 0 0.5rem;
+  }
+
+  .entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .entry {
+    padding: 1rem;
+  }
+
+  .entry p {
+    font-size: 0.8rem;
+  }
+
+  /* 情景压力测试的条形行：名称占满整行，条形另起一行 */
+  .scenario-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 0.15rem;
+  }
+
+  .scenario-bar .bar-track {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
+
+/* 超窄屏（320–360）：进一步压缩内边距与字号 */
+@media (max-width: 379px) {
+  .page {
+    padding: 0.7rem 0.55rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .metric .metric-value {
+    font-size: 1rem;
+  }
+
+  .metric .metric-label {
+    font-size: 0.7rem;
+  }
+
+  table.tbl {
+    font-size: 0.72rem;
+  }
+
+  .chart {
+    height: 200px;
+  }
+}
+
+/* 横屏手机：高度受限，压缩纵向占位，保证一屏能看到图表 */
+@media (max-height: 520px) and (orientation: landscape) {
+  .hero {
+    padding: 0.5rem 0 0.75rem;
+  }
+
+  .hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .chart {
+    height: 220px;
+  }
+
+  .page {
+    padding-bottom: 2rem;
+  }
+}
+
+/* 触摸设备：去掉点击高亮，按钮点击区不小于 44px 的可访问性底线 */
+@media (pointer: coarse) {
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  mdui-button,
+  mdui-list-item,
+  mdui-tab {
+    min-height: 2.75rem;
   }
 }

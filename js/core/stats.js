@@ -9,7 +9,7 @@
  * 4. 明确区分「波动」与「下行波动」，Sortino 只用下行部分。
  */
 
-import { drawdowns, returns } from "./series.js";
+import { drawdowns, gapAwareReturns, returns } from "./series.js";
 
 export const TRADING_DAYS = 252;
 export const DEFAULT_RISK_FREE = 0.025;
@@ -54,16 +54,25 @@ export function annualizedReturn(prices, dates) {
   return Math.pow(1 + total, 1 / years) - 1;
 }
 
-/** 年化波动率 = 日收益标准差 × √252 */
-export function annualizedVolatility(prices) {
-  const rets = returns(prices);
+/**
+ * 年化波动率 = 日收益标准差 × √252
+ *
+ * dates 用于剔除跨度过大的相邻点（数据空洞、停牌），
+ * 否则「两个月涨 20%」会被当成「一天涨 20%」。
+ */
+export function annualizedVolatility(prices, dates, options = {}) {
+  const rets = dates?.length
+    ? gapAwareReturns(dates, prices, options).returns
+    : returns(prices);
   if (rets.length < 2) return null;
   return stdev(rets) * Math.sqrt(TRADING_DAYS);
 }
 
 /** 年化下行波动（只统计低于目标收益的部分） */
-export function downsideDeviation(prices, target = 0) {
-  const rets = returns(prices);
+export function downsideDeviation(prices, dates, target = 0, options = {}) {
+  const rets = dates?.length
+    ? gapAwareReturns(dates, prices, options).returns
+    : returns(prices);
   if (rets.length < 2) return null;
   let acc = 0;
   for (const r of rets) {
@@ -76,7 +85,7 @@ export function downsideDeviation(prices, target = 0) {
 /** 夏普比率 */
 export function sharpeRatio(prices, riskFree = DEFAULT_RISK_FREE, dates) {
   const ann = annualizedReturn(prices, dates);
-  const vol = annualizedVolatility(prices);
+  const vol = annualizedVolatility(prices, dates);
   if (ann === null || !vol) return null;
   return (ann - riskFree) / vol;
 }
@@ -84,7 +93,7 @@ export function sharpeRatio(prices, riskFree = DEFAULT_RISK_FREE, dates) {
 /** 索提诺比率 */
 export function sortinoRatio(prices, riskFree = DEFAULT_RISK_FREE, dates) {
   const ann = annualizedReturn(prices, dates);
-  const down = downsideDeviation(prices);
+  const down = downsideDeviation(prices, dates);
   if (ann === null || !down) return null;
   return (ann - riskFree) / down;
 }
@@ -144,9 +153,11 @@ export function calmarRatio(prices, dates) {
   return ann / Math.abs(mdd.value);
 }
 
-/** 胜率与平均盈亏 */
-export function winLoss(prices) {
-  const rets = returns(prices);
+/** 胜率与平均盈亏（同样剔除跨度过大的相邻点） */
+export function winLoss(prices, dates, options = {}) {
+  const rets = dates?.length
+    ? gapAwareReturns(dates, prices, options).returns
+    : returns(prices);
   if (!rets.length) return null;
   const up = rets.filter((r) => r > 0);
   const down = rets.filter((r) => r < 0);
@@ -167,14 +178,30 @@ export function winLoss(prices) {
  * 相对基准的 Beta 与 Alpha（年化）。
  * beta = cov(asset, bench) / var(bench)；alpha = Ra - [Rf + beta × (Rb - Rf)]
  */
-export function betaAlpha(assetPrices, benchPrices, riskFree = DEFAULT_RISK_FREE, dates) {
-  const ra = returns(assetPrices);
-  const rb = returns(benchPrices);
-  const n = Math.min(ra.length, rb.length);
+export function betaAlpha(
+  assetPrices,
+  benchPrices,
+  riskFree = DEFAULT_RISK_FREE,
+  dates,
+  benchDates = dates
+) {
+  const assetRet = gapAwareReturns(dates, assetPrices);
+  const benchRet = gapAwareReturns(benchDates || dates, benchPrices);
+
+  // 按日期交集对齐日收益，避免「一边有停牌、一边没有」时错位
+  const benchMap = new Map();
+  for (let i = 0; i < benchRet.dates.length; i += 1) benchMap.set(benchRet.dates[i], benchRet.returns[i]);
+  const a = [];
+  const b = [];
+  for (let i = 0; i < assetRet.dates.length; i += 1) {
+    const value = benchMap.get(assetRet.dates[i]);
+    if (value === undefined) continue;
+    a.push(assetRet.returns[i]);
+    b.push(value);
+  }
+  const n = a.length;
   if (n < 30) return { beta: null, alpha: null, correlation: null };
 
-  const a = ra.slice(-n);
-  const b = rb.slice(-n);
   const ma = mean(a);
   const mb = mean(b);
   let cov = 0;
@@ -192,7 +219,7 @@ export function betaAlpha(assetPrices, benchPrices, riskFree = DEFAULT_RISK_FREE
   const correlation = varA > 0 ? cov / Math.sqrt(varA * varB) : null;
 
   const annA = annualizedReturn(assetPrices, dates);
-  const annB = annualizedReturn(benchPrices);
+  const annB = annualizedReturn(benchPrices, benchDates || dates);
   const alpha =
     annA === null || annB === null ? null : annA - (riskFree + beta * (annB - riskFree));
 
@@ -241,13 +268,13 @@ export function analyze(prices, dates, options = {}) {
     years,
     totalReturn: totalReturn(prices),
     annualizedReturn: annualizedReturn(prices, dates),
-    volatility: annualizedVolatility(prices),
-    downside: downsideDeviation(prices),
+    volatility: annualizedVolatility(prices, dates),
+    downside: downsideDeviation(prices, dates),
     sharpe: sharpeRatio(prices, rf, dates),
     sortino: sortinoRatio(prices, rf, dates),
     calmar: calmarRatio(prices, dates),
     maxDrawdown: mdd,
-    winLoss: winLoss(prices),
+    winLoss: winLoss(prices, dates),
     rolling1y: rollingAnnualized(prices, TRADING_DAYS),
     drawdownSeries: drawdowns(prices),
     beta: null,
@@ -261,12 +288,16 @@ export function analyze(prices, dates, options = {}) {
       prices,
       options.benchmark.prices,
       rf,
-      dates
+      dates,
+      options.benchmark.dates
     );
     result.beta = beta;
     result.alpha = alpha;
     result.correlation = correlation;
-    result.benchmarkReturn = annualizedReturn(options.benchmark.prices, options.benchmark.dates);
+    result.benchmarkReturn = annualizedReturn(
+      options.benchmark.prices,
+      options.benchmark.dates || dates
+    );
   }
 
   return result;

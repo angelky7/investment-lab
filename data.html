@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>数据状态 · 投资实验室</title>
   <meta name="description" content="数据来源、更新时间、覆盖范围与质量校验结果。所有分析结论都建立在这份数据之上。" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2300695c'/%3E%3Cpath d='M8 22l5-6 4 3.5L24 10' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
@@ -35,6 +35,10 @@
         <section class="section" id="data-summary" aria-live="polite">
           <div class="skeleton" style="height:5rem"></div>
         </section>
+
+        <section class="section" id="data-calendars" aria-live="polite"></section>
+
+        <section class="section" id="data-gaps" aria-live="polite"></section>
 
         <section class="section">
           <h2 class="section-title">数据从哪来</h2>
@@ -84,11 +88,16 @@
         <section class="section">
           <div class="notice" data-tone="warn">
             <span>
-              <strong>已知局限：</strong>
-              行情接口不提供股息的现金到账细节，后复权是「按分红再投资」的近似的；
-              基金累计净值不等于真实的可再投资净值；ETF 的折溢价被忽略；
-              交易日历以各资产自身数据为准，跨市场对比时取日期交集。
-              这些近似对长期收益的判断影响很小，但对精确到小数点后两位的「业绩归因」不够用。
+              <strong>已知局限（逐条如实说明）：</strong><br />
+              1. <strong>数据源空洞</strong>：腾讯的纳斯达克100 在 2021-05 缺 10 个交易日，
+                 道琼斯在 2009-07 缺 19 个交易日；道指历史最早只到 2009-05。
+                 这些缺口无法从源端补齐，已在上面「缺口明细」里列出。<br />
+              2. <strong>个股停牌</strong>：如 2015 年停牌潮、2006 年股权分置改革停牌，
+                 期间没有价格是市场事实，不是缺失。<br />
+              3. <strong>统计口径</strong>：相邻两个数据点相隔超过 10 个自然日时，
+                 该段收益不计入波动率、夏普、索提诺与胜率，避免把「停牌两个月」算成「一天跌 30%」。<br />
+              4. 行情接口不提供逐笔股息到账，后复权是按复权因子的近似；基金累计净值不等于可再投资净值；
+                 ETF 折溢价与交易成本被忽略；跨市场对比取交易日交集。
             </span>
           </div>
         </section>

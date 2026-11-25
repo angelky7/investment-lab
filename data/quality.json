@@ -1,819 +1,1602 @@
 {
-  "schema": 2,
-  "generated_at": "2026-11-25T13:47:11+08:00",
+  "schema": 3,
+  "generated_at": "2026-11-25T18:25:22+08:00",
   "data_date": "2026-11-24",
   "stale_days": 1,
+  "calendars": {
+    "CN": {
+      "days": 5316,
+      "start": "2005-01-04",
+      "end": "2026-11-24"
+    },
+    "HK": {
+      "days": 5422,
+      "start": "2004-11-25",
+      "end": "2026-11-24"
+    },
+    "US": {
+      "days": 5509,
+      "start": "2005-01-03",
+      "end": "2026-11-24"
+    }
+  },
   "summary": {
-    "total": 55,
-    "files_ok": 55,
+    "total": 57,
+    "files_ok": 57,
     "missing": 0,
     "error_count": 0,
-    "warning_count": 15,
-    "total_points": 207742
+    "warning_count": 18,
+    "total_points": 216300,
+    "assets_with_gaps": 1,
+    "assets_complete": 37
   },
   "errors": [],
   "warnings": [
-    "601318: 1 处日期断档 > 20 天",
-    "600036: 1 处日期断档 > 20 天",
-    "300059: 1 处日期断档 > 20 天",
-    "000001: 2 处日期断档 > 20 天",
-    "600519: 2 处日期断档 > 20 天",
-    "000858: 2 处日期断档 > 20 天",
-    "002714: 1 处日期断档 > 20 天",
-    "601888: 1 处日期断档 > 20 天",
-    "002415: 1 处日期断档 > 20 天",
-    "002230: 1 处日期断档 > 20 天",
-    "000725: 1 处日期断档 > 20 天",
-    "601012: 1 处日期断档 > 20 天",
-    "600585: 2 处日期断档 > 20 天",
-    "600276: 2 处日期断档 > 20 天",
-    "000002: 3 处日期断档 > 20 天"
+    "纳斯达克100指数（index us.NDX）: 连续缺 10 个交易日（2021-05-10 ~ 2021-05-21），指数/ETF 不会停牌，疑似数据源空洞",
+    "道琼斯工业平均指数（index us.DJI）: 连续缺 19 个交易日（2009-07-02 ~ 2009-07-29），指数/ETF 不会停牌，疑似数据源空洞",
+    "中国平安（stock 601318）: 连续缺 47 个交易日（2010-06-29 ~ 2010-09-01），多为停牌或数据源空洞",
+    "招商银行（stock 600036）: 连续缺 25 个交易日（2006-01-12 ~ 2006-02-24），多为停牌或数据源空洞",
+    "中信证券（stock 600030）: 连续缺 12 个交易日（2005-06-20 ~ 2005-07-05），多为停牌或数据源空洞",
+    "东方财富（stock 300059）: 连续缺 42 个交易日（2015-02-09 ~ 2015-04-15），多为停牌或数据源空洞",
+    "平安银行（stock 000001）: 连续缺 46 个交易日（2010-06-30 ~ 2010-09-01），多为停牌或数据源空洞",
+    "贵州茅台（stock 600519）: 连续缺 36 个交易日（2006-02-24 ~ 2006-04-14），多为停牌或数据源空洞",
+    "五粮液（stock 000858）: 连续缺 60 个交易日（2015-07-30 ~ 2015-10-30），多为停牌或数据源空洞",
+    "牧原股份（stock 002714）: 连续缺 15 个交易日（2015-04-07 ~ 2015-04-27），多为停牌或数据源空洞",
+    "中国中免（stock 601888）: 连续缺 56 个交易日（2015-03-16 ~ 2015-06-03），多为停牌或数据源空洞",
+    "海康威视（stock 002415）: 连续缺 42 个交易日（2015-07-09 ~ 2015-09-08），多为停牌或数据源空洞",
+    "科大讯飞（stock 002230）: 连续缺 43 个交易日（2016-03-16 ~ 2016-05-17），多为停牌或数据源空洞",
+    "京东方A（stock 000725）: 连续缺 14 个交易日（2005-10-17 ~ 2005-11-03），多为停牌或数据源空洞",
+    "隆基绿能（stock 601012）: 连续缺 18 个交易日（2013-12-17 ~ 2014-01-10），多为停牌或数据源空洞",
+    "海螺水泥（stock 600585）: 连续缺 14 个交易日（2006-02-10 ~ 2006-03-01），多为停牌或数据源空洞",
+    "恒瑞医药（stock 600276）: 连续缺 17 个交易日（2006-05-26 ~ 2006-06-19），多为停牌或数据源空洞",
+    "万科A（stock 000002）: 连续缺 130 个交易日（2015-12-21 ~ 2016-07-01），多为停牌或数据源空洞"
   ],
   "assets": [
     {
       "symbol": "000300",
+      "name": "沪深300",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
       "status": "ok",
       "count": 5316,
       "start": "2005-01-04",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "沪深300",
-      "type": "index",
-      "group": "宽基指数"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "000905",
+      "name": "中证500",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
       "status": "ok",
       "count": 4865,
       "start": "2006-11-16",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "中证500",
-      "type": "index",
-      "group": "宽基指数"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "000852",
+      "name": "中证1000",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
       "status": "ok",
       "count": 3165,
       "start": "2013-11-19",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "中证1000",
-      "type": "index",
-      "group": "宽基指数"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "000001",
+      "name": "上证指数",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
       "status": "ok",
       "count": 5353,
       "start": "2004-11-11",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "上证指数",
-      "type": "index",
-      "group": "宽基指数"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "399001",
+      "name": "深证成指",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
       "status": "ok",
       "count": 5353,
       "start": "2004-11-11",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "深证成指",
-      "type": "index",
-      "group": "宽基指数"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "399006",
+      "name": "创业板指",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
       "status": "ok",
       "count": 4001,
       "start": "2010-06-01",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "创业板指",
-      "type": "index",
-      "group": "宽基指数"
+      "missing_trading_days": 1,
+      "missing_ratio": 0.00025,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2014-10-08",
+          "to": "2014-10-08",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "000016",
+      "name": "上证50",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
       "status": "ok",
       "count": 5353,
       "start": "2004-11-11",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "上证50",
-      "type": "index",
-      "group": "宽基指数"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "000688",
+      "name": "科创50",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
       "status": "ok",
       "count": 1670,
       "start": "2020-01-02",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "科创50",
-      "type": "index",
-      "group": "宽基指数"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "399673",
+      "name": "创业板50",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
       "status": "ok",
       "count": 3024,
       "start": "2014-06-18",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "创业板50",
-      "type": "index",
-      "group": "宽基指数"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "us.NDX",
-      "status": "ok",
-      "count": 4256,
-      "start": "2009-12-09",
-      "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
       "name": "纳斯达克100指数",
       "type": "index",
-      "group": "海外指数"
+      "group": "海外指数",
+      "market": "US",
+      "status": "ok",
+      "count": 5499,
+      "start": "2005-01-03",
+      "end": "2026-11-24",
+      "missing_trading_days": 10,
+      "missing_ratio": 0.00182,
+      "max_missing_run": 10,
+      "missing_runs": [
+        {
+          "from": "2021-05-10",
+          "to": "2021-05-21",
+          "days": 10
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "us.INX",
-      "status": "ok",
-      "count": 4266,
-      "start": "2009-12-09",
-      "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
       "name": "标普500",
       "type": "index",
-      "group": "海外指数"
+      "group": "海外指数",
+      "market": "US",
+      "status": "ok",
+      "count": 5509,
+      "start": "2005-01-03",
+      "end": "2026-11-24",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "us.DJI",
-      "status": "ok",
-      "count": 4264,
-      "start": "2009-12-09",
-      "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
       "name": "道琼斯工业平均指数",
       "type": "index",
-      "group": "海外指数"
+      "group": "海外指数",
+      "market": "US",
+      "status": "ok",
+      "count": 4389,
+      "start": "2009-05-11",
+      "end": "2026-11-24",
+      "missing_trading_days": 26,
+      "missing_ratio": 0.00589,
+      "max_missing_run": 19,
+      "missing_runs": [
+        {
+          "from": "2009-07-02",
+          "to": "2009-07-29",
+          "days": 19
+        },
+        {
+          "from": "2009-06-22",
+          "to": "2009-06-24",
+          "days": 3
+        },
+        {
+          "from": "2009-05-15",
+          "to": "2009-05-15",
+          "days": 1
+        },
+        {
+          "from": "2009-09-04",
+          "to": "2009-09-04",
+          "days": 1
+        },
+        {
+          "from": "2012-06-29",
+          "to": "2012-06-29",
+          "days": 1
+        }
+      ],
+      "completeness": "minor"
+    },
+    {
+      "symbol": "000510",
+      "name": "中证A500",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
+      "status": "ok",
+      "count": 525,
+      "start": "2024-09-23",
+      "end": "2026-11-24",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "hkHSI",
+      "name": "恒生指数",
+      "type": "index",
+      "group": "海外指数",
+      "market": "HK",
+      "status": "ok",
+      "count": 5422,
+      "start": "2004-11-25",
+      "end": "2026-11-24",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "601318",
+      "name": "中国平安",
+      "type": "stock",
+      "group": "金融",
+      "market": "CN",
       "status": "ok",
       "count": 4731,
       "start": "2007-03-01",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 67,
+      "missing_ratio": 0.01396,
+      "max_missing_run": 47,
+      "missing_runs": [
         {
-          "from": "2010-06-28",
-          "to": "2010-09-02",
-          "days": 66
+          "from": "2010-06-29",
+          "to": "2010-09-01",
+          "days": 47
+        },
+        {
+          "from": "2009-06-08",
+          "to": "2009-06-12",
+          "days": 5
+        },
+        {
+          "from": "2007-03-19",
+          "to": "2007-03-19",
+          "days": 1
+        },
+        {
+          "from": "2007-06-07",
+          "to": "2007-06-07",
+          "days": 1
+        },
+        {
+          "from": "2008-03-05",
+          "to": "2008-03-05",
+          "days": 1
         }
       ],
-      "gap_count": 1,
-      "name": "中国平安",
-      "type": "stock",
-      "group": "金融"
+      "completeness": "minor"
     },
     {
       "symbol": "600036",
+      "name": "招商银行",
+      "type": "stock",
+      "group": "金融",
+      "market": "CN",
       "status": "ok",
       "count": 5324,
       "start": "2004-09-09",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 69,
+      "missing_ratio": 0.01298,
+      "max_missing_run": 25,
+      "missing_runs": [
         {
-          "from": "2006-01-11",
-          "to": "2006-02-27",
-          "days": 47
+          "from": "2006-01-12",
+          "to": "2006-02-24",
+          "days": 25
+        },
+        {
+          "from": "2005-12-19",
+          "to": "2005-12-30",
+          "days": 10
+        },
+        {
+          "from": "2010-03-05",
+          "to": "2010-03-12",
+          "days": 6
+        },
+        {
+          "from": "2013-08-28",
+          "to": "2013-09-04",
+          "days": 6
+        },
+        {
+          "from": "2015-04-03",
+          "to": "2015-04-10",
+          "days": 5
         }
       ],
-      "gap_count": 1,
-      "name": "招商银行",
-      "type": "stock",
-      "group": "金融"
+      "completeness": "minor"
     },
     {
       "symbol": "601398",
+      "name": "工商银行",
+      "type": "stock",
+      "group": "金融",
+      "market": "CN",
       "status": "ok",
       "count": 4857,
       "start": "2006-10-27",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "工商银行",
-      "type": "stock",
-      "group": "金融"
+      "missing_trading_days": 22,
+      "missing_ratio": 0.00451,
+      "max_missing_run": 6,
+      "missing_runs": [
+        {
+          "from": "2010-11-16",
+          "to": "2010-11-23",
+          "days": 6
+        },
+        {
+          "from": "2007-03-21",
+          "to": "2007-03-21",
+          "days": 1
+        },
+        {
+          "from": "2007-06-12",
+          "to": "2007-06-12",
+          "days": 1
+        },
+        {
+          "from": "2007-10-26",
+          "to": "2007-10-26",
+          "days": 1
+        },
+        {
+          "from": "2007-12-13",
+          "to": "2007-12-13",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "600030",
+      "name": "中信证券",
+      "type": "stock",
+      "group": "金融",
+      "market": "CN",
       "status": "ok",
       "count": 5292,
       "start": "2004-09-20",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "中信证券",
-      "type": "stock",
-      "group": "金融"
+      "missing_trading_days": 94,
+      "missing_ratio": 0.01768,
+      "max_missing_run": 12,
+      "missing_runs": [
+        {
+          "from": "2005-06-20",
+          "to": "2005-07-05",
+          "days": 12
+        },
+        {
+          "from": "2005-07-28",
+          "to": "2005-08-12",
+          "days": 12
+        },
+        {
+          "from": "2010-04-16",
+          "to": "2010-04-30",
+          "days": 11
+        },
+        {
+          "from": "2018-12-25",
+          "to": "2019-01-09",
+          "days": 10
+        },
+        {
+          "from": "2007-10-22",
+          "to": "2007-11-01",
+          "days": 9
+        }
+      ],
+      "completeness": "minor"
     },
     {
       "symbol": "300059",
+      "name": "东方财富",
+      "type": "stock",
+      "group": "金融",
+      "market": "CN",
       "status": "ok",
       "count": 3987,
       "start": "2010-03-19",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 65,
+      "missing_ratio": 0.01604,
+      "max_missing_run": 42,
+      "missing_runs": [
         {
-          "from": "2015-02-06",
-          "to": "2015-04-16",
-          "days": 69
+          "from": "2015-02-09",
+          "to": "2015-04-15",
+          "days": 42
+        },
+        {
+          "from": "2015-09-23",
+          "to": "2015-09-29",
+          "days": 5
+        },
+        {
+          "from": "2016-04-25",
+          "to": "2016-04-29",
+          "days": 5
+        },
+        {
+          "from": "2015-01-19",
+          "to": "2015-01-21",
+          "days": 3
+        },
+        {
+          "from": "2010-04-26",
+          "to": "2010-04-26",
+          "days": 1
         }
       ],
-      "gap_count": 1,
-      "name": "东方财富",
-      "type": "stock",
-      "group": "金融"
+      "completeness": "minor"
     },
     {
       "symbol": "000001",
+      "name": "平安银行",
+      "type": "stock",
+      "group": "金融",
+      "market": "CN",
       "status": "ok",
       "count": 5242,
       "start": "2004-09-13",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 148,
+      "missing_ratio": 0.02784,
+      "max_missing_run": 46,
+      "missing_runs": [
         {
-          "from": "2005-09-27",
-          "to": "2005-10-21",
-          "days": 24
+          "from": "2010-06-30",
+          "to": "2010-09-01",
+          "days": 46
         },
         {
-          "from": "2010-06-29",
-          "to": "2010-09-02",
-          "days": 65
+          "from": "2007-06-01",
+          "to": "2007-06-19",
+          "days": 13
+        },
+        {
+          "from": "2005-09-28",
+          "to": "2005-10-20",
+          "days": 12
+        },
+        {
+          "from": "2006-05-29",
+          "to": "2006-06-09",
+          "days": 10
+        },
+        {
+          "from": "2007-05-14",
+          "to": "2007-05-24",
+          "days": 9
         }
       ],
-      "gap_count": 2,
-      "name": "平安银行",
-      "type": "stock",
-      "group": "金融"
+      "completeness": "minor"
     },
     {
       "symbol": "600519",
+      "name": "贵州茅台",
+      "type": "stock",
+      "group": "消费",
+      "market": "CN",
       "status": "ok",
       "count": 5340,
       "start": "2004-08-19",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 68,
+      "missing_ratio": 0.01279,
+      "max_missing_run": 36,
+      "missing_runs": [
         {
-          "from": "2006-02-23",
-          "to": "2006-04-17",
-          "days": 53
+          "from": "2006-02-24",
+          "to": "2006-04-14",
+          "days": 36
         },
         {
-          "from": "2006-04-25",
-          "to": "2006-05-25",
-          "days": 30
+          "from": "2006-04-26",
+          "to": "2006-05-24",
+          "days": 16
+        },
+        {
+          "from": "2007-05-10",
+          "to": "2007-05-11",
+          "days": 2
+        },
+        {
+          "from": "2010-05-27",
+          "to": "2010-05-28",
+          "days": 2
+        },
+        {
+          "from": "2005-06-29",
+          "to": "2005-06-29",
+          "days": 1
         }
       ],
-      "gap_count": 2,
-      "name": "贵州茅台",
-      "type": "stock",
-      "group": "消费"
+      "completeness": "minor"
     },
     {
       "symbol": "000858",
+      "name": "五粮液",
+      "type": "stock",
+      "group": "消费",
+      "market": "CN",
       "status": "ok",
       "count": 5263,
       "start": "2004-09-16",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 125,
+      "missing_ratio": 0.02351,
+      "max_missing_run": 60,
+      "missing_runs": [
         {
-          "from": "2006-01-24",
-          "to": "2006-03-02",
-          "days": 37
+          "from": "2015-07-30",
+          "to": "2015-10-30",
+          "days": 60
         },
         {
-          "from": "2015-07-29",
-          "to": "2015-11-02",
-          "days": 96
+          "from": "2006-01-25",
+          "to": "2006-03-01",
+          "days": 19
+        },
+        {
+          "from": "2006-03-15",
+          "to": "2006-03-30",
+          "days": 12
+        },
+        {
+          "from": "2008-07-21",
+          "to": "2008-08-01",
+          "days": 10
+        },
+        {
+          "from": "2009-09-24",
+          "to": "2009-09-29",
+          "days": 4
         }
       ],
-      "gap_count": 2,
-      "name": "五粮液",
-      "type": "stock",
-      "group": "消费"
+      "completeness": "minor"
     },
     {
       "symbol": "002714",
+      "name": "牧原股份",
+      "type": "stock",
+      "group": "消费",
+      "market": "CN",
       "status": "ok",
       "count": 3091,
       "start": "2014-01-28",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 25,
+      "missing_ratio": 0.00802,
+      "max_missing_run": 15,
+      "missing_runs": [
         {
-          "from": "2015-04-03",
-          "to": "2015-04-28",
-          "days": 25
+          "from": "2015-04-07",
+          "to": "2015-04-27",
+          "days": 15
+        },
+        {
+          "from": "2016-03-25",
+          "to": "2016-04-08",
+          "days": 10
         }
       ],
-      "gap_count": 1,
-      "name": "牧原股份",
-      "type": "stock",
-      "group": "消费"
+      "completeness": "minor"
     },
     {
       "symbol": "601888",
+      "name": "中国中免",
+      "type": "stock",
+      "group": "消费",
+      "market": "CN",
       "status": "ok",
       "count": 4091,
       "start": "2009-10-15",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 66,
+      "missing_ratio": 0.01588,
+      "max_missing_run": 56,
+      "missing_runs": [
         {
-          "from": "2015-03-13",
-          "to": "2015-06-04",
-          "days": 83
+          "from": "2015-03-16",
+          "to": "2015-06-03",
+          "days": 56
+        },
+        {
+          "from": "2012-11-07",
+          "to": "2012-11-13",
+          "days": 5
+        },
+        {
+          "from": "2010-06-11",
+          "to": "2010-06-11",
+          "days": 1
+        },
+        {
+          "from": "2010-09-15",
+          "to": "2010-09-15",
+          "days": 1
+        },
+        {
+          "from": "2011-05-20",
+          "to": "2011-05-20",
+          "days": 1
         }
       ],
-      "gap_count": 1,
-      "name": "中国中免",
-      "type": "stock",
-      "group": "消费"
+      "completeness": "minor"
     },
     {
       "symbol": "300750",
+      "name": "宁德时代",
+      "type": "stock",
+      "group": "科技",
+      "market": "CN",
       "status": "ok",
       "count": 2052,
       "start": "2018-06-11",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "宁德时代",
-      "type": "stock",
-      "group": "科技"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "002415",
+      "name": "海康威视",
+      "type": "stock",
+      "group": "科技",
+      "market": "CN",
       "status": "ok",
       "count": 3950,
       "start": "2010-05-28",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 54,
+      "missing_ratio": 0.01349,
+      "max_missing_run": 42,
+      "missing_runs": [
         {
-          "from": "2015-07-08",
-          "to": "2015-09-09",
-          "days": 63
+          "from": "2015-07-09",
+          "to": "2015-09-08",
+          "days": 42
+        },
+        {
+          "from": "2019-10-08",
+          "to": "2019-10-09",
+          "days": 2
+        },
+        {
+          "from": "2010-06-25",
+          "to": "2010-06-25",
+          "days": 1
+        },
+        {
+          "from": "2010-11-22",
+          "to": "2010-11-22",
+          "days": 1
+        },
+        {
+          "from": "2010-12-13",
+          "to": "2010-12-13",
+          "days": 1
         }
       ],
-      "gap_count": 1,
-      "name": "海康威视",
-      "type": "stock",
-      "group": "科技"
+      "completeness": "minor"
     },
     {
       "symbol": "002230",
+      "name": "科大讯飞",
+      "type": "stock",
+      "group": "科技",
+      "market": "CN",
       "status": "ok",
       "count": 4417,
       "start": "2008-05-12",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 89,
+      "missing_ratio": 0.01975,
+      "max_missing_run": 43,
+      "missing_runs": [
         {
-          "from": "2016-03-15",
-          "to": "2016-05-18",
-          "days": 64
+          "from": "2016-03-16",
+          "to": "2016-05-17",
+          "days": 43
+        },
+        {
+          "from": "2012-08-10",
+          "to": "2012-08-23",
+          "days": 10
+        },
+        {
+          "from": "2015-04-14",
+          "to": "2015-04-27",
+          "days": 10
+        },
+        {
+          "from": "2016-07-21",
+          "to": "2016-07-27",
+          "days": 5
+        },
+        {
+          "from": "2009-07-20",
+          "to": "2009-07-22",
+          "days": 3
         }
       ],
-      "gap_count": 1,
-      "name": "科大讯飞",
-      "type": "stock",
-      "group": "科技"
+      "completeness": "minor"
     },
     {
       "symbol": "688981",
+      "name": "中芯国际",
+      "type": "stock",
+      "group": "科技",
+      "market": "CN",
       "status": "ok",
       "count": 1536,
       "start": "2020-07-16",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "中芯国际",
-      "type": "stock",
-      "group": "科技"
+      "missing_trading_days": 6,
+      "missing_ratio": 0.00389,
+      "max_missing_run": 6,
+      "missing_runs": [
+        {
+          "from": "2025-09-01",
+          "to": "2025-09-08",
+          "days": 6
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "000725",
+      "name": "京东方A",
+      "type": "stock",
+      "group": "科技",
+      "market": "CN",
       "status": "ok",
       "count": 5281,
       "start": "2004-09-14",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 109,
+      "missing_ratio": 0.0205,
+      "max_missing_run": 14,
+      "missing_runs": [
         {
-          "from": "2005-10-14",
-          "to": "2005-11-04",
-          "days": 21
+          "from": "2005-10-17",
+          "to": "2005-11-03",
+          "days": 14
+        },
+        {
+          "from": "2007-08-14",
+          "to": "2007-08-30",
+          "days": 13
+        },
+        {
+          "from": "2005-11-14",
+          "to": "2005-11-29",
+          "days": 12
+        },
+        {
+          "from": "2007-03-12",
+          "to": "2007-03-27",
+          "days": 12
+        },
+        {
+          "from": "2008-11-04",
+          "to": "2008-11-07",
+          "days": 4
         }
       ],
-      "gap_count": 1,
-      "name": "京东方A",
-      "type": "stock",
-      "group": "科技"
+      "completeness": "minor"
     },
     {
       "symbol": "600031",
+      "name": "三一重工",
+      "type": "stock",
+      "group": "制造",
+      "market": "CN",
       "status": "ok",
       "count": 5323,
       "start": "2004-10-15",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "三一重工",
-      "type": "stock",
-      "group": "制造"
+      "missing_trading_days": 47,
+      "missing_ratio": 0.00884,
+      "max_missing_run": 8,
+      "missing_runs": [
+        {
+          "from": "2005-06-02",
+          "to": "2005-06-13",
+          "days": 8
+        },
+        {
+          "from": "2008-09-25",
+          "to": "2008-10-09",
+          "days": 6
+        },
+        {
+          "from": "2009-09-10",
+          "to": "2009-09-14",
+          "days": 3
+        },
+        {
+          "from": "2005-05-09",
+          "to": "2005-05-10",
+          "days": 2
+        },
+        {
+          "from": "2006-11-29",
+          "to": "2006-11-30",
+          "days": 2
+        }
+      ],
+      "completeness": "minor"
     },
     {
       "symbol": "002594",
+      "name": "比亚迪",
+      "type": "stock",
+      "group": "制造",
+      "market": "CN",
       "status": "ok",
       "count": 3729,
       "start": "2011-06-30",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "比亚迪",
-      "type": "stock",
-      "group": "制造"
+      "missing_trading_days": 12,
+      "missing_ratio": 0.00321,
+      "max_missing_run": 8,
+      "missing_runs": [
+        {
+          "from": "2015-05-25",
+          "to": "2015-06-03",
+          "days": 8
+        },
+        {
+          "from": "2015-04-24",
+          "to": "2015-04-27",
+          "days": 2
+        },
+        {
+          "from": "2011-09-09",
+          "to": "2011-09-09",
+          "days": 1
+        },
+        {
+          "from": "2012-06-08",
+          "to": "2012-06-08",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "601012",
+      "name": "隆基绿能",
+      "type": "stock",
+      "group": "制造",
+      "market": "CN",
       "status": "ok",
       "count": 3512,
       "start": "2012-04-11",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 41,
+      "missing_ratio": 0.01154,
+      "max_missing_run": 18,
+      "missing_runs": [
         {
-          "from": "2013-12-16",
-          "to": "2014-01-13",
-          "days": 28
+          "from": "2013-12-17",
+          "to": "2014-01-10",
+          "days": 18
+        },
+        {
+          "from": "2014-06-19",
+          "to": "2014-06-30",
+          "days": 8
+        },
+        {
+          "from": "2019-04-09",
+          "to": "2019-04-16",
+          "days": 6
+        },
+        {
+          "from": "2015-12-23",
+          "to": "2015-12-29",
+          "days": 5
+        },
+        {
+          "from": "2012-05-29",
+          "to": "2012-05-29",
+          "days": 1
         }
       ],
-      "gap_count": 1,
-      "name": "隆基绿能",
-      "type": "stock",
-      "group": "制造"
+      "completeness": "minor"
     },
     {
       "symbol": "600585",
+      "name": "海螺水泥",
+      "type": "stock",
+      "group": "制造",
+      "market": "CN",
       "status": "ok",
       "count": 5330,
       "start": "2004-09-24",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 52,
+      "missing_ratio": 0.00978,
+      "max_missing_run": 14,
+      "missing_runs": [
         {
-          "from": "2006-01-13",
-          "to": "2006-02-06",
-          "days": 24
+          "from": "2006-02-10",
+          "to": "2006-03-01",
+          "days": 14
         },
         {
-          "from": "2006-02-09",
-          "to": "2006-03-02",
-          "days": 21
+          "from": "2006-01-16",
+          "to": "2006-01-25",
+          "days": 8
+        },
+        {
+          "from": "2014-12-18",
+          "to": "2014-12-29",
+          "days": 8
+        },
+        {
+          "from": "2008-05-16",
+          "to": "2008-05-21",
+          "days": 4
+        },
+        {
+          "from": "2006-07-13",
+          "to": "2006-07-14",
+          "days": 2
         }
       ],
-      "gap_count": 2,
-      "name": "海螺水泥",
-      "type": "stock",
-      "group": "制造"
+      "completeness": "minor"
     },
     {
       "symbol": "600276",
+      "name": "恒瑞医药",
+      "type": "stock",
+      "group": "医药",
+      "market": "CN",
       "status": "ok",
       "count": 5342,
       "start": "2004-09-27",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 39,
+      "missing_ratio": 0.00734,
+      "max_missing_run": 17,
+      "missing_runs": [
         {
-          "from": "2006-04-27",
-          "to": "2006-05-18",
-          "days": 21
+          "from": "2006-05-26",
+          "to": "2006-06-19",
+          "days": 17
         },
         {
-          "from": "2006-05-25",
-          "to": "2006-06-20",
-          "days": 26
+          "from": "2006-04-28",
+          "to": "2006-05-17",
+          "days": 9
+        },
+        {
+          "from": "2010-04-09",
+          "to": "2010-04-12",
+          "days": 2
+        },
+        {
+          "from": "2005-02-28",
+          "to": "2005-02-28",
+          "days": 1
+        },
+        {
+          "from": "2006-08-16",
+          "to": "2006-08-16",
+          "days": 1
         }
       ],
-      "gap_count": 2,
-      "name": "恒瑞医药",
-      "type": "stock",
-      "group": "医药"
+      "completeness": "minor"
     },
     {
       "symbol": "300760",
+      "name": "迈瑞医疗",
+      "type": "stock",
+      "group": "医药",
+      "market": "CN",
       "status": "ok",
       "count": 1968,
       "start": "2018-10-16",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "迈瑞医疗",
-      "type": "stock",
-      "group": "医药"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "000002",
+      "name": "万科A",
+      "type": "stock",
+      "group": "地产",
+      "market": "CN",
       "status": "ok",
       "count": 5188,
       "start": "2004-09-16",
       "end": "2026-11-24",
-      "gaps": [
+      "missing_trading_days": 200,
+      "missing_ratio": 0.03762,
+      "max_missing_run": 130,
+      "missing_runs": [
         {
-          "from": "2005-11-04",
-          "to": "2005-12-02",
-          "days": 28
+          "from": "2015-12-21",
+          "to": "2016-07-01",
+          "days": 130
         },
         {
-          "from": "2012-12-25",
-          "to": "2013-01-21",
-          "days": 27
+          "from": "2005-11-07",
+          "to": "2005-12-01",
+          "days": 19
         },
         {
-          "from": "2015-12-18",
-          "to": "2016-07-04",
-          "days": 199
+          "from": "2012-12-26",
+          "to": "2013-01-18",
+          "days": 15
+        },
+        {
+          "from": "2005-10-10",
+          "to": "2005-10-19",
+          "days": 8
+        },
+        {
+          "from": "2007-08-24",
+          "to": "2007-08-28",
+          "days": 3
         }
       ],
-      "gap_count": 3,
-      "name": "万科A",
-      "type": "stock",
-      "group": "地产"
+      "completeness": "gaps"
     },
     {
       "symbol": "510300",
+      "name": "沪深300ETF（华泰柏瑞）",
+      "type": "etf",
+      "group": "宽基ETF",
+      "market": "CN",
       "status": "ok",
       "count": 3522,
       "start": "2012-05-28",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "沪深300ETF（华泰柏瑞）",
-      "type": "etf",
-      "group": "宽基ETF"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "510500",
+      "name": "中证500ETF（南方）",
+      "type": "etf",
+      "group": "宽基ETF",
+      "market": "CN",
       "status": "ok",
       "count": 3325,
       "start": "2013-03-15",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "中证500ETF（南方）",
-      "type": "etf",
-      "group": "宽基ETF"
+      "missing_trading_days": 2,
+      "missing_ratio": 0.0006,
+      "max_missing_run": 2,
+      "missing_runs": [
+        {
+          "from": "2015-04-13",
+          "to": "2015-04-14",
+          "days": 2
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "510050",
+      "name": "上证50ETF（华夏）",
+      "type": "etf",
+      "group": "宽基ETF",
+      "market": "CN",
       "status": "ok",
       "count": 5287,
       "start": "2005-02-23",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "上证50ETF（华夏）",
-      "type": "etf",
-      "group": "宽基ETF"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "159915",
+      "name": "创业板ETF（易方达）",
+      "type": "etf",
+      "group": "宽基ETF",
+      "market": "CN",
       "status": "ok",
       "count": 3630,
       "start": "2011-12-09",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "创业板ETF（易方达）",
-      "type": "etf",
-      "group": "宽基ETF"
+      "missing_trading_days": 1,
+      "missing_ratio": 0.00028,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2021-02-08",
+          "to": "2021-02-08",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "588000",
+      "name": "科创50ETF（华夏）",
+      "type": "etf",
+      "group": "宽基ETF",
+      "market": "CN",
       "status": "ok",
       "count": 1461,
       "start": "2020-11-16",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "科创50ETF（华夏）",
-      "type": "etf",
-      "group": "宽基ETF"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "159919",
+      "name": "沪深300ETF（嘉实）",
+      "type": "etf",
+      "group": "宽基ETF",
+      "market": "CN",
       "status": "ok",
       "count": 3520,
       "start": "2012-05-28",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "沪深300ETF（嘉实）",
-      "type": "etf",
-      "group": "宽基ETF"
+      "missing_trading_days": 2,
+      "missing_ratio": 0.00057,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2012-11-30",
+          "to": "2012-11-30",
+          "days": 1
+        },
+        {
+          "from": "2019-01-11",
+          "to": "2019-01-11",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "512100",
+      "name": "中证1000ETF（南方）",
+      "type": "etf",
+      "group": "宽基ETF",
+      "market": "CN",
       "status": "ok",
       "count": 2441,
       "start": "2016-11-04",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "中证1000ETF（南方）",
-      "type": "etf",
-      "group": "宽基ETF"
+      "missing_trading_days": 1,
+      "missing_ratio": 0.00041,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2022-09-02",
+          "to": "2022-09-02",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "512880",
+      "name": "证券ETF（国泰）",
+      "type": "etf",
+      "group": "行业ETF",
+      "market": "CN",
       "status": "ok",
       "count": 2499,
       "start": "2016-08-08",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "证券ETF（国泰）",
-      "type": "etf",
-      "group": "行业ETF"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "512690",
+      "name": "酒ETF（鹏华）",
+      "type": "etf",
+      "group": "行业ETF",
+      "market": "CN",
       "status": "ok",
       "count": 1834,
       "start": "2019-05-06",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "酒ETF（鹏华）",
-      "type": "etf",
-      "group": "行业ETF"
+      "missing_trading_days": 1,
+      "missing_ratio": 0.00054,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2021-05-14",
+          "to": "2021-05-14",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "159995",
+      "name": "芯片ETF（华夏）",
+      "type": "etf",
+      "group": "行业ETF",
+      "market": "CN",
       "status": "ok",
       "count": 1649,
       "start": "2020-02-10",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "芯片ETF（华夏）",
-      "type": "etf",
-      "group": "行业ETF"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "512170",
+      "name": "医疗ETF（华宝）",
+      "type": "etf",
+      "group": "行业ETF",
+      "market": "CN",
       "status": "ok",
       "count": 1805,
       "start": "2019-06-17",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "医疗ETF（华宝）",
-      "type": "etf",
-      "group": "行业ETF"
+      "missing_trading_days": 1,
+      "missing_ratio": 0.00055,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2021-02-24",
+          "to": "2021-02-24",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "159866",
+      "name": "日经ETF（工银瑞信）",
+      "type": "etf",
+      "group": "跨境ETF",
+      "market": "CN",
       "status": "ok",
       "count": 1365,
       "start": "2021-04-08",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "日经ETF（工银瑞信）",
-      "type": "etf",
-      "group": "跨境ETF"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "513100",
+      "name": "纳指ETF（国泰）",
+      "type": "etf",
+      "group": "跨境ETF",
+      "market": "CN",
       "status": "ok",
       "count": 3288,
       "start": "2013-05-15",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "纳指ETF（国泰）",
-      "type": "etf",
-      "group": "跨境ETF"
+      "missing_trading_days": 1,
+      "missing_ratio": 0.0003,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2022-01-13",
+          "to": "2022-01-13",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "513500",
+      "name": "标普500ETF（博时）",
+      "type": "etf",
+      "group": "跨境ETF",
+      "market": "CN",
       "status": "ok",
       "count": 3124,
       "start": "2014-01-15",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "标普500ETF（博时）",
-      "type": "etf",
-      "group": "跨境ETF"
+      "missing_trading_days": 1,
+      "missing_ratio": 0.00032,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2022-03-29",
+          "to": "2022-03-29",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     },
     {
       "symbol": "159920",
+      "name": "恒生ETF（华夏）",
+      "type": "etf",
+      "group": "跨境ETF",
+      "market": "CN",
       "status": "ok",
       "count": 3423,
       "start": "2012-10-22",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "恒生ETF（华夏）",
-      "type": "etf",
-      "group": "跨境ETF"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "518880",
+      "name": "黄金ETF（华安）",
+      "type": "etf",
+      "group": "大类资产",
+      "market": "CN",
       "status": "ok",
       "count": 3239,
       "start": "2013-07-29",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "黄金ETF（华安）",
-      "type": "etf",
-      "group": "大类资产"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "511010",
+      "name": "国债ETF（国泰）",
+      "type": "etf",
+      "group": "大类资产",
+      "market": "CN",
       "status": "ok",
       "count": 3321,
       "start": "2013-03-25",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "国债ETF（国泰）",
-      "type": "etf",
-      "group": "大类资产"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "511880",
+      "name": "银华日利（货币ETF）",
+      "type": "etf",
+      "group": "大类资产",
+      "market": "CN",
       "status": "ok",
       "count": 3305,
       "start": "2013-04-18",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "银华日利（货币ETF）",
-      "type": "etf",
-      "group": "大类资产"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "110011",
+      "name": "易方达中小盘混合",
+      "type": "fund",
+      "group": "场外基金",
+      "market": "CN",
       "status": "ok",
       "count": 4444,
       "start": "2008-06-19",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "易方达中小盘混合",
-      "type": "fund",
-      "group": "场外基金"
+      "missing_trading_days": 49,
+      "missing_ratio": 0.01094,
+      "max_missing_run": 4,
+      "missing_runs": [
+        {
+          "from": "2008-06-23",
+          "to": "2008-06-26",
+          "days": 4
+        },
+        {
+          "from": "2008-07-07",
+          "to": "2008-07-10",
+          "days": 4
+        },
+        {
+          "from": "2008-07-14",
+          "to": "2008-07-17",
+          "days": 4
+        },
+        {
+          "from": "2008-07-21",
+          "to": "2008-07-24",
+          "days": 4
+        },
+        {
+          "from": "2008-07-28",
+          "to": "2008-07-31",
+          "days": 4
+        }
+      ],
+      "completeness": "minor"
     },
     {
       "symbol": "001512",
+      "name": "易方达中证海外互联ETF联接A",
+      "type": "fund",
+      "group": "场外基金",
+      "market": "CN",
       "status": "ok",
       "count": 2730,
       "start": "2015-07-08",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "易方达中证海外互联ETF联接A",
-      "type": "fund",
-      "group": "场外基金"
+      "missing_trading_days": 43,
+      "missing_ratio": 0.01555,
+      "max_missing_run": 4,
+      "missing_runs": [
+        {
+          "from": "2015-07-13",
+          "to": "2015-07-16",
+          "days": 4
+        },
+        {
+          "from": "2015-07-20",
+          "to": "2015-07-23",
+          "days": 4
+        },
+        {
+          "from": "2015-07-27",
+          "to": "2015-07-30",
+          "days": 4
+        },
+        {
+          "from": "2015-08-03",
+          "to": "2015-08-06",
+          "days": 4
+        },
+        {
+          "from": "2015-08-10",
+          "to": "2015-08-13",
+          "days": 4
+        }
+      ],
+      "completeness": "minor"
     },
     {
       "symbol": "161725",
+      "name": "招商中证白酒指数（LOF）",
+      "type": "fund",
+      "group": "场外基金",
+      "market": "CN",
       "status": "ok",
       "count": 2798,
       "start": "2015-05-27",
       "end": "2026-11-24",
-      "gaps": [],
-      "gap_count": 0,
-      "name": "招商中证白酒指数（LOF）",
-      "type": "fund",
-      "group": "场外基金"
+      "missing_trading_days": 4,
+      "missing_ratio": 0.00143,
+      "max_missing_run": 3,
+      "missing_runs": [
+        {
+          "from": "2015-06-01",
+          "to": "2015-06-03",
+          "days": 3
+        },
+        {
+          "from": "2015-05-28",
+          "to": "2015-05-28",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
     }
   ]
 }

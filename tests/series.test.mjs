@@ -7,6 +7,8 @@ import assert from "node:assert/strict";
 
 import {
   alignByDate,
+  daysBetween,
+  gapAwareReturns,
   cumulative,
   dateRangeIndices,
   drawdowns,
@@ -18,6 +20,7 @@ import {
   scaleDisplay,
   sliceLastYears,
 } from "../js/core/series.js";
+import { annualizedVolatility } from "../js/core/stats.js";
 
 test("returns 与 cumulative 互补", () => {
   const prices = [100, 110, 99];
@@ -107,4 +110,38 @@ test("histogram 分箱总数守恒", () => {
 test("histogram 处理全等值", () => {
   const { counts } = histogram([0.01, 0.01, 0.01], 10);
   assert.equal(counts.reduce((a, b) => a + b, 0), 3);
+});
+test("gapAwareReturns 跳过跨度过大的相邻点", () => {
+  const dates = ["2024-01-02", "2024-01-03", "2024-01-04", "2024-06-03"];
+  const prices = [100, 110, 121, 133.1];
+  const { returns: rets, dates: retDates, skipped } = gapAwareReturns(dates, prices);
+  // 前两段间隔 1 天，最后一段隔了 5 个月，应当被跳过
+  assert.equal(rets.length, 2);
+  assert.deepEqual(retDates, ["2024-01-03", "2024-01-04"]);
+  assert.equal(skipped, 1);
+  assert.ok(Math.abs(rets[0] - 0.1) < 1e-12);
+});
+
+test("gapAwareReturns 默认不剔除正常周末与长假", () => {
+  const dates = ["2024-09-30", "2024-10-08", "2024-10-09"]; // 国庆长假 8 天
+  const prices = [100, 105, 110];
+  const { returns: rets, skipped } = gapAwareReturns(dates, prices);
+  assert.equal(rets.length, 2);
+  assert.equal(skipped, 0);
+});
+
+test("daysBetween 计算自然日差", () => {
+  assert.equal(daysBetween("2024-01-01", "2024-01-11"), 10);
+  assert.equal(daysBetween("bad", "2024-01-11"), null);
+});
+
+test("数据空洞不应把波动率算大", () => {
+  // 两个月的空洞里涨了 20%：若被当成「一天」，年化波动会爆表
+  const datesWithHole = ["2024-01-02", "2024-01-03", "2024-03-15", "2024-03-18"];
+  const pricesWithHole = [100, 100, 120, 120.6];
+  const datesClean = ["2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"];
+  const pricesClean = [100, 100, 100.4, 100.8];
+  const volHole = annualizedVolatility(pricesWithHole, datesWithHole);
+  const volClean = annualizedVolatility(pricesClean, datesClean);
+  assert.ok(volHole < volClean * 3, `空洞序列波动 ${volHole} 不应远大于干净序列 ${volClean}`);
 });

@@ -259,6 +259,8 @@ class TencentSource:
         bars = dedupe_sort(buckets)
         if since:
             bars = [b for b in bars if b.date >= since]
+        if asset.from_date:
+            bars = [b for b in bars if b.date >= asset.from_date]
         if not bars:
             return None
 
@@ -269,7 +271,7 @@ class TencentSource:
             type=asset.type,
             market=asset.market,
             group=asset.group,
-            currency="USD" if asset.market is Market.US else "CNY",
+            currency={"US": "USD", "HK": "HKD"}.get(asset.market.value, "CNY"),
             source=self.name,
             price_basis=(
                 PriceBasis.INDEX_CLOSE.value if is_index else PriceBasis.HFQ_CLOSE.value

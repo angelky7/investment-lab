@@ -18,6 +18,54 @@ export function returns(prices) {
   return out;
 }
 
+/**
+ * 跳空感知的日收益序列。
+ *
+ * 为什么需要它：行情源本身存在空洞（实测腾讯的贵州茅台 2006-03 整月缺失），
+ * 个股还会长期停牌（万科 2015 年停牌数月）。若不处理，这些空洞会被当成
+ * 「一天之内涨跌 30%」，直接把波动率、夏普、胜率算得面目全非。
+ *
+ * 规则：相邻两个数据点相隔超过 maxGapDays 个自然日时，跳过该收益（不计入统计），
+ * 并计入 skipped，让「样本被剔除了多少」也能被看到。
+ *
+ * @param {string[]} dates
+ * @param {number[]} prices
+ * @param {{maxGapDays?: number}} [options]
+ * @returns {{returns: number[], dates: string[], skipped: number}}
+ */
+export function gapAwareReturns(dates, prices, options = {}) {
+  const maxGapDays = Number.isFinite(options.maxGapDays) ? options.maxGapDays : 10;
+  const outReturns = [];
+  const outDates = [];
+  let skipped = 0;
+
+  const count = Math.min(dates?.length ?? 0, prices?.length ?? 0);
+  for (let i = 1; i < count; i += 1) {
+    const prev = prices[i - 1];
+    const curr = prices[i];
+    const gap = daysBetween(dates[i - 1], dates[i]);
+    if (!(prev > 0) || !(curr > 0)) {
+      skipped += 1;
+      continue;
+    }
+    if (gap !== null && gap > maxGapDays) {
+      skipped += 1;
+      continue;
+    }
+    outReturns.push(curr / prev - 1);
+    outDates.push(dates[i]);
+  }
+  return { returns: outReturns, dates: outDates, skipped };
+}
+
+/** 两个 ISO 日期相差的自然日数；解析失败返回 null */
+export function daysBetween(fromIso, toIso) {
+  const a = Date.parse(`${fromIso}T00:00:00Z`);
+  const b = Date.parse(`${toIso}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return (b - a) / 86400000;
+}
+
 /** 累计收益（相对首日，返回小数序列） */
 export function cumulative(prices) {
   if (!prices.length) return [];

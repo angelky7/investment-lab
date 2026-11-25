@@ -99,7 +99,8 @@ function normalizeWeights(weights) {
 function heatmapHtml(keys, names, matrix) {
   const upVar = "var(--il-up-rgb)";
   const coolVar = "var(--il-cool-rgb)";
-  let html = `<div class="heatmap" style="grid-template-columns:minmax(4.5rem,auto) repeat(${keys.length},minmax(2.2rem,1fr))">`;
+  // 列数交给 CSS 变量：窄屏时单元格会自动变小，而不是把卡片撑宽
+  let html = `<div class="heatmap" style="--hm-cols:${keys.length}">`;
   html += `<div class="hm-head"></div>`;
   keys.forEach((key, j) => {
     html += `<div class="hm-head">${names[j]}</div>`;
@@ -160,7 +161,7 @@ async function renderCorrelation() {
       return;
     }
 
-    const { keys: matrixKeys, matrix } = correlationMatrix(aligned.values);
+    const { keys: matrixKeys, matrix } = correlationMatrix(aligned.dates, aligned.values);
     if (!matrix.length) {
       host.innerHTML = notice("数据不足，无法计算相关性。", "warn");
       return;
@@ -197,7 +198,7 @@ async function renderCorrelation() {
             aligned.dates[aligned.dates.length - 1]
           )}</span>
         </div>
-        <div style="overflow-x:auto;padding-bottom:0.35rem">${heatmapHtml(matrixKeys, names, matrix)}</div>
+        <div class="hscroll">${heatmapHtml(matrixKeys, names, matrix)}</div>
         <p class="caption">颜色越深表示相关性绝对值越大。红色为正相关（同涨同跌），蓝色为负相关（走势相反）。</p>
       </div>
 
@@ -475,7 +476,7 @@ async function renderStress() {
 
     const betas = {};
     if (bench) {
-      for (const s of named) betas[s.key] = estimateBeta(s.prices, bench.prices);
+      for (const s of named) betas[s.key] = estimateBeta(s.dates, s.prices, bench.dates, bench.prices);
     }
 
     const rows = stressTest(named, scenarios, {

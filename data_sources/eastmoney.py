@@ -234,6 +234,8 @@ class EastmoneyKlineSource:
 
         bars = parse_kline_json(raw) or []
         bars = [b for b in bars if int(b.date[:4]) >= asset.from_year]
+        if asset.from_date:
+            bars = [b for b in bars if b.date >= asset.from_date]
         bars = dedupe_sort(bars)
         if not bars:
             return None
@@ -244,7 +246,7 @@ class EastmoneyKlineSource:
             type=asset.type,
             market=asset.market,
             group=asset.group,
-            currency="USD" if asset.market.value == "US" else "CNY",
+            currency={"US": "USD", "HK": "HKD"}.get(asset.market.value, "CNY"),
             source=self.name,
             price_basis=(
                 PriceBasis.INDEX_CLOSE.value

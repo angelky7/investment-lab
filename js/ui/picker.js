@@ -261,11 +261,12 @@ export function weightRows(host, { keys, weights, onChange } = {}) {
   };
 }
 /** 统计区间选择（近 1/3/5/10 年、全部） */
+// 标签刻意用短词：5 个中文标签在 390px 竖屏上放不下「近 X 年」的写法
 export const RANGES = [
-  { value: "1", label: "近 1 年", years: 1 },
-  { value: "3", label: "近 3 年", years: 3 },
-  { value: "5", label: "近 5 年", years: 5 },
-  { value: "10", label: "近 10 年", years: 10 },
+  { value: "1", label: "1 年", years: 1 },
+  { value: "3", label: "3 年", years: 3 },
+  { value: "5", label: "5 年", years: 5 },
+  { value: "10", label: "10 年", years: 10 },
   { value: "all", label: "全部", years: Infinity },
 ];
 
@@ -279,7 +280,7 @@ export function rangeTabs(host, { value = "5", onChange } = {}) {
   host.innerHTML = `
     <mdui-tabs value="${value}" variant="secondary" style="min-width:auto">
       ${RANGES.map(
-        (r) => `<mdui-tab value="${r.value}" style="min-width:auto;padding:0 .7rem">${r.label}</mdui-tab>`
+        (r) => `<mdui-tab value="${r.value}" style="min-width:auto;padding:0 .62rem">${r.label}</mdui-tab>`
       ).join("")}
     </mdui-tabs>`;
   const tabs = host.querySelector("mdui-tabs");

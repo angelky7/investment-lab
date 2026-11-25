@@ -11,22 +11,28 @@
  * 4. 压力测试走**真实历史区间**，不再用「指数跌幅 × 1.2」这种拍脑袋系数。
  */
 
-import { TRADING_DAYS, returns } from "./series.js";
+import { TRADING_DAYS, gapAwareReturns, returns } from "./series.js";
 import { annualizedReturn, yearsBetween } from "./stats.js";
 
 /* --------------------------------- 相关性 -------------------------------- */
 
 /**
  * Pearson 相关系数矩阵。
- * @param {Record<string, number[]>} values 已按日期对齐的收益率/价格序列
+ * @param {string[]} dates 已对齐的交易日
+ * @param {Record<string, number[]>} values 已对齐的价格序列
  * @returns {{keys: string[], matrix: number[][]}}
  */
-export function correlationMatrix(values) {
+export function correlationMatrix(dates, values) {
   const keys = Object.keys(values).filter((k) => values[k].length > 2);
   if (keys.length < 2) return { keys, matrix: [] };
 
   const returnsMap = {};
-  for (const key of keys) returnsMap[key] = returns(values[key]);
+  for (const key of keys) {
+    // 跳空感知：停牌与数据空洞不应被当成「一天涨跌 30%」污染相关系数
+    returnsMap[key] = dates?.length
+      ? gapAwareReturns(dates, values[key]).returns
+      : returns(values[key]);
+  }
 
   const matrix = keys.map(() => keys.map(() => 0));
   for (let i = 0; i < keys.length; i += 1) {
@@ -400,14 +406,31 @@ export function assetStress(asset, scenarios, options = {}) {
   }));
 }
 
-/** 由日收益序列估计资产相对基准的 Beta（对齐长度尾部） */
-export function estimateBeta(assetPrices, benchmarkPrices) {
-  const ra = returns(assetPrices);
-  const rb = returns(benchmarkPrices);
-  const n = Math.min(ra.length, rb.length);
+/**
+ * 由日收益估计资产相对基准的 Beta。
+ *
+ * 按日期交集对齐，而不是「尾部取最短」——恒生、标普与 A 股交易日历不同，
+ * 简单尾部对齐会把不同日子的收益错配在一起。
+ *
+ * @param {string[]} assetDates @param {number[]} assetPrices
+ * @param {string[]} benchDates @param {number[]} benchPrices
+ */
+export function estimateBeta(assetDates, assetPrices, benchDates, benchPrices) {
+  const assetRet = gapAwareReturns(assetDates, assetPrices);
+  const benchRet = gapAwareReturns(benchDates, benchPrices);
+  const benchMap = new Map();
+  for (let i = 0; i < benchRet.dates.length; i += 1) benchMap.set(benchRet.dates[i], benchRet.returns[i]);
+
+  const a = [];
+  const b = [];
+  for (let i = 0; i < assetRet.dates.length; i += 1) {
+    const value = benchMap.get(assetRet.dates[i]);
+    if (value === undefined) continue;
+    a.push(assetRet.returns[i]);
+    b.push(value);
+  }
+  const n = a.length;
   if (n < 30) return null;
-  const a = ra.slice(-n);
-  const b = rb.slice(-n);
   let ma = 0;
   let mb = 0;
   for (let i = 0; i < n; i += 1) {

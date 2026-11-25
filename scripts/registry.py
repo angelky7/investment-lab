@@ -60,6 +60,8 @@ def load_asset_defs() -> list[AssetDef]:
                 from_year=int(item["from"]),
                 source=item.get("source", "tencent"),
                 em_secid=item.get("em_secid", ""),
+                note=item.get("note", ""),
+                from_date=item.get("from_date", ""),
             )
         )
     return assets

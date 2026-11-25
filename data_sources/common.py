@@ -117,7 +117,11 @@ class AssetDef:
     market: Market
     from_year: int
     source: str
+    # 精确起始日（YYYY-MM-DD）。设置后序列会在该日期处截断，
+    # 用于「新指数只采用正式发布之后的数据」这类口径控制。
+    from_date: str = ""
     em_secid: str = ""  # 东方财富 secid，如 1.600519 / 0.159915 / 100.SPX
+    note: str = ""  # 数据口径说明（例如「仅采用正式发布后的历史」）
 
 
 class DataSource(ABC):

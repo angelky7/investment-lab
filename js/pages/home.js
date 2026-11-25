@@ -14,9 +14,10 @@ import { pct, price, tone, dateLabel, count } from "../core/format.js";
 
 const HIGHLIGHTS = [
   { key: "index:000300", label: "沪深300", showPoints: true },
+  { key: "index:us.INX", label: "标普500", showPoints: true },
+  { key: "index:hkHSI", label: "恒生指数", showPoints: true },
+  { key: "index:000510", label: "中证A500", showPoints: true },
   { key: "etf:518880", label: "黄金ETF", showPoints: false },
-  { key: "etf:511010", label: "国债ETF", showPoints: false },
-  { key: "etf:511880", label: "货币ETF", showPoints: false },
 ];
 
 function parseKey(key) {

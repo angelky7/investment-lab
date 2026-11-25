@@ -168,9 +168,21 @@ class TestEastmoneyParser(unittest.TestCase):
         self.assertEqual(meta, {})
 
     def test_secid_derivation(self):
-        cn_sh = AssetDef("600519", "贵州茅台", AssetType.STOCK, "sh600519", "消费", Market.CN, 2005, "tencent", "1.600519")
-        cn_sz = AssetDef("159915", "创业板ETF", AssetType.ETF, "sz159915", "宽基ETF", Market.CN, 2011, "tencent", "0.159915")
-        us = AssetDef("us.INX", "标普500", AssetType.INDEX, "us.INX", "海外指数", Market.US, 2010, "tencent", "100.SPX")
+        cn_sh = AssetDef(
+            symbol="600519", name="贵州茅台", type=AssetType.STOCK, code="sh600519",
+            group="消费", market=Market.CN, from_year=2005, source="tencent",
+            em_secid="1.600519",
+        )
+        cn_sz = AssetDef(
+            symbol="159915", name="创业板ETF", type=AssetType.ETF, code="sz159915",
+            group="宽基ETF", market=Market.CN, from_year=2011, source="tencent",
+            em_secid="0.159915",
+        )
+        us = AssetDef(
+            symbol="us.INX", name="标普500", type=AssetType.INDEX, code="us.INX",
+            group="海外指数", market=Market.US, from_year=2005, source="tencent",
+            em_secid="100.SPX",
+        )
         self.assertEqual(secid_for(cn_sh), "1.600519")
         self.assertEqual(secid_for(cn_sz), "0.159915")
         self.assertEqual(secid_for(us), "100.SPX")
@@ -195,8 +207,17 @@ class TestDedupeSort(unittest.TestCase):
 
 
 class TestValidate(unittest.TestCase):
+    def _write(self, tmp, payload=None, raw=None):
+        path = os.path.join(tmp, "a.json")
+        with open(path, "w", encoding="utf-8") as f:
+            if raw is not None:
+                f.write(raw)
+            else:
+                json.dump(payload, f, ensure_ascii=False)
+        return path
+
     def test_good_payload_has_no_errors(self):
-        from scripts.validate import validate_one
+        from scripts.validate import check_integrity
 
         payload = {
             "symbol": "000300",
@@ -205,18 +226,13 @@ class TestValidate(unittest.TestCase):
             "dates": ["2024-01-02", "2024-01-03", "2024-01-04"],
             "prices": [3400.0, 3410.0, 3420.0],
         }
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "index_000300.json")
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(payload, f, ensure_ascii=False)
-            errors, warnings, info = validate_one(path, "000300")
+        errors, warnings = check_integrity(payload, "000300")
         self.assertEqual(errors, [])
-        self.assertEqual(info["count"], 3)
-        # 3 条数据 < 250，应当产生「点数偏少」的提醒
+        # 3 条 < MIN_OK_POINTS，应当提醒点数偏少
         self.assertTrue(any("建议 ≥" in w for w in warnings))
 
     def test_unsorted_dates_detected(self):
-        from scripts.validate import validate_one
+        from scripts.validate import check_integrity
 
         payload = {
             "name": "x",
@@ -224,15 +240,11 @@ class TestValidate(unittest.TestCase):
             "dates": ["2024-01-03", "2024-01-02"],
             "prices": [1.0, 2.0],
         }
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "a.json")
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(payload, f)
-            errors, _, _ = validate_one(path, "x")
+        errors, _ = check_integrity(payload, "x")
         self.assertTrue(any("严格递增" in e for e in errors))
 
     def test_non_positive_price_detected(self):
-        from scripts.validate import validate_one
+        from scripts.validate import check_integrity
 
         payload = {
             "name": "x",
@@ -240,31 +252,59 @@ class TestValidate(unittest.TestCase):
             "dates": ["2024-01-02", "2024-01-03"],
             "prices": [1.0, -2.0],
         }
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "a.json")
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(payload, f)
-            errors, _, _ = validate_one(path, "x")
+        errors, _ = check_integrity(payload, "x")
         self.assertTrue(any("非正" in e for e in errors))
 
-    def test_corrupt_json_detected(self):
-        from scripts.validate import validate_one
+    def test_length_mismatch_detected(self):
+        from scripts.validate import check_integrity
 
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "a.json")
-            with open(path, "w", encoding="utf-8") as f:
-                f.write("{not json")
-            errors, _, info = validate_one(path, "a")
-        self.assertTrue(any("损坏" in e for e in errors))
-        self.assertEqual(info["status"], "corrupt")
+        payload = {
+            "name": "x",
+            "count": 2,
+            "dates": ["2024-01-02", "2024-01-03"],
+            "prices": [1.0],
+        }
+        errors, _ = check_integrity(payload, "x")
+        self.assertTrue(any("长度不一致" in e for e in errors))
 
-    def test_missing_file_is_warning(self):
-        from scripts.validate import validate_one
+    def test_empty_name_detected(self):
+        from scripts.validate import check_integrity
 
-        with tempfile.TemporaryDirectory() as tmp:
-            errors, warnings, _ = validate_one(os.path.join(tmp, "nope.json"), "nope")
-        self.assertEqual(errors, [])
-        self.assertTrue(any("缺失" in w for w in warnings))
+        payload = {"name": "", "count": 2, "dates": ["2024-01-02", "2024-01-03"], "prices": [1, 2]}
+        errors, _ = check_integrity(payload, "x")
+        self.assertTrue(any("名称为空" in e for e in errors))
+
+    def test_missing_columns_detected(self):
+        from scripts.validate import check_integrity
+
+        errors, _ = check_integrity({"name": "x"}, "x")
+        self.assertTrue(any("缺少 dates/prices" in e for e in errors))
+
+    def test_missing_analysis_finds_runs(self):
+        from scripts.validate import missing_analysis
+
+        calendar = {f"2024-01-{d:02d}" for d in range(2, 13)}  # 11 个交易日
+        dates = ["2024-01-02", "2024-01-03", "2024-01-06", "2024-01-07", "2024-01-12"]
+        gaps = missing_analysis(dates, calendar)
+        self.assertEqual(gaps["missing"], 6)
+        self.assertEqual(gaps["max_run"], 4)  # 01-08 ~ 01-11 连续 4 天
+        self.assertAlmostEqual(gaps["missing_ratio"], 6 / 11, places=4)
+
+    def test_missing_analysis_no_gap(self):
+        from scripts.validate import missing_analysis
+
+        calendar = {"2024-01-02", "2024-01-03"}
+        gaps = missing_analysis(["2024-01-02", "2024-01-03"], calendar)
+        self.assertEqual(gaps["missing"], 0)
+        self.assertEqual(gaps["max_run"], 0)
+
+    def test_missing_analysis_respects_own_span(self):
+        from scripts.validate import missing_analysis
+
+        # 资产起始晚于日历起点时，日历更早的日子不应算成缺口
+        calendar = {"2023-12-01", "2024-01-02", "2024-01-03"}
+        gaps = missing_analysis(["2024-01-02", "2024-01-03"], calendar)
+        self.assertEqual(gaps["missing"], 0)
 
 
 class TestRegistry(unittest.TestCase):

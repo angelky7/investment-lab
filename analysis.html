@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>资产分析 · 投资实验室</title>
   <meta name="description" content="单资产与多资产的收益、波动、夏普、索提诺、最大回撤、Beta 与 Alpha 分析，基于 20 年真实复权行情。" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2300695c'/%3E%3Cpath d='M8 22l5-6 4 3.5L24 10' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
@@ -34,7 +34,7 @@
 
         <section class="section">
           <mdui-card variant="filled" class="card">
-            <mdui-tabs id="mode-tabs" value="single" variant="secondary" full-width>
+            <mdui-tabs id="mode-tabs" value="single" variant="secondary">
               <mdui-tab value="single">单资产分析</mdui-tab>
               <mdui-tab value="compare">多资产对比</mdui-tab>
             </mdui-tabs>
@@ -43,7 +43,10 @@
               <div id="single-type-tabs" style="margin-bottom:0.85rem"></div>
               <div class="row">
                 <div id="single-asset" class="grow" style="flex:1 1 16rem"></div>
-                <div id="single-range" style="flex:0 0 auto"></div>
+                <div style="flex:0 0 auto">
+                  <div class="small muted" style="margin-bottom:.2rem">统计区间</div>
+                  <div id="single-range"></div>
+                </div>
                 <div style="flex:0 0 8.5rem">
                   <mdui-text-field id="rf-input" label="无风险利率" type="number" value="2.5"
                     suffix="%" min="0" max="15" step="0.1" variant="outlined"></mdui-text-field>
@@ -59,7 +62,10 @@
               <div class="row" style="margin-bottom:0.5rem;align-items:center">
                 <span class="small muted">选择 2–6 项进行对比，先对齐交易日期再比较，避免错位失真。</span>
                 <div style="flex:1"></div>
-                <div id="compare-range" style="flex:0 0 auto"></div>
+                <div style="flex:0 0 auto">
+                  <div class="small muted" style="margin-bottom:.2rem">统计区间</div>
+                  <div id="compare-range"></div>
+                </div>
               </div>
               <div id="compare-picker"></div>
             </div>

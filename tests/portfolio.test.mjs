@@ -40,7 +40,8 @@ test("correlationMatrix 识别完全正相关与负相关", () => {
   const up = build(1);
   const mirrored = build(-1);
 
-  const { keys, matrix } = correlationMatrix({ a: up, b: up.slice(), c: mirrored });
+  const dates = up.map((_, i) => `2024-01-${String(i + 1).padStart(2, "0")}`);
+  const { keys, matrix } = correlationMatrix(dates, { a: up, b: up.slice(), c: mirrored });
   assert.deepEqual(keys, ["a", "b", "c"]);
   assert.ok(Math.abs(matrix[0][1] - 1) < 1e-9);
   assert.ok(Math.abs(matrix[0][2] + 1) < 1e-9);
@@ -49,7 +50,7 @@ test("correlationMatrix 识别完全正相关与负相关", () => {
 });
 
 test("correlationMatrix 少于两项时返回空矩阵", () => {
-  const { matrix } = correlationMatrix({ a: [1, 2, 3] });
+  const { matrix } = correlationMatrix(["2024-01-01", "2024-01-02"], { a: [1, 2, 3] });
   assert.deepEqual(matrix, []);
 });
 
@@ -136,9 +137,13 @@ test("rebalanceSimulation 拒绝不合法权重", () => {
   assert.equal(rebalanceSimulation(dates, { a: prices, b: prices }, [0.5, 0.3]), null);
 });
 
-test("estimateBeta 对同倍率资产给出 1", () => {
-  const bench = Array.from({ length: 200 }, (_, i) => 100 * (1 + (i % 7) / 1000));
-  assert.ok(Math.abs(estimateBeta(bench, bench) - 1) < 1e-9);
+test("estimateBeta 对同一序列给出 1", () => {
+  const prices = Array.from({ length: 200 }, (_, i) => 100 * (1 + (i % 7) / 1000));
+  const dates = prices.map((_, i) => {
+    const d = new Date(Date.UTC(2022, 0, 1) + i * 86400000);
+    return d.toISOString().slice(0, 10);
+  });
+  assert.ok(Math.abs(estimateBeta(dates, prices, dates, prices) - 1) < 1e-9);
 });
 
 test("stressTest 用真实历史区间计算资产跌幅", () => {

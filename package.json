@@ -1,6 +1,6 @@
 {
   "name": "investment-lab",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "开源投资实验室：用 20 年真实行情讲解收益、风险、分散与再平衡，零构建、零框架依赖，界面基于 MDUI 2。",
@@ -32,7 +32,8 @@
     "data:validate": "python scripts/validate.py",
     "data:refresh": "python scripts/fetch.py --mode incremental && python scripts/build.py && python scripts/validate.py",
     "test:e2e": "node tests/e2e/smoke.mjs",
-    "test:all:with-e2e": "npm run test:all && npm run test:e2e"
+    "test:all:with-e2e": "npm run test:all && npm run test:e2e",
+    "data:repair": "python scripts/repair.py"
   },
   "devDependencies": {
     "playwright-core": "^1.49.1"

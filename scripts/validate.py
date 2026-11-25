@@ -1,10 +1,13 @@
 """scripts/validate.py — 数据质量校验。
 
-两类问题分开处理：
+三类检查：
+
 * errors   —— 数据本身坏了（JSON 损坏、日期乱序/重复、价格非正、长度不一致）。
               出现即退出码 1，CI 会标红。
-* warnings —— 数据可用但不完美（缺失资产、点数偏少、日期断档、整体过期）。
-              CI 不阻塞，但仍写入报告并打印，便于人工发现漂移。
+* gaps     —— 相对「该市场自己的交易日历」缺了哪些交易日。
+              这是最有用的检查：它能把「停牌」「数据源空洞」「跨市场假期」区分开，
+              而不是笼统地说「中间少了一段」。
+* warnings —— 数据可用但不完美（缺失资产、点数偏少、整体过期）。
 
 输出 data/quality.json，前端「数据状态」页直接读取。
 """
@@ -29,45 +32,41 @@ from scripts.registry import (  # noqa: E402
 ensure_import_path()
 
 MIN_OK_POINTS = 250
-MAX_GAP_DAYS = 20
 STALE_DAYS = 6
 CST = timezone(timedelta(hours=8))
 
+# 各市场交易日历的参照资产：优先用流动性最好的指数，避免个别停牌污染日历
+CALENDAR_ANCHORS = {"CN": "000300", "HK": "hkHSI", "US": "us.INX"}
+# 缺失率分档
+COMPLETE_RATIO = 0.005
+MINOR_RATIO = 0.03
+# 指数/ETF 不可能停牌，缺口超过这个交易日数就值得怀疑数据源
+SUSPICIOUS_RUN = 10
 
-def is_weekend_or_long_holiday_gap(prev: str, cur: str) -> int:
-    d1 = date.fromisoformat(prev)
-    d2 = date.fromisoformat(cur)
-    return (d2 - d1).days
 
-
-def validate_one(path: str, symbol: str) -> tuple[list[str], list[str], dict]:
-    """返回 (errors, warnings, info)。"""
-    errors: list[str] = []
-    warnings: list[str] = []
-    info: dict = {"symbol": symbol}
-
-    if not os.path.exists(path):
-        return [], [f"{symbol}: 数据文件缺失"], {"symbol": symbol, "status": "missing"}
-
+def load_history(path: str) -> dict | None:
     try:
         with open(path, encoding="utf-8") as f:
-            payload = json.load(f)
-    except (json.JSONDecodeError, OSError) as exc:
-        return [f"{symbol}: JSON 损坏 {exc}"], [], {"symbol": symbol, "status": "corrupt"}
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def check_integrity(payload: dict, symbol: str) -> tuple[list[str], list[str]]:
+    """结构与数值层面的硬错误。"""
+    errors: list[str] = []
+    warnings: list[str] = []
 
     dates = payload.get("dates")
     prices = payload.get("prices")
     if not isinstance(dates, list) or not isinstance(prices, list):
-        return [f"{symbol}: 缺少 dates/prices 列"], [], {"symbol": symbol, "status": "corrupt"}
-
+        return [f"{symbol}: 缺少 dates/prices 列"], warnings
     if len(dates) != len(prices):
         errors.append(f"{symbol}: dates({len(dates)}) 与 prices({len(prices)}) 长度不一致")
     if not dates:
-        return errors + [f"{symbol}: 空序列"], [], {"symbol": symbol, "status": "empty"}
-
+        return errors + [f"{symbol}: 空序列"], warnings
     if int(payload.get("count", -1)) != len(dates):
         errors.append(f"{symbol}: count 字段与序列长度不一致")
-
     if not payload.get("name"):
         errors.append(f"{symbol}: 名称为空")
 
@@ -76,36 +75,53 @@ def validate_one(path: str, symbol: str) -> tuple[list[str], list[str], dict]:
             errors.append(f"{symbol}: 日期非严格递增（{dates[i - 1]} → {dates[i]}）")
             break
 
-    flat_prices = [p for p in prices if not isinstance(p, (int, float)) or p <= 0]
-    if flat_prices:
-        errors.append(f"{symbol}: 存在 {len(flat_prices)} 个非正/非数值价格")
+    bad_prices = sum(
+        1 for p in prices if not isinstance(p, (int, float)) or p <= 0
+    )
+    if bad_prices:
+        errors.append(f"{symbol}: 存在 {bad_prices} 个非正/非数值价格")
 
-    gaps = []
-    for i in range(1, len(dates)):
-        try:
-            gap = is_weekend_or_long_holiday_gap(dates[i - 1], dates[i])
-        except ValueError:
-            errors.append(f"{symbol}: 非法日期格式 {dates[i]}")
-            break
-        if gap > MAX_GAP_DAYS:
-            gaps.append({"from": dates[i - 1], "to": dates[i], "days": gap})
-
-    if gaps:
-        warnings.append(f"{symbol}: {len(gaps)} 处日期断档 > {MAX_GAP_DAYS} 天")
     if len(dates) < MIN_OK_POINTS:
         warnings.append(f"{symbol}: 仅 {len(dates)} 条数据（建议 ≥ {MIN_OK_POINTS}）")
 
-    info.update(
-        {
-            "status": "ok",
-            "count": len(dates),
-            "start": dates[0],
-            "end": dates[-1],
-            "gaps": gaps[:5],
-            "gap_count": len(gaps),
-        }
-    )
-    return errors, warnings, info
+    return errors, warnings
+
+
+def missing_analysis(dates: list[str], calendar: set[str]) -> dict:
+    """相对市场交易日历，找出缺失的交易日与最长连续缺口。"""
+    if not dates or not calendar:
+        return {"missing": 0, "missing_ratio": 0.0, "max_run": 0, "runs": []}
+
+    own = set(dates)
+    start, end = dates[0], dates[-1]
+    span = sorted(d for d in calendar if start <= d <= end)
+    if not span:
+        return {"missing": 0, "missing_ratio": 0.0, "max_run": 0, "runs": []}
+
+    # 按交易日历顺序扫描，连续缺失合并成一段
+    runs: list[dict] = []
+    current: dict | None = None
+    missing = 0
+    for day in span:
+        if day in own:
+            current = None
+            continue
+        missing += 1
+        if current is None:
+            current = {"from": day, "to": day, "days": 1}
+            runs.append(current)
+        else:
+            current["to"] = day
+            current["days"] += 1
+
+    runs.sort(key=lambda r: -r["days"])
+    return {
+        "missing": missing,
+        "missing_ratio": missing / len(span),
+        "max_run": runs[0]["days"] if runs else 0,
+        "runs": runs[:5],
+        "span_days": len(span),
+    }
 
 
 def main() -> int:
@@ -113,19 +129,102 @@ def main() -> int:
     all_errors: list[str] = []
     all_warnings: list[str] = []
     reports: list[dict] = []
+    payloads: dict[str, dict] = {}
     latest_end = ""
 
+    # 第一轮：读取 + 结构校验
     for asset in assets:
         path = os.path.join(HISTORY_DIR, history_filename(asset))
-        errors, warnings, info = validate_one(path, asset.symbol)
-        info["name"] = asset.name
-        info["type"] = asset.type.value
-        info["group"] = asset.group
+        payload = load_history(path) if os.path.exists(path) else None
+        info: dict = {
+            "symbol": asset.symbol,
+            "name": asset.name,
+            "type": asset.type.value,
+            "group": asset.group,
+            "market": asset.market.value,
+        }
+        if payload is None:
+            info["status"] = "missing" if not os.path.exists(path) else "corrupt"
+            if not os.path.exists(path):
+                all_warnings.append(f"{asset.symbol}: 数据文件缺失")
+            else:
+                all_errors.append(f"{asset.symbol}: JSON 损坏")
+            reports.append(info)
+            continue
+
+        errors, warnings = check_integrity(payload, asset.symbol)
         all_errors.extend(errors)
         all_warnings.extend(warnings)
+        payloads[(asset.type.value, asset.symbol)] = payload
+        info.update(
+            {
+                "status": "ok",
+                "count": payload.get("count", 0),
+                "start": payload.get("start", ""),
+                "end": payload.get("end", ""),
+            }
+        )
         reports.append(info)
-        if info.get("end", "") > latest_end:
-            latest_end = info.get("end", "")
+        if payload.get("end", "") > latest_end:
+            latest_end = payload.get("end", "")
+
+    # 第二轮：每个市场建一个交易日历（参照指数优先）
+    calendars: dict[str, set[str]] = {}
+    for market, anchor in CALENDAR_ANCHORS.items():
+        payload = payloads.get(("index", anchor))
+        if payload:
+            calendars[market] = set(payload["dates"])
+    # 参照资产缺失时，退化为该市场所有资产的日期并集
+    by_market: dict[str, set[str]] = {}
+    for asset in assets:
+        payload = payloads.get((asset.type.value, asset.symbol))
+        if not payload:
+            continue
+        by_market.setdefault(asset.market.value, set()).update(payload["dates"])
+    for market, day_union in by_market.items():
+        calendars.setdefault(market, day_union)
+
+    gap_assets = 0
+    for info in reports:
+        if info.get("status") != "ok":
+            continue
+        asset = next(
+            a
+            for a in assets
+            if a.symbol == info["symbol"] and a.type.value == info["type"]
+        )
+        payload = payloads[(info["type"], info["symbol"])]
+        gaps = missing_analysis(payload["dates"], calendars.get(asset.market.value, set()))
+        info.update(
+            {
+                "missing_trading_days": gaps["missing"],
+                "missing_ratio": round(gaps["missing_ratio"], 5),
+                "max_missing_run": gaps["max_run"],
+                "missing_runs": gaps["runs"],
+            }
+        )
+        ratio = gaps["missing_ratio"]
+        if ratio < COMPLETE_RATIO:
+            info["completeness"] = "complete"
+        elif ratio < MINOR_RATIO:
+            info["completeness"] = "minor"
+        else:
+            info["completeness"] = "gaps"
+            gap_assets += 1
+
+        # 指数与 ETF 不存在停牌，长缺口几乎只能是数据源空洞
+        if asset.type.value in ("index", "etf") and gaps["max_run"] >= SUSPICIOUS_RUN:
+            first = gaps["runs"][0]
+            all_warnings.append(
+                f"{asset.name}（{asset.type.value} {asset.symbol}）: 连续缺 {first['days']} 个交易日"
+                f"（{first['from']} ~ {first['to']}），指数/ETF 不会停牌，疑似数据源空洞"
+            )
+        elif gaps["max_run"] >= SUSPICIOUS_RUN:
+            first = gaps["runs"][0]
+            all_warnings.append(
+                f"{asset.name}（{asset.type.value} {asset.symbol}）: 连续缺 {first['days']} 个交易日"
+                f"（{first['from']} ~ {first['to']}），多为停牌或数据源空洞"
+            )
 
     # 过期检查
     today = datetime.now(CST).date()
@@ -146,10 +245,14 @@ def main() -> int:
     missing = sum(1 for r in reports if r.get("status") == "missing")
 
     report = {
-        "schema": 2,
+        "schema": 3,
         "generated_at": datetime.now(CST).isoformat(timespec="seconds"),
         "data_date": latest_end,
         "stale_days": stale_days,
+        "calendars": {
+            market: {"days": len(days), "start": min(days) if days else "", "end": max(days) if days else ""}
+            for market, days in calendars.items()
+        },
         "summary": {
             "total": len(reports),
             "files_ok": ok,
@@ -157,6 +260,8 @@ def main() -> int:
             "error_count": len(all_errors),
             "warning_count": len(all_warnings),
             "total_points": sum(r.get("count", 0) for r in reports),
+            "assets_with_gaps": gap_assets,
+            "assets_complete": sum(1 for r in reports if r.get("completeness") == "complete"),
         },
         "errors": all_errors,
         "warnings": all_warnings,
@@ -168,15 +273,23 @@ def main() -> int:
         json.dump(report, f, ensure_ascii=False, indent=2)
     os.replace(tmp, QUALITY_FILE)
 
-    print("=" * 60)
+    print("=" * 64)
     print(f"数据质量：{ok}/{len(reports)} 个资产可用，共 {report['summary']['total_points']} 条记录")
     print(f"最新数据日期：{latest_end or '无'}（距今 {stale_days if stale_days is not None else '?'} 天）")
+    print(
+        f"完整性：完全对齐 {report['summary']['assets_complete']} 项，"
+        f"存在明显缺口 {gap_assets} 项"
+    )
+    for market, info in report["calendars"].items():
+        print(f"  {market} 交易日历：{info['days']} 天 {info['start']} ~ {info['end']}")
     print(f"错误 {len(all_errors)} 项，警告 {len(all_warnings)} 项 → data/quality.json")
     for e in all_errors:
         print(f"  [错误] {e}")
-    for w in all_warnings:
+    for w in all_warnings[:12]:
         print(f"  [警告] {w}")
-    print("=" * 60)
+    if len(all_warnings) > 12:
+        print(f"  [警告] … 另有 {len(all_warnings) - 12} 条")
+    print("=" * 64)
 
     return 1 if all_errors else 0
 
