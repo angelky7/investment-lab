@@ -201,6 +201,7 @@ function setMode(mode) {
 /* --------------------------------- 单资产 -------------------------------- */
 
 async function renderSingle() {
+  if (state.mode !== "single") return;
   const token = ++seq;
   const metricsHost = document.getElementById("single-metrics");
   const chartsHost = document.getElementById("single-charts");
