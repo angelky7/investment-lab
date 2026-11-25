@@ -718,9 +718,22 @@ async function renderRebalance() {
       <div class="card">
         <div class="chart-head">
           <h3>净值曲线对比</h3>
-          <span class="hint">同样本金、同样资产，唯一区别是有没有定期调回目标权重</span>
+          <span class="hint">同样本金、同样资产，唯一区别是有没有定期调回目标权重；底部红刻度＝调仓时点</span>
         </div>
         <div class="chart" id="chart-rebalance"></div>
+      </div>
+
+      <div class="card">
+        <div class="chart-head">
+          <h3>各资产权重漂移</h3>
+          <span class="hint">虚线是目标权重；每次调仓后权重会被拉回虚线，然后再次走开</span>
+        </div>
+        <div class="chart tall" id="chart-weights"></div>
+        <p class="caption">
+          这张图是「再平衡在做什么」的直接证据：某档涨多了权重会越过目标、跌多了会低于目标，
+          定期调仓把它拉回来——本质是<strong>机械地卖强买弱</strong>。
+          线条之间的缝隙越大，说明这段行情里各资产的分化越剧烈。
+        </p>
       </div>
 
       <div class="card">
@@ -754,10 +767,35 @@ async function renderRebalance() {
           width: 1.5,
         },
       ],
+      markers: result.events.map((event) => ({ index: event.index })),
       formatter: (v) => `¥${Math.round(v / 10000)}万`,
       tipFormatter: (v) => money(v),
       labelFormatter: years <= 3 ? (d) => d.slice(2, 7) : (d) => d.slice(0, 4),
       tipDateFormatter: dateLabel,
+    });
+
+    // 权重漂移：这张图才是「再平衡在做什么」的直接证据
+    const weightColors = ["--il-chart-1", "--il-chart-2", "--il-chart-3", "--il-chart-4", "--il-chart-5"];
+    lineChart(document.getElementById("chart-weights"), {
+      labels: aligned.dates,
+      series: names.map((name, i) => ({
+        name: `${name}（目标 ${Math.round(weights[i] * 100)}%）`,
+        values: result.weightSeries[i] || [],
+        color: `var(${weightColors[i % weightColors.length]})`,
+        fill: false,
+        width: 1.6,
+      })),
+      baselines: names.map((name, i) => ({
+        value: weights[i],
+        label: `${Math.round(weights[i] * 100)}%`,
+        color: `var(${weightColors[i % weightColors.length]})`,
+      })),
+      markers: result.events.map((event) => ({ index: event.index })),
+      formatter: (v) => `${(v * 100).toFixed(0)}%`,
+      tipFormatter: (v) => `${(v * 100).toFixed(1)}%`,
+      labelFormatter: years <= 3 ? (d) => d.slice(2, 7) : (d) => d.slice(0, 4),
+      tipDateFormatter: dateLabel,
+      includeZero: false,
     });
   } catch (err) {
     if (token !== tokens.rebalance) return;

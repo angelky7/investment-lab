@@ -262,6 +262,9 @@ export function rebalanceSimulation(dates, values, weights, options = {}) {
   const valueSeries = new Array(length).fill(0);
   const noRebalanceUnits = weights.map((w, i) => (initial * w) / priceArrays[i][0]);
   const noRebalanceSeries = new Array(length).fill(0);
+  // 每档的市值与权重序列：用来画「权重漂移」折线图，看清楚再平衡到底在做什么
+  const sleeveValues = keys.map(() => new Array(length).fill(0));
+  const weightSeries = keys.map(() => new Array(length).fill(0));
   let rebalances = 0;
   const events = [];
 
@@ -269,18 +272,26 @@ export function rebalanceSimulation(dates, values, weights, options = {}) {
     let total = 0;
     let driftTotal = 0;
     for (let i = 0; i < keys.length; i += 1) {
-      total += holdings[i] * priceArrays[i][t];
+      sleeveValues[i][t] = holdings[i] * priceArrays[i][t];
+      total += sleeveValues[i][t];
       driftTotal += noRebalanceUnits[i] * priceArrays[i][t];
     }
-    valueSeries[t] = total;
-    noRebalanceSeries[t] = driftTotal;
 
-    if (t > 0 && t % everyDays === 0 && t < length - 1) {
+    // 调仓先于记录：这样「调仓日」记录的权重就是调仓后的目标权重，
+    // 权重漂移图上的锯齿会正好在标记处折回，读图不用二次解释。
+    if (t > 0 && t % everyDays === 0 && t < length - 1 && total > 0) {
       for (let i = 0; i < keys.length; i += 1) {
         holdings[i] = (total * weights[i]) / priceArrays[i][t];
+        sleeveValues[i][t] = total * weights[i];
       }
       rebalances += 1;
       events.push({ date: dates[t], index: t, value: total });
+    }
+
+    valueSeries[t] = total;
+    noRebalanceSeries[t] = driftTotal;
+    for (let i = 0; i < keys.length; i += 1) {
+      weightSeries[i][t] = total > 0 ? sleeveValues[i][t] / total : 0;
     }
   }
 
@@ -295,6 +306,8 @@ export function rebalanceSimulation(dates, values, weights, options = {}) {
     events,
     valueSeries,
     noRebalanceSeries,
+    sleeveValues,
+    weightSeries,
     finalValue,
     driftFinal,
     totalReturn: finalValue / initial - 1,

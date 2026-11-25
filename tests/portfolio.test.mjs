@@ -132,6 +132,33 @@ test("rebalanceSimulation 在等速增长时与不动几乎一致", () => {
   assert.equal(result.rebalances, Math.floor((dates.length - 1) / 63));
 });
 
+test("rebalanceSimulation 返回各档权重序列，且每次调仓后回到目标", () => {
+  const dates = monthDates(2);
+  // a 单边上涨、b 不动：权重会持续偏离，定期调仓应把它拉回 50%
+  const a = dates.map((_, i) => 100 * Math.pow(1.004, i));
+  const b = dates.map(() => 100);
+  const result = rebalanceSimulation(dates, { a, b }, [0.5, 0.5], { everyDays: 63, initial: 10000 });
+
+  assert.ok(result);
+  assert.ok(Array.isArray(result.weightSeries));
+  assert.equal(result.weightSeries.length, 2);
+  assert.equal(result.weightSeries[0].length, dates.length);
+
+  // 第一天就是目标权重
+  assert.ok(Math.abs(result.weightSeries[0][0] - 0.5) < 1e-9);
+  // 每次调仓当天（t % 63 === 0）权重回到 50%
+  for (const event of result.events) {
+    const w = result.weightSeries[0][event.index];
+    assert.ok(Math.abs(w - 0.5) < 1e-9, `调仓日 ${event.date} 的权重应回到 50%，实际 ${w}`);
+  }
+  // 未到调仓日时，上涨资产的权重会高于目标
+  const mid = 40;
+  assert.ok(result.weightSeries[0][mid] > 0.5);
+  // 每档市值之和等于组合总市值
+  const sum = result.sleeveValues.reduce((acc, series) => acc + series[mid], 0);
+  assert.ok(Math.abs(sum - result.valueSeries[mid]) < 1e-6);
+});
+
 test("rebalanceSimulation 拒绝不合法权重", () => {
   const dates = monthDates(1);
   const prices = dates.map(() => 100);

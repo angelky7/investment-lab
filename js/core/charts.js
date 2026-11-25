@@ -335,16 +335,47 @@ class CanvasChart {
       ctx.stroke();
     });
 
-    // 参考线（如 0%）
-    if (this.state.baseline !== undefined) {
-      const y = Math.round(yFor(this.state.baseline)) + 0.5;
-      ctx.strokeStyle = withAlpha(axisColor, 0.55);
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(box.left, y);
-      ctx.lineTo(box.right, y);
-      ctx.stroke();
-      ctx.setLineDash([]);
+    // 参考线：支持单条（baseline）与多条（baselines），例如目标权重
+    const refLines = [];
+    if (this.state.baseline !== undefined) refLines.push({ value: this.state.baseline });
+    if (Array.isArray(this.state.baselines)) refLines.push(...this.state.baselines);
+    if (refLines.length) {
+      ctx.font = '10px system-ui, -apple-system, "PingFang SC", sans-serif';
+      refLines.forEach((line, i) => {
+        const y = Math.round(yFor(line.value)) + 0.5;
+        ctx.strokeStyle = withAlpha(
+          line.color ? resolveColor(line.color) : axisColor,
+          line.color ? 0.5 : 0.45
+        );
+        ctx.setLineDash(line.dash || [4, 4]);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(box.left, y);
+        ctx.lineTo(box.right, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        if (line.label) {
+          ctx.fillStyle = withAlpha(
+            line.color ? resolveColor(line.color) : axisColor,
+            0.85
+          );
+          ctx.textAlign = "right";
+          ctx.fillText(line.label, box.right - 4, y - 7);
+        }
+      });
+    }
+
+    // 事件标记（例如再平衡发生的时点）：底部短竖线
+    if (Array.isArray(this.state.markers) && this.state.markers.length) {
+      ctx.strokeStyle = withAlpha(cssVar("--il-up", "#c62828"), 0.45);
+      ctx.lineWidth = 1;
+      for (const marker of this.state.markers) {
+        const x = Math.round(this.xForIndex(marker.index, count, box)) + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x, box.bottom - 6);
+        ctx.lineTo(x, box.bottom);
+        ctx.stroke();
+      }
     }
 
     ctx.restore();
