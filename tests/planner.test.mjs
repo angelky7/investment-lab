@@ -117,7 +117,7 @@ test("searchAllocation 遵守分散边界（每档 10%–40%、至少 3 类）",
       assert.ok(weight <= search.bounds.maxWeight + 1e-9, `权重 ${weight} 高于上限`);
     }
     const meaningful = candidate.weights.filter((w) => w >= search.bounds.minWeight - 1e-9).length;
-    assert.ok(meaningful >= search.bounds.minClasses, "至少 3 类参与");
+    assert.ok(meaningful >= 3, "至少 3 类参与");
   }
 
   // 赢家类应拿到上限 40%，而不是 100%
@@ -139,6 +139,62 @@ test("searchAllocation 在预算过紧时返回无解", () => {
   assert.equal(search.chosen, null);
   assert.ok(search.bestDrawdown, "应给出回撤最浅的候选作为参考");
   assert.ok(Math.abs(search.bestDrawdown.maxDrawdown) > 0.05);
+});
+
+test("searchAllocation 支持排除某些资产类别（不配黄金）", () => {
+  const prices = buildPrices(600, [1.0004, 1.0005, 1.0001, 1.0008, 1.0]);
+  // 第 4 类（黄金）被排除
+  const includeMask = [true, true, true, false, true];
+  const search = searchAllocation({
+    prices,
+    years: 2.3,
+    budget: 0.5,
+    targetLow: 0.05,
+    equityFlags: [true, true, false, false, false],
+    includeMask,
+  });
+
+  assert.ok(search.chosen, "排除一类后仍应有解");
+  assert.equal(search.includedIdx.includes(3), false);
+  assert.equal(search.bounds.included, 4);
+  for (const candidate of search.candidates) {
+    assert.equal(candidate.weights[3], 0, "被排除的类别权重必须为 0");
+    const sum = candidate.weights.reduce((a, b) => a + b, 0);
+    assert.ok(Math.abs(sum - 1) < 1e-9, `权重之和应为 1，实际 ${sum}`);
+  }
+  assert.equal(search.chosen.weights[3], 0);
+});
+
+test("只勾两类时允许更高单档权重（否则无解）", () => {
+  const prices = buildPrices(600, [1.0009, 1.0001, 1.0001, 1.0001, 1.0]);
+  const search = searchAllocation({
+    prices,
+    years: 2.3,
+    budget: 0.5,
+    targetLow: 0.05,
+    equityFlags: [true, true, false, false, false],
+    includeMask: [true, true, false, false, false],
+  });
+  assert.ok(search.chosen, "两类也应能算出配比");
+  assert.equal(search.bounds.maxWeight, 0.9);
+  const sum = search.chosen.weights.reduce((a, b) => a + b, 0);
+  assert.ok(Math.abs(sum - 1) < 1e-9);
+  // 赢家类会拿到比 40% 更高的权重（这正是「只配两类」的代价）
+  assert.ok(search.chosen.weights[0] > 0.4);
+});
+
+test("只勾 1 类时明确返回不可行", () => {
+  const prices = buildPrices(100, [1, 1, 1, 1, 1]);
+  const search = searchAllocation({
+    prices,
+    years: 0.3,
+    budget: 0.5,
+    targetLow: 0.05,
+    equityFlags: [true, true, false, false, false],
+    includeMask: [true, false, false, false, false],
+  });
+  assert.equal(search.chosen, null);
+  assert.ok(search.reason.includes("至少需要勾选 2 个"));
 });
 
 test("searchAllocation 尊重权益上限", () => {

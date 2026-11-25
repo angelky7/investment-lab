@@ -23,7 +23,9 @@ export const ASSET_CLASSES = [
   { id: "cnStock", key: "etf:510300", label: "A 股宽基", role: "主要收益来源", equity: true },
   { id: "overseas", key: "etf:513500", label: "海外股票", role: "地域分散", equity: true },
   { id: "bond", key: "etf:511010", label: "国债", role: "压低波动", equity: false },
-  { id: "gold", key: "etf:518880", label: "黄金", role: "通胀对冲", equity: false },
+  // 黄金的角色常被简化成「通胀对冲」，但它短期同样会大跌（近一年回撤比标普500 深得多），
+  // 所以这里的描述刻意写成有条件的两段式
+  { id: "gold", key: "etf:518880", label: "黄金", role: "长期对冲通胀（短期也会跌）", equity: false },
   { id: "cash", key: "etf:511880", label: "现金", role: "流动性与弹药", equity: false },
 ];
 
@@ -186,54 +188,83 @@ export function searchAllocation(input) {
     targetLow,
     equityCap = 1,
     equityFlags,
+    includeMask,
     step = 0.1,
     riskFreeRate = 0.025,
-    // 分散边界：无约束搜索会退化到「全押赢家」，那是过拟合
     minWeight = 0.1,
-    maxWeight = 0.4,
-    minClasses = 3,
+    maxWeight,
   } = input;
 
   const n = prices.length;
   const classes = prices[0].length;
-  if (!n || !classes) return { candidates: [], feasible: [], chosen: null };
+  const allIdx = Array.from({ length: classes }, (_, i) => i);
+  // 只枚举用户勾选的类别：没勾的权重恒为 0（而不是给一个 10% 的底线）
+  const includedIdx = includeMask
+    ? allIdx.filter((i) => includeMask[i])
+    : allIdx;
+  const included = includedIdx.length;
+
+  const empty = {
+    candidates: [],
+    feasible: [],
+    chosen: null,
+    bestDrawdown: null,
+    includedIdx,
+    bounds: { minWeight, maxWeight, step, included },
+    reason: included < 2 ? "至少需要勾选 2 个资产类别" : "",
+  };
+  if (!n || !classes || included < 2) return empty;
 
   const steps = Math.round(1 / step);
+  const minSteps = Math.max(1, Math.round(minWeight / step));
+  // 单档上限：
+  //   勾 2 类 → 允许最高 90%（用户是明确选择"只配两类"，此时再卡 40% 会导致无解）
+  //   勾 3 类及以上 → 仍卡 40%，防止退化成「押注单一资产」
+  const effectiveMax =
+    Number.isFinite(maxWeight) && maxWeight > 0
+      ? maxWeight
+      : included <= 2
+        ? 1 - minWeight
+        : 0.4;
+  const maxSteps = Math.round(effectiveMax / step);
+
+  if (minSteps * included > steps) return empty;
+
   const all = [];
   const feasible = [];
-
-  // 枚举各档权重（合计 steps），复杂度 C(steps+classes-1, classes-1)，10% 步长下约 1001 组
   const current = new Array(classes).fill(0);
-  const walk = (index, remaining) => {
-    if (index === classes - 1) {
-      current[index] = remaining;
-      const weights = current.map((s) => s / steps);
 
-      // 单档上下限
-      if (weights.some((w) => w > maxWeight + 1e-9 || w < minWeight - 1e-9)) return;
-      // 至少 minClasses 类各占 minWeight 以上（避免「两类资产假装是组合」）
-      if (weights.filter((w) => w >= minWeight - 1e-9).length < minClasses) return;
+  const walk = (k, remaining) => {
+    const idx = includedIdx[k];
+    if (k === included - 1) {
+      if (remaining < minSteps || remaining > maxSteps) return;
+      current[idx] = remaining / steps;
 
-      // 权益上限约束
+      const weights = current.map((v) => v);
       let equity = 0;
       for (let i = 0; i < classes; i += 1) if (equityFlags[i]) equity += weights[i];
       if (equity > equityCap + 1e-9) return;
 
       const result = evaluateAllocation(weights, prices, { years, riskFreeRate });
       if (!result) return;
-      const point = { weights: weights.slice(), equity, ...result };
+      const point = { weights, equity, ...result };
       all.push(point);
       if (Math.abs(result.maxDrawdown) <= budget + 1e-9) feasible.push(point);
       return;
     }
-    for (let s = 0; s <= remaining; s += 1) {
-      current[index] = s;
-      walk(index + 1, remaining - s);
+
+    // 给后面的每一档留够最小步数
+    const remainingAfter = included - k - 1;
+    const upper = Math.min(maxSteps, remaining - minSteps * remainingAfter);
+    for (let s = minSteps; s <= upper; s += 1) {
+      current[idx] = s / steps;
+      walk(k + 1, remaining - s);
     }
+    current[idx] = 0;
   };
+
   walk(0, steps);
 
-  // 可行集里挑收益最高的；同等收益取波动更小的
   feasible.sort((a, b) => {
     const diff = (b.annualized ?? -1) - (a.annualized ?? -1);
     if (Math.abs(diff) > 1e-6) return diff;
@@ -250,7 +281,9 @@ export function searchAllocation(input) {
     feasible,
     chosen,
     bestDrawdown,
-    bounds: { minWeight, maxWeight, minClasses, step },
+    includedIdx,
+    bounds: { minWeight, maxWeight: effectiveMax, step, included },
+    reason: "",
   };
 }
 

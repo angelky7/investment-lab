@@ -1,6 +1,6 @@
 {
   "name": "investment-lab",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "private": true,
   "type": "module",
   "description": "开源投资实验室：用 20 年真实行情讲解收益、风险、分散与再平衡，零构建、零框架依赖，界面基于 MDUI 2。",

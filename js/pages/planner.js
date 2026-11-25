@@ -23,6 +23,8 @@ import { dateLabel, money, num, pct, rangeLabel, tone } from "../core/format.js"
 
 const state = {
   assets: [],
+  // 用户勾选的资产类别（至少保留 2 类）。黄金、海外股票这些不想要就可以不配。
+  included: ASSET_CLASSES.map((c) => c.id),
   answers: {
     drawdown: 0.2,
     target: [0.05, 0.07],
@@ -37,6 +39,61 @@ const seq = { current: 0 };
 /** 叙述文本里的 **强调** 转成 <strong>（内容由本项目生成，不含用户输入） */
 function md(text) {
   return String(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
+/* ------------------------------ 资产类别选择 ----------------------------- */
+
+function renderClassPicker() {
+  const host = document.getElementById("class-picker");
+  if (!host) return;
+
+  host.innerHTML = `
+    <p class="question-hint" style="margin-bottom:0.6rem">
+      不想要的类别可以直接取消勾选——例如不想配黄金、或不想承担海外股票的汇率风险。
+      至少保留 2 类，否则没法构成组合。
+    </p>
+    <div class="choice-list">
+      ${ASSET_CLASSES.map(
+        (item) => `
+        <label class="choice ${state.included.includes(item.id) ? "on" : ""}" data-class="${item.id}">
+          <input type="checkbox" ${state.included.includes(item.id) ? "checked" : ""} />
+          <span class="choice-label">${item.label}</span>
+          <span class="choice-note">${item.role}</span>
+        </label>`
+      ).join("")}
+    </div>
+    <p class="small muted" id="class-status" style="margin:0.5rem 0 0"></p>`;
+
+  const update = () => {
+    const status = host.querySelector("#class-status");
+    const excluded = ASSET_CLASSES.filter((c) => !state.included.includes(c.id));
+    status.textContent =
+      state.included.length < 2
+        ? "至少要保留 2 个类别"
+        : excluded.length
+          ? `已排除：${excluded.map((c) => c.label).join("、")}`
+          : "全部 5 个类别都参与";
+  };
+  update();
+
+  host.querySelectorAll(".choice").forEach((label) => {
+    label.addEventListener("click", (event) => {
+      event.preventDefault();
+      const id = label.dataset.class;
+      const isOn = state.included.includes(id);
+      if (isOn && state.included.length <= 2) {
+        update();
+        return;
+      }
+      state.included = isOn
+        ? state.included.filter((x) => x !== id)
+        : [...state.included, id];
+      label.classList.toggle("on", !isOn);
+      label.querySelector("input").checked = !isOn;
+      update();
+      window.setTimeout(runSolve, 60);
+    });
+  });
 }
 
 /* ------------------------------- 问卷渲染 ------------------------------- */
@@ -148,6 +205,7 @@ async function runSolve() {
     const years = (dateEnd - dateStart) / (365.25 * 86400000);
 
     const constraints = constraintsFromAnswers(state.answers);
+    const includeMask = classes.map((c) => state.included.includes(c.id));
     const started = performance.now();
     const search = searchAllocation({
       prices,
@@ -156,6 +214,7 @@ async function runSolve() {
       targetLow: constraints.targetLow,
       equityCap: constraints.equityCap,
       equityFlags: classes.map((c) => c.equity),
+      includeMask,
       step: 0.1,
     });
     const elapsed = Math.round(performance.now() - started);
@@ -171,8 +230,9 @@ async function runSolve() {
         <div class="card">
           <h2 class="section-title">没有可行解</h2>
           ${notice(
-            "在历史数据里，没有任何一组以 10% 为步长的配比能同时满足你的回撤预算与权益上限。" +
-              "这通常意味着约束过紧（例如要求回撤 < 5% 却又想要 10% 年化）。",
+            search.reason ||
+              "在历史数据里，没有任何一组配比能同时满足你的回撤预算与权益上限。" +
+                "这通常意味着约束过紧（例如要求回撤 < 5% 却又想要 10% 年化），或者勾选的类别太少、彼此又太相似。",
             "warn"
           )}
           <p class="section-desc" style="margin-top:0.9rem">${windowNote(classes, classes.map((c) => byKey.get(c.key).dates[0]))}</p>
@@ -258,9 +318,19 @@ async function runSolve() {
 
       <div class="card">
         <h2 class="section-title">这组配置的构成</h2>
+        ${
+          classes.filter((c) => !state.included.includes(c.id)).length
+            ? `<p class="section-desc" style="margin:0 0 .7rem">你排除了：${classes
+                .filter((c) => !state.included.includes(c.id))
+                .map((c) => c.label)
+                .join("、")}——它们的权重被固定为 0，不参与本次搜索。</p>`
+            : ""
+        }
         <div class="stack" style="gap:.4rem">
           ${classes
-            .map((c, i) => {
+            .filter((c) => state.included.includes(c.id))
+            .map((c) => {
+              const i = classes.indexOf(c);
               const weight = chosen.weights[i];
               return `
               <div class="weight-bar-row">
@@ -281,7 +351,10 @@ async function runSolve() {
             { label: "作用" },
             { label: "数据起点" },
           ],
-          rows: classes.map((c, i) => ({
+          rows: classes
+            .filter((c) => state.included.includes(c.id))
+            .map((c) => ({ c, i: classes.indexOf(c) }))
+            .map(({ c, i }) => ({
             cells: [
               { html: `<strong>${c.label}</strong>` },
               { html: c.asset.symbol, cls: "small" },
@@ -291,9 +364,9 @@ async function runSolve() {
             ],
           })),
           caption:
-            `每档限制在 ${(search.bounds.minWeight * 100).toFixed(0)}%–${(search.bounds.maxWeight * 100).toFixed(
-              0
-            )}%，且至少 ${search.bounds.minClasses} 类各占 ${(search.bounds.minWeight * 100).toFixed(0)}% 以上。` +
+            `本次参与 ${search.bounds.included} 类，每档限制在 ${(search.bounds.minWeight * 100).toFixed(0)}%–${(
+              search.bounds.maxWeight * 100
+            ).toFixed(0)}%。` +
             "为什么要加这个限制：不加边界时，搜索会把权重全压到「这段历史里涨得最好的那两档」，" +
             "那是过拟合而不是配置。步长 10%，更细的网格只会让过拟合更精准。",
         })}
@@ -416,6 +489,7 @@ async function runSolve() {
 
 function main() {
   initShell({ active: "planner" });
+  renderClassPicker();
   renderQuestions();
   document.getElementById("btn-solve").addEventListener("click", runSolve);
   runSolve();

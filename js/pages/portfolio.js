@@ -26,6 +26,7 @@ import {
   stressTest,
 } from "../core/portfolio.js";
 import { annualizedVolatility, maxDrawdown, sharpeRatio } from "../core/stats.js";
+import { CHECK_ASSETS, buildCheck } from "../core/market-check.js";
 import { STRATEGIES, findStrategy } from "../core/strategies.js";
 import { lineChart } from "../core/charts.js";
 import {
@@ -253,10 +254,97 @@ async function renderCorrelation() {
           caption: "对角线恒为 1。相关性高于 0.7 的资产放在一起，几乎等于重复持有一个东西。",
         })}
       </div>`;
+    // 用同一批数据检验「黄金 = 避险资产」这个说法
+    await renderHedgeCheck(token);
   } catch (err) {
     if (token !== tokens.corr) return;
     showError(host, err.message);
   }
+}
+
+/**
+ * 数据检验卡片：把「说法」交给数据核对。
+ *
+ * 为什么放在相关性页：这里的主题是分散与对冲，而黄金是最常被误读成
+ * 「股票跌它就涨」的资产。用实时数据说清楚，比在文案里写「黄金能避险」诚实得多。
+ */
+async function renderHedgeCheck(token) {
+  const host = document.getElementById("corr-result");
+  if (!host || token !== tokens.corr) return;
+
+  const refs = CHECK_ASSETS.map((item) => ({
+    ...item,
+    asset: findAsset(state.assets, item.key),
+  })).filter((item) => item.asset);
+  if (refs.length < 3) return;
+
+  const seriesList = await loadSeriesMany(refs.map((r) => r.asset));
+  if (token !== tokens.corr) return;
+  const byKey = new Map(seriesList.map((s) => [s.key, s]));
+
+  const series = refs
+    .map((ref) => {
+      const s = byKey.get(`${ref.asset.type}:${ref.asset.symbol}`);
+      return s ? { key: ref.key, label: ref.label, dates: s.dates, prices: s.prices } : null;
+    })
+    .filter(Boolean);
+
+  const check = buildCheck(series);
+  if (!check.rows.length) return;
+
+  const cell = (stats, key) => {
+    if (!stats) return { html: "—", cls: "muted" };
+    if (key === "maxDrawdown") {
+      return { html: pct(stats.maxDrawdown), cls: "neg" };
+    }
+    return { html: pct(stats.totalReturn), cls: tone(stats.totalReturn) };
+  };
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="chart-head">
+      <h3>数据检验：黄金真的是「避险资产」吗？</h3>
+      <span class="hint">全部数字由当前数据实时计算，不是写死的文案</span>
+    </div>
+    <p class="section-desc">
+      黄金常被讲成「股票跌它就涨」的避险工具。但「低相关」和「反向」是两件事。
+      下面把黄金、美股、A 股、国债放进同一段时间里对照——如果黄金跌得比股票还多，
+      那么把它当防回撤工具就是误读。
+    </p>
+    ${tableHtml({
+      columns: [
+        { label: "资产", align: "left" },
+        ...CHECK_WINDOWS_LABELS(),
+        { label: "近 1 年最大回撤" },
+      ],
+      rows: check.rows.map((row) => ({
+        cells: [
+          { html: `<strong>${row.label}</strong>` },
+          ...row.windows.map((w) => cell(w.stats, "totalReturn")),
+          cell(
+            row.windows.find((w) => w.days === 365)?.stats,
+            "maxDrawdown"
+          ),
+        ],
+      })),
+      caption: "同一窗口、同一交易日历口径。近 1 年 = 最近 365 个自然日。",
+    })}
+    <div class="stack" style="margin-top:0.9rem;gap:.5rem">
+      ${check.verdicts
+        .map((text) => `<div class="notice" data-tone="warn"><span>${text}</span></div>`)
+        .join("")}
+    </div>`;
+
+  host.appendChild(card);
+}
+
+function CHECK_WINDOWS_LABELS() {
+  return [
+    { label: "近 1 月" },
+    { label: "近 3 月" },
+    { label: "近 1 年" },
+  ];
 }
 
 function correlationAdvice(avg, lowest, names) {

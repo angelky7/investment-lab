@@ -24,7 +24,7 @@ export const STRATEGIES = [
     sleeves: [
       { key: "etf:510300", label: "沪深300ETF", weight: 25, role: "股票：繁荣期" },
       { key: "etf:511010", label: "国债ETF", weight: 25, role: "债券：紧缩/衰退期" },
-      { key: "etf:518880", label: "黄金ETF", weight: 25, role: "黄金：通胀期" },
+      { key: "etf:518880", label: "黄金ETF", weight: 25, role: "黄金：通胀期（短期同样会大跌）" },
       { key: "etf:511880", label: "货币ETF", weight: 25, role: "现金：其余时间与弹药" },
     ],
     rule: { type: "band", lower: 0.15, upper: 0.35 },
@@ -32,6 +32,8 @@ export const STRATEGIES = [
       "四档都用后复权 ETF 序列，分红与票息已经再投资，口径一致。",
       "永久组合的目标是「任何一年都不要伤筋动骨」，不是收益最大化；它的长期收益通常低于纯股票。",
       "黄金档用人民币计价的 518880；若换成美元计价的 GLD，还要叠加汇率变化。",
+      "别把黄金当「股票跌它就涨」的工具：低相关只是不同步。实测近一年黄金跌得比标普500 更多，" +
+        "组合分析页的「数据检验」卡片会把当前数字算给你看。",
     ],
   },
   {
