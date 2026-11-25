@@ -24,9 +24,10 @@ export const CHECK_WINDOWS = [
   { days: 365, label: "近 1 年" },
 ];
 
-/** 取最近 days 天的窗口 */
+/** 取最近 days 天的窗口；days <= 0 表示全区间 */
 export function sliceLastDays(dates, prices, days) {
   if (!dates?.length) return { dates: [], prices: [] };
+  if (!(days > 0)) return { dates: dates.slice(), prices: prices.slice() };
   const last = Date.parse(`${dates[dates.length - 1]}T00:00:00Z`);
   const cutoff = last - days * 86400000;
   let start = 0;
@@ -186,4 +187,167 @@ export function buildCheck(series) {
   );
 
   return { rows, goldStats, spxStats, bondStats, corr1y, corrAll, verdicts };
+}
+
+/* ----------------------- 防御性检验：低波 ≠ 避险 ----------------------- */
+
+/**
+ * 参与「是不是避险」对照的资产。
+ * 沪深300 只作参照，不参与排序。
+ */
+export const DEFENSIVE_ASSETS = [
+  { key: "etf:512890", label: "红利低波ETF" },
+  { key: "etf:515100", label: "红利低波100ETF" },
+  { key: "etf:518880", label: "黄金ETF" },
+  { key: "etf:511010", label: "国债ETF" },
+];
+
+/**
+ * 下跌跟随度：在基准单日跌幅超过 threshold 的日子里，
+ * 候选资产平均涨跌多少、有多大比例同向下跌。
+ *
+ * 这是区分「防御性」（跌得慢）与「避险」（不跌甚至上涨）的关键指标——
+ * 只看年化波动率会把两者混为一谈。
+ */
+export function downsideFollow(candidate, bench, threshold = -0.01) {
+  const benchReturns = new Map();
+  for (let i = 1; i < bench.dates.length; i += 1) {
+    const prev = bench.prices[i - 1];
+    if (prev > 0) benchReturns.set(bench.dates[i], bench.prices[i] / prev - 1);
+  }
+
+  const samples = [];
+  for (let i = 1; i < candidate.dates.length; i += 1) {
+    const prev = candidate.prices[i - 1];
+    if (!(prev > 0)) continue;
+    const benchReturn = benchReturns.get(candidate.dates[i]);
+    if (benchReturn === undefined || benchReturn > threshold) continue;
+    samples.push(candidate.prices[i] / prev - 1);
+  }
+  if (samples.length < 20) return null;
+
+  const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+  const down = samples.filter((r) => r < 0).length;
+  return {
+    days: samples.length,
+    avgReturn: avg,
+    downShare: down / samples.length,
+    threshold,
+  };
+}
+
+/**
+ * 生成「防御性检验」的表格与结论。
+ * @param {{key:string,label:string,dates:string[],prices:number[]}[]} series
+ * @param {{key:string,label:string,dates:string[],prices:number[]}} bench 沪深300
+ */
+export function buildDefensiveCheck(series, bench) {
+  const rows = [];
+  const push = (label, item, isBench = false) => {
+    const all = windowStats(item.dates, item.prices, 0) || {
+      totalReturn: null,
+      maxDrawdown: null,
+    };
+    const years = (Date.parse(item.dates[item.dates.length - 1]) - Date.parse(item.dates[0])) / (365.25 * 86400000);
+    const annualized =
+      all.totalReturn !== null && years > 0 ? Math.pow(1 + all.totalReturn, 1 / years) - 1 : null;
+
+    // 年化波动（日收益标准差 × √252）
+    const rets = [];
+    for (let i = 1; i < item.prices.length; i += 1) {
+      const prev = item.prices[i - 1];
+      if (prev > 0) rets.push(item.prices[i] / prev - 1);
+    }
+    const mean = rets.length ? rets.reduce((a, b) => a + b, 0) / rets.length : 0;
+    const variance = rets.length > 1
+      ? rets.reduce((acc, r) => acc + (r - mean) ** 2, 0) / (rets.length - 1)
+      : 0;
+    const volatility = Math.sqrt(variance) * Math.sqrt(252);
+
+    rows.push({
+      label,
+      isBench,
+      start: item.dates[0],
+      annualized,
+      volatility,
+      maxDrawdown: all.maxDrawdown,
+      correlation: isBench ? 1 : correlationOverDays(item, bench, 0),
+      follow: isBench ? null : downsideFollow(item, bench),
+    });
+  };
+
+  push(bench.label || "沪深300（参照）", bench, true);
+  // 候选按「被检验的对象在前、参照物在后」的顺序排列，读表更顺
+  const ordered = DEFENSIVE_ASSETS
+    .map((item) => series.find((s) => s.key === item.key))
+    .filter(Boolean);
+  for (const item of ordered) push(item.label, item);
+
+  const byLabel = new Map(rows.map((r) => [r.label, r]));
+  const div = rows.find((r) => r.label.includes("红利低波") && !r.label.includes("100"));
+  const div100 = rows.find((r) => r.label.includes("红利低波100"));
+  const bond = byLabel.get("国债ETF");
+  const gold = byLabel.get("黄金ETF");
+  const benchRow = rows[0];
+
+  const verdicts = [];
+  if (div && benchRow) {
+    const ddGap =
+      Math.abs(div.maxDrawdown) < Math.abs(benchRow.maxDrawdown)
+        ? `回撤 ${(div.maxDrawdown * 100).toFixed(1)}%，比沪深300 的 ${(benchRow.maxDrawdown * 100).toFixed(1)}% 浅`
+        : `回撤 ${(div.maxDrawdown * 100).toFixed(1)}%，并不比沪深300 浅`;
+    verdicts.push(
+      `红利低波的长期波动 ${(div.volatility * 100).toFixed(1)}%（沪深300 ${(
+        benchRow.volatility * 100
+      ).toFixed(1)}%），${ddGap}——**它确实是"更稳的股票"**。`
+    );
+
+    if (div.follow) {
+      verdicts.push(
+        `但在沪深300 单日跌超 1% 的 ${div.follow.days} 天里，红利低波平均 ${(
+          div.follow.avgReturn * 100
+        ).toFixed(2)}%，其中 ${(div.follow.downShare * 100).toFixed(0)}% 的日子同样下跌。` +
+          "也就是说：<strong>它跌得慢一点，但照样跌</strong>——这是「防御性」，不是「避险」。"
+      );
+    }
+
+    if (bond && bond.follow) {
+      verdicts.push(
+        `对照真正的避险资产（国债ETF）：同样的下跌日里它平均 ${(bond.follow.avgReturn * 100).toFixed(
+          2
+        )}%，只有 ${(bond.follow.downShare * 100).toFixed(0)}% 的日子同向下跌，` +
+          `与沪深300 的相关系数 ${bond.correlation.toFixed(2)}。这才能叫「不跟着跌」。`
+      );
+    }
+
+    verdicts.push(
+      `判断标准可以收成一句话：<strong>相关系数接近 0 或为负、下跌日不跟跌 → 避险；` +
+        `相关系数中高（红利低波 ${div.correlation.toFixed(2)}）、下跌日照跟 → 防御性权益。</strong>` +
+        "红利低波属于后者：它优化的是「同样涨、跌得少」，而不是「不跌」。"
+    );
+
+    if (div.start > "2018-12-31") {
+      verdicts.push(
+        `注意它的历史只有 ${div.start} 起，且这几年正好是红利风格占优的阶段；` +
+          "换成成长风格主导的年份，它可能跑输得很明显——风格轮动本身也是一种风险。"
+      );
+    }
+    if (div100) {
+      verdicts.push(
+        `红利低波100 的表现与之接近（波动 ${(div100.volatility * 100).toFixed(1)}%、回撤 ${(
+          div100.maxDrawdown * 100
+        ).toFixed(1)}%、下跌日平均 ${((div100.follow?.avgReturn ?? 0) * 100).toFixed(2)}%），` +
+          "两者是同一类策略的两个版本，差异主要在成分股数量与权重规则。"
+      );
+    }
+    if (gold && gold.follow) {
+      verdicts.push(
+        `顺带对照黄金：同样下跌日里它平均 ${(gold.follow.avgReturn * 100).toFixed(2)}%、` +
+          `${(gold.follow.downShare * 100).toFixed(0)}% 的日子同向下跌——` +
+          "「跌得少」但绝不「不跌」，而且它自己还可能在别的时段独立大跌。"
+      );
+    }
+  }
+
+  return { rows, verdicts };
 }

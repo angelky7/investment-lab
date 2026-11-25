@@ -26,7 +26,12 @@ import {
   stressTest,
 } from "../core/portfolio.js";
 import { annualizedVolatility, maxDrawdown, sharpeRatio } from "../core/stats.js";
-import { CHECK_ASSETS, buildCheck } from "../core/market-check.js";
+import {
+  CHECK_ASSETS,
+  DEFENSIVE_ASSETS,
+  buildCheck,
+  buildDefensiveCheck,
+} from "../core/market-check.js";
 import { STRATEGIES, findStrategy } from "../core/strategies.js";
 import { lineChart } from "../core/charts.js";
 import {
@@ -272,10 +277,16 @@ async function renderHedgeCheck(token) {
   const host = document.getElementById("corr-result");
   if (!host || token !== tokens.corr) return;
 
-  const refs = CHECK_ASSETS.map((item) => ({
-    ...item,
-    asset: findAsset(state.assets, item.key),
-  })).filter((item) => item.asset);
+  const wanted = [...CHECK_ASSETS, ...DEFENSIVE_ASSETS, { key: "index:000300", label: "沪深300" }];
+  const seen = new Set();
+  const refs = wanted
+    .filter((item) => {
+      if (seen.has(item.key)) return false;
+      seen.add(item.key);
+      return true;
+    })
+    .map((item) => ({ ...item, asset: findAsset(state.assets, item.key) }))
+    .filter((item) => item.asset);
   if (refs.length < 3) return;
 
   const seriesList = await loadSeriesMany(refs.map((r) => r.asset));
@@ -337,6 +348,67 @@ async function renderHedgeCheck(token) {
     </div>`;
 
   host.appendChild(card);
+
+  // 第二张：红利低波是不是「避险」？
+  const benchSeries = series.find((s) => s.key === "index:000300") || series[0];
+  const defensive = buildDefensiveCheck(
+    series.filter((s) => DEFENSIVE_ASSETS.some((item) => item.key === s.key)),
+    benchSeries
+  );
+  if (!defensive.rows.length) return;
+
+  const defCard = document.createElement("div");
+  defCard.className = "card";
+  defCard.innerHTML = `
+    <div class="chart-head">
+      <h3>数据检验：红利低波算「避险」吗？</h3>
+      <span class="hint">「跌得慢」是防御性，「不跟着跌」才是避险——两者常被混为一谈</span>
+    </div>
+    <p class="section-desc">
+      红利低波靠「高股息 + 低波动」选股，长期波动确实比宽基小。但这不等于它会在下跌时不跌。
+      下表把「与沪深300 的相关系数」和「沪深300 大跌日的跟随幅度」放在一起，
+      用它自己和国债的对比来回答这个问题。
+    </p>
+    ${tableHtml({
+      columns: [
+        { label: "资产", align: "left" },
+        { label: "年化收益" },
+        { label: "年化波动" },
+        { label: "最大回撤" },
+        { label: "与沪深300 相关性" },
+        { label: "沪深300 跌超 1% 时" },
+        { label: "其中同向下跌" },
+      ],
+      rows: defensive.rows.map((row) => ({
+        cells: [
+          {
+            html: `<strong>${row.label}</strong>${row.isBench ? ' <span class="muted small">参照</span>' : ""}`,
+          },
+          { html: pct(row.annualized), cls: row.isBench ? "" : tone(row.annualized) },
+          { html: pct(row.volatility, { signed: false }) },
+          { html: pct(row.maxDrawdown), cls: "neg" },
+          { html: row.isBench ? "1.00" : num(row.correlation) },
+          {
+            html: row.follow ? pct(row.follow.avgReturn) : "—",
+            cls: row.follow ? tone(row.follow.avgReturn) : "muted",
+          },
+          {
+            html: row.follow ? pct(row.follow.downShare, { signed: false, digits: 0 }) : "—",
+            cls: "muted",
+          },
+        ],
+      })),
+      caption:
+        "年化收益与波动按各自数据的完整区间计算（红利低波自 2019 年起、国债自 2013 年起），" +
+        "所以它们的年化不能与沪深300 的 20 年直接横比——但相关系数与下跌跟随是可以横比的。",
+    })}
+    <div class="stack" style="margin-top:0.9rem;gap:.5rem">
+      ${defensive.verdicts
+        .map((text) => `<div class="notice" data-tone="info"><span>${mdEmphasis(text)}</span></div>`)
+        .join("")}
+    </div>`;
+
+  host.appendChild(defCard);
 }
 
 function CHECK_WINDOWS_LABELS() {
@@ -907,6 +979,11 @@ function rebalanceAdvice(diff, result, names, weights) {
       : `这次再平衡跑输了「买入后不动」，这很正常：在单边上涨的行情里，少调整反而让最强的资产继续跑。
          再平衡的价值主要不是多赚钱，而是把风险控制在你能承受的水平。`;
   return `${base}${tail}`;
+}
+
+/** 把叙述文本里的 **强调** 渲染成 <strong>（内容由本项目生成，不含用户输入） */
+function mdEmphasis(text) {
+  return String(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 
 /* -------------------------------- 策略组合 ------------------------------- */
