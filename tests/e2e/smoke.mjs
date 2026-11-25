@@ -64,6 +64,7 @@ const CASES = [
   },
   { path: "history.html", tabs: null },
   { path: "calculator.html", tabs: "#calc-tabs", values: ["compound", "dca", "drawdown", "rebalance"] },
+  { path: "planner.html", tabs: null },
   { path: "data.html", tabs: null },
 ];
 

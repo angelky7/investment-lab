@@ -860,6 +860,123 @@ code {
   border-radius: 100px;
 }
 
+
+/* ------------------------------ 问卷（配置求解器）----------------------------- */
+
+.question {
+  padding: 0.95rem 0;
+  border-bottom: 1px solid rgb(var(--mdui-color-outline-variant) / 0.5);
+}
+
+.question:last-child {
+  border-bottom: none;
+  padding-bottom: 0.2rem;
+}
+
+.question-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
+.question-hint {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.choice-list {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+
+.choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--mdui-shape-corner-small);
+  background: rgb(var(--mdui-color-surface-container-low));
+  cursor: pointer;
+  transition: background 120ms var(--mdui-motion-easing-standard);
+}
+
+.choice:hover {
+  background: rgb(var(--mdui-color-surface-container));
+}
+
+.choice.on {
+  background: rgba(var(--mdui-color-primary), 0.13);
+}
+
+.choice input[type="radio"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: rgb(var(--mdui-color-primary));
+}
+
+.choice-label {
+  font-size: 0.86rem;
+}
+
+.choice-note {
+  font-size: 0.7rem;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  text-align: right;
+}
+
+/* 权重横条 */
+.weight-bar-row {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) 3rem;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+}
+
+.weight-bar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weight-bar-track {
+  height: 0.6rem;
+  border-radius: 100px;
+  background: rgb(var(--mdui-color-surface-container-high));
+  overflow: hidden;
+}
+
+.weight-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: var(--il-chart-1);
+  transition: width 240ms var(--mdui-motion-easing-standard);
+}
+
+.weight-bar-value {
+  text-align: right;
+  font-weight: 600;
+}
+
+@media (max-width: 599px) {
+  .choice {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 0.1rem;
+  }
+  .choice-note {
+    grid-column: 2;
+    text-align: left;
+  }
+  .weight-bar-row {
+    grid-template-columns: 4.6rem minmax(0, 1fr) 2.6rem;
+    font-size: 0.76rem;
+  }
+}
+
 /* ------------------------------ 工具类 ------------------------------ */
 
 .mono {

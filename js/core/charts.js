@@ -209,6 +209,7 @@ class CanvasChart {
 
     if (this.state.kind === "histogram") this.drawHistogram(box, axisColor, gridColor);
     else if (this.state.kind === "bar") this.drawBars(box, axisColor, gridColor);
+    else if (this.state.kind === "scatter") this.drawScatter(box, axisColor, gridColor);
     else this.drawLines(box, axisColor, gridColor);
   }
 
@@ -489,10 +490,142 @@ class CanvasChart {
     }
   }
 
+  /* -------------------------------- 散点 -------------------------------- */
+
+  drawScatter(box, axisColor, gridColor) {
+    const { ctx } = this;
+    const { points = [], vLines = [], hLines = [] } = this.state;
+    if (!points.length) return;
+
+    const xs = points.map((p) => p.x).concat(vLines.map((v) => v.value));
+    const ys = points.map((p) => p.y).concat(hLines.map((v) => v.value));
+    const xScale = niceTicks(Math.min(0, ...xs), Math.max(...xs), 5);
+    const yScale = niceTicks(Math.min(0, ...ys), Math.max(...ys), 5);
+
+    const xFor = (v) =>
+      box.left + ((v - xScale.min) / (xScale.max - xScale.min || 1)) * box.width;
+    const yFor = (v) =>
+      box.bottom - ((v - yScale.min) / (yScale.max - yScale.min || 1)) * box.height;
+
+    // 网格 + 刻度
+    ctx.strokeStyle = gridColor;
+    ctx.fillStyle = axisColor;
+    ctx.lineWidth = 1;
+    ctx.textAlign = "right";
+    for (const tick of yScale.ticks) {
+      const y = Math.round(yFor(tick)) + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(box.left, y);
+      ctx.lineTo(box.right, y);
+      ctx.stroke();
+      ctx.fillText(this.state.yFormatter(tick), box.left - 6, y);
+    }
+    ctx.textAlign = "center";
+    for (const tick of xScale.ticks) {
+      const x = Math.round(xFor(tick)) + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x, box.top);
+      ctx.lineTo(x, box.bottom);
+      ctx.stroke();
+      ctx.fillText(this.state.xFormatter(tick), x, this.height - 12);
+    }
+
+    // 参考线：回撤预算（竖）与收益目标（横）
+    for (const line of vLines) {
+      const x = Math.round(xFor(line.value)) + 0.5;
+      ctx.strokeStyle = withAlpha(cssVar("--il-up", "#c62828"), 0.75);
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x, box.top);
+      ctx.lineTo(x, box.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = cssVar("--il-up", "#c62828");
+      ctx.textAlign = "left";
+      ctx.fillText(line.label, Math.min(x + 4, box.right - 60), box.top + 10);
+    }
+    for (const line of hLines) {
+      const y = Math.round(yFor(line.value)) + 0.5;
+      ctx.strokeStyle = withAlpha(cssVar("--il-chart-3", "#1d4ed8"), 0.75);
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(box.left, y);
+      ctx.lineTo(box.right, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = cssVar("--il-chart-3", "#1d4ed8");
+      ctx.textAlign = "left";
+      ctx.fillText(line.label, box.left + 4, Math.max(y - 6, box.top + 10));
+    }
+
+    // 点
+    this.hitPoints = [];
+    const style = {
+      candidate: { color: "var(--il-axis)", alpha: 0.22, r: 2.1 },
+      feasible: { color: "var(--il-chart-1)", alpha: 0.5, r: 2.6 },
+      reference: { color: "var(--il-chart-3)", alpha: 0.95, r: 4.2 },
+      chosen: { color: "var(--il-up)", alpha: 1, r: 6 },
+    };
+
+    // 先画候选，再画选中，保证选中在最上层
+    const order = { candidate: 0, feasible: 1, reference: 2, chosen: 3 };
+    const sorted = points
+      .map((p, index) => ({ p, index }))
+      .sort((a, b) => (order[a.p.kind] ?? 0) - (order[b.p.kind] ?? 0));
+
+    for (const { p, index } of sorted) {
+      const cfg = style[p.kind] || style.candidate;
+      const x = xFor(p.x);
+      const y = yFor(p.y);
+      ctx.fillStyle = withAlpha(resolveColor(cfg.color), cfg.alpha);
+      ctx.beginPath();
+      ctx.arc(x, y, cfg.r, 0, Math.PI * 2);
+      ctx.fill();
+      if (p.kind === "chosen" || p.kind === "reference") {
+        ctx.strokeStyle = withAlpha(resolveColor(cfg.color), 0.9);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(x, y, cfg.r + 3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      this.hitPoints.push({ index, x, y, point: p });
+    }
+
+    // 坐标轴标题：只画横轴的（画在刻度下方），纵轴标题交给页面文案，
+    // 否则会和左上角最上方那个刻度标签叠在一起。
+    if (this.state.xLabel) {
+      ctx.fillStyle = axisColor;
+      ctx.textAlign = "right";
+      ctx.font = '11px system-ui, -apple-system, "PingFang SC", sans-serif';
+      ctx.fillText(this.state.xLabel, box.right, this.height - 2);
+      ctx.font = FONT;
+    }
+  }
+
   /* -------------------------------- 交互 -------------------------------- */
 
   pointerMove(event) {
     const state = this.state;
+    if (state?.kind === "scatter") {
+      if (event.type === "pointermove" && event.pointerType !== "mouse" && event.buttons === 0) return;
+      const rect = this.canvas.getBoundingClientRect();
+      const px = event.clientX - rect.left;
+      const py = event.clientY - rect.top;
+      let nearest = null;
+      for (const hit of this.hitPoints || []) {
+        const dist = Math.hypot(hit.x - px, hit.y - py);
+        if (dist < 14 && (!nearest || dist < nearest.dist)) nearest = { ...hit, dist };
+      }
+      if (!nearest) {
+        this.tip.classList.remove("show");
+        return;
+      }
+      this.scatterTip = nearest.index;
+      const p = nearest.point;
+      this.tip.innerHTML = this.state.tipHtml(p);
+      this.positionTip(nearest.x, nearest.y);
+      return;
+    }
     if (!state || !state.labels?.length) return;
     if (event.type === "pointermove" && event.pointerType !== "mouse" && event.buttons === 0) {
       return;
@@ -620,6 +753,19 @@ export function barChart(host, config) {
 /** 直方图 */
 export function histogramChart(host, config) {
   return mount(host, { kind: "histogram", ...config });
+}
+
+/**
+ * 散点图（用于「风险—收益」候选云）
+ * @param {HTMLElement} host
+ * @param {{points: {x:number, y:number, kind?: string, key?: string}[],
+ *   vLines?: {value:number, label:string}[], hLines?: {value:number, label:string}[],
+ *   xFormatter: Function, yFormatter: Function, xLabel: string, yLabel: string,
+ *   tipHtml: (point:any)=>string, tall?: boolean}} config
+ */
+export function scatterChart(host, config) {
+  host?.classList?.toggle("tall", Boolean(config.tall));
+  return mount(host, { kind: "scatter", ...config });
 }
 
 /** 清除图表 */

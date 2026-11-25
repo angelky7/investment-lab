@@ -23,6 +23,7 @@ HTML_FILES = [
     "portfolio.html",
     "history.html",
     "calculator.html",
+    "planner.html",
     "data.html",
 ]
 
