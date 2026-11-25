@@ -843,6 +843,90 @@
       "from": 1994,
       "source": "sina",
       "note": "1994 年起的在岸汇率日 K（新浪财经）；汇改前后的台阶式跳变是真实历史，不是数据错误。"
+    },
+    {
+      "symbol": "H20269",
+      "type": "index",
+      "code": "H20269",
+      "em_secid": "",
+      "name": "中证红利低波动全收益指数",
+      "group": "策略指数",
+      "market": "CN",
+      "from": 2005,
+      "source": "csindex",
+      "note": "红利低波动指数的全收益版本（含分红再投资），2005-12 起。用作红利低波长期分析的基准口径。"
+    },
+    {
+      "symbol": "930955",
+      "type": "index",
+      "code": "930955",
+      "em_secid": "",
+      "name": "中证红利低波动100指数",
+      "group": "策略指数",
+      "market": "CN",
+      "from": 2005,
+      "source": "csindex",
+      "note": "价格指数（不含分红），用于对照红利低波100ETF（2020-07 上市）的长期形态。"
+    },
+    {
+      "symbol": "000922",
+      "type": "index",
+      "code": "000922",
+      "em_secid": "",
+      "name": "中证红利指数",
+      "group": "策略指数",
+      "market": "CN",
+      "from": 2005,
+      "source": "csindex",
+      "note": "红利策略的母指数，价格口径；用来对照「红利」与「红利低波」的差别。"
+    },
+    {
+      "symbol": "H00300",
+      "type": "index",
+      "code": "H00300",
+      "em_secid": "",
+      "name": "沪深300全收益指数",
+      "group": "宽基指数",
+      "market": "CN",
+      "from": 2005,
+      "source": "csindex",
+      "note": "沪深300的全收益版本（含分红再投资），2005-12 起；比 510300 ETF 多 7 年历史。"
+    },
+    {
+      "symbol": "H11025",
+      "type": "index",
+      "code": "H11025",
+      "em_secid": "",
+      "name": "中证货币基金指数",
+      "group": "大类资产",
+      "market": "CN",
+      "from": 2005,
+      "source": "csindex",
+      "note": "货币基金的平均收益曲线，2005-12 起；给「现金」这一档提供长历史。"
+    },
+    {
+      "symbol": "GOLDCNY",
+      "type": "index",
+      "code": "",
+      "em_secid": "",
+      "name": "黄金（人民币计价，合成）",
+      "group": "大类资产",
+      "market": "CN",
+      "from": 2004,
+      "source": "derived",
+      "note": "由「黄金ETF-SPDR（GLD，美元）× 美元兑人民币」逐日折算合成，2004-11 起。它不是可交易标的，只为把人民币视角的黄金历史拉长到 2004 年；实盘可用 518880 等人民币黄金 ETF 复制，但会有费率与跟踪误差。"
+    },
+    {
+      "symbol": "H20955",
+      "type": "index",
+      "code": "H20955",
+      "em_secid": "",
+      "name": "中证红利低波动100全收益指数",
+      "group": "策略指数",
+      "market": "CN",
+      "from": 2005,
+      "source": "csindex",
+      "note": "红利低波动100 的全收益版本（含分红再投资），2005-12 起。"
     }
   ]
 }

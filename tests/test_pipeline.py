@@ -367,8 +367,15 @@ class TestRegistry(unittest.TestCase):
             self.assertTrue(asset.name, f"{asset.symbol} 名称为空")
             self.assertTrue(asset.group, f"{asset.symbol} 缺少分组")
             self.assertGreaterEqual(asset.from_year, 1990)
-            if asset.type.value not in ("fund", "fx"):
+            # 基金、汇率、中证指数与派生序列都不走东方财富的 secid
+            needs_secid = asset.type.value not in ("fund", "fx") and asset.source not in (
+                "csindex",
+                "derived",
+            )
+            if needs_secid:
                 self.assertTrue(asset.em_secid, f"{asset.symbol} 缺少 em_secid")
+            if asset.source != "derived":
+                self.assertTrue(asset.code, f"{asset.symbol} 缺少抓取代码")
 
     def test_periods_config(self):
         from scripts.registry import load_periods

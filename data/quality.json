@@ -1,6 +1,6 @@
 {
   "schema": 3,
-  "generated_at": "2026-11-25T19:11:31+08:00",
+  "generated_at": "2026-11-25T22:27:51+08:00",
   "data_date": "2026-11-25",
   "stale_days": 0,
   "calendars": {
@@ -21,16 +21,16 @@
     }
   },
   "summary": {
-    "total": 74,
-    "files_ok": 74,
+    "total": 81,
+    "files_ok": 81,
     "missing": 0,
     "error_count": 0,
-    "warning_count": 20,
-    "total_points": 282247,
-    "assets_with_gaps": 2,
+    "warning_count": 21,
+    "total_points": 317944,
+    "assets_with_gaps": 3,
     "assets_with_suspension_gaps": 17,
-    "assets_with_source_gaps": 3,
-    "assets_complete": 49
+    "assets_with_source_gaps": 4,
+    "assets_complete": 54
   },
   "errors": [],
   "warnings": [
@@ -53,7 +53,8 @@
     "恒瑞医药（stock 600276）: 连续缺 17 个交易日（2006-05-26 ~ 2006-06-19），多为停牌或数据源空洞",
     "万科A（stock 000002）: 连续缺 130 个交易日（2015-12-21 ~ 2016-07-01），多为停牌或数据源空洞",
     "长江电力（stock 600900）: 连续缺 251 个交易日（2008-05-08 ~ 2009-05-15），多为停牌或数据源空洞",
-    "特斯拉（stock us.TSLA.OQ）: 连续缺 27 个交易日（2011-02-15 ~ 2011-03-24），多为停牌或数据源空洞"
+    "特斯拉（stock us.TSLA.OQ）: 连续缺 27 个交易日（2011-02-15 ~ 2011-03-24），多为停牌或数据源空洞",
+    "中证货币基金指数（index H11025）: 连续缺 136 个交易日（2016-08-31 ~ 2017-03-27），指数/ETF 不会停牌，疑似数据源空洞"
   ],
   "assets": [
     {
@@ -2112,6 +2113,166 @@
         }
       ],
       "completeness": "minor"
+    },
+    {
+      "symbol": "H20269",
+      "name": "中证红利低波动全收益指数",
+      "type": "index",
+      "group": "策略指数",
+      "market": "CN",
+      "status": "ok",
+      "count": 5077,
+      "start": "2005-12-30",
+      "end": "2026-11-25",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "930955",
+      "name": "中证红利低波动100指数",
+      "type": "index",
+      "group": "策略指数",
+      "market": "CN",
+      "status": "ok",
+      "count": 5077,
+      "start": "2005-12-30",
+      "end": "2026-11-25",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "000922",
+      "name": "中证红利指数",
+      "type": "index",
+      "group": "策略指数",
+      "market": "CN",
+      "status": "ok",
+      "count": 5077,
+      "start": "2005-12-30",
+      "end": "2026-11-25",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "H00300",
+      "name": "沪深300全收益指数",
+      "type": "index",
+      "group": "宽基指数",
+      "market": "CN",
+      "status": "ok",
+      "count": 5077,
+      "start": "2005-12-30",
+      "end": "2026-11-25",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "H11025",
+      "name": "中证货币基金指数",
+      "type": "index",
+      "group": "大类资产",
+      "market": "CN",
+      "status": "ok",
+      "count": 4936,
+      "start": "2005-12-30",
+      "end": "2026-11-24",
+      "missing_trading_days": 139,
+      "missing_ratio": 0.02739,
+      "max_missing_run": 136,
+      "missing_runs": [
+        {
+          "from": "2016-08-31",
+          "to": "2017-03-27",
+          "days": 136
+        },
+        {
+          "from": "2022-12-26",
+          "to": "2022-12-26",
+          "days": 1
+        },
+        {
+          "from": "2023-06-28",
+          "to": "2023-06-28",
+          "days": 1
+        },
+        {
+          "from": "2023-09-25",
+          "to": "2023-09-25",
+          "days": 1
+        }
+      ],
+      "completeness": "minor",
+      "gap_cause": "source"
+    },
+    {
+      "symbol": "GOLDCNY",
+      "name": "黄金（人民币计价，合成）",
+      "type": "index",
+      "group": "大类资产",
+      "market": "CN",
+      "status": "ok",
+      "count": 5376,
+      "start": "2004-11-18",
+      "end": "2026-11-24",
+      "missing_trading_days": 203,
+      "missing_ratio": 0.03819,
+      "max_missing_run": 5,
+      "missing_runs": [
+        {
+          "from": "2006-01-11",
+          "to": "2006-01-17",
+          "days": 5
+        },
+        {
+          "from": "2005-01-04",
+          "to": "2005-01-06",
+          "days": 3
+        },
+        {
+          "from": "2006-01-19",
+          "to": "2006-01-20",
+          "days": 2
+        },
+        {
+          "from": "2012-10-29",
+          "to": "2012-10-30",
+          "days": 2
+        },
+        {
+          "from": "2017-03-02",
+          "to": "2017-03-03",
+          "days": 2
+        }
+      ],
+      "completeness": "gaps"
+    },
+    {
+      "symbol": "H20955",
+      "name": "中证红利低波动100全收益指数",
+      "type": "index",
+      "group": "策略指数",
+      "market": "CN",
+      "status": "ok",
+      "count": 5077,
+      "start": "2005-12-30",
+      "end": "2026-11-25",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     }
   ]
 }

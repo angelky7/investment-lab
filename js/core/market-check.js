@@ -196,9 +196,12 @@ export function buildCheck(series) {
  * 沪深300 只作参照，不参与排序。
  */
 export const DEFENSIVE_ASSETS = [
-  { key: "etf:512890", label: "红利低波ETF" },
-  { key: "etf:515100", label: "红利低波100ETF" },
-  { key: "etf:518880", label: "黄金ETF" },
+  // 用 2005-12 起的「全收益」指数：含分红、20 年历史。
+  // 对应的 ETF（512890 / 515100）只有 2019 年起，做行为检验太短。
+  { key: "index:H20269", label: "红利低波（全收益指数）" },
+  { key: "index:H20955", label: "红利低波100（全收益指数）" },
+  { key: "etf:512890", label: "红利低波ETF（2019 起）" },
+  { key: "index:GOLDCNY", label: "黄金（人民币计价，合成）" },
   { key: "etf:511010", label: "国债ETF" },
 ];
 
@@ -287,20 +290,42 @@ export function buildDefensiveCheck(series, bench) {
   const div = rows.find((r) => r.label.includes("红利低波") && !r.label.includes("100"));
   const div100 = rows.find((r) => r.label.includes("红利低波100"));
   const bond = byLabel.get("国债ETF");
-  const gold = byLabel.get("黄金ETF");
+  const gold = rows.find((r) => r.label.includes("黄金"));
   const benchRow = rows[0];
 
   const verdicts = [];
   if (div && benchRow) {
-    const ddGap =
-      Math.abs(div.maxDrawdown) < Math.abs(benchRow.maxDrawdown)
-        ? `回撤 ${(div.maxDrawdown * 100).toFixed(1)}%，比沪深300 的 ${(benchRow.maxDrawdown * 100).toFixed(1)}% 浅`
-        : `回撤 ${(div.maxDrawdown * 100).toFixed(1)}%，并不比沪深300 浅`;
-    verdicts.push(
-      `红利低波的长期波动 ${(div.volatility * 100).toFixed(1)}%（沪深300 ${(
-        benchRow.volatility * 100
-      ).toFixed(1)}%），${ddGap}——**它确实是"更稳的股票"**。`
-    );
+    const volRatio = benchRow.volatility > 0 ? div.volatility / benchRow.volatility : 1;
+    const ddRatio20 =
+      benchRow.maxDrawdown !== 0 ? div.maxDrawdown / benchRow.maxDrawdown : 1;
+
+    // 20 年窗口里「低波」到底成不成立？差距不明显就必须说清楚，而不是复读标签
+    if (volRatio < 0.85) {
+      verdicts.push(
+        `红利低波的长期波动 ${(div.volatility * 100).toFixed(1)}%，明显低于沪深300 的 ${(
+          benchRow.volatility * 100
+        ).toFixed(1)}%——在这段历史里它确实是「更稳的股票」。`
+      );
+    } else {
+      verdicts.push(
+        `把窗口拉到 ${div.start} 起的全历史，红利低波的波动是 ${(div.volatility * 100).toFixed(
+          1
+        )}%，沪深300 是 ${(benchRow.volatility * 100).toFixed(1)}%——**两者几乎一样**。` +
+          `最大回撤 ${(div.maxDrawdown * 100).toFixed(1)}% 对 ${(benchRow.maxDrawdown * 100).toFixed(
+            1
+          )}%，也只是略浅。` +
+          "也就是说：<strong>「低波」并不是这个策略在长周期里的固有属性</strong>。"
+      );
+    }
+
+    if (ddRatio20 > 0.9 && volRatio >= 0.85) {
+      verdicts.push(
+        `那为什么很多人觉得它很稳？因为看的是近几年：红利低波ETF（2019 起）的波动只有 ${((
+          byLabel.get("红利低波ETF（2019 起）")?.volatility ?? 0
+        ) * 100).toFixed(1)}%。` +
+          "同一个策略、不同的窗口，性格完全不同——这正是「用一段行情给资产下定义」的典型陷阱。"
+      );
+    }
 
     if (div.follow) {
       verdicts.push(

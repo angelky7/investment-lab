@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from data_sources.common import AssetDef, Bar, dedupe_sort  # noqa: E402
 from data_sources.eastmoney import EastmoneyFundSource, EastmoneyKlineSource  # noqa: E402
+from data_sources.csindex import CsindexSource  # noqa: E402
 from data_sources.sina import SinaForexSource  # noqa: E402
 from data_sources.tencent import TencentSource, fetch_quote_prices  # noqa: E402
 from scripts.registry import (  # noqa: E402
@@ -51,19 +52,29 @@ def now_cst() -> datetime:
     return datetime.now(CST)
 
 
-def build_providers() -> dict[str, list]:
-    """资产类型 → 数据源链（按优先级）。"""
+def build_providers() -> dict:
+    """数据源链：既按资产类型兜底，也支持登记表里声明的 source。"""
     east_kline = EastmoneyKlineSource()
     tencent = TencentSource()
     east_fund = EastmoneyFundSource()
     sina_fx = SinaForexSource()
-    # 腾讯 newfqkline 当前最稳（一次窗口即可拿到完整历史），东方财富作为兜底
+    csindex = CsindexSource()
     return {
-        "index": [tencent, east_kline],
-        "stock": [tencent, east_kline],
-        "etf": [tencent, east_kline],
-        "fund": [east_fund],
-        "fx": [sina_fx],
+        "by_type": {
+            # 腾讯 newfqkline 当前最稳（一次窗口即可拿到完整历史），东方财富作为兜底
+            "index": [tencent, east_kline],
+            "stock": [tencent, east_kline],
+            "etf": [tencent, east_kline],
+            "fund": [east_fund],
+            "fx": [sina_fx],
+        },
+        "by_source": {
+            # 资产在登记表里声明的 source 优先：中证指数走官网，新浪走外汇接口
+            "csindex": [csindex],
+            "sina": [sina_fx],
+            "tencent": [tencent, east_kline],
+            "eastmoney": [east_kline, east_fund],
+        },
     }
 
 
@@ -124,8 +135,8 @@ def main(argv: list[str] | None = None) -> int:
     for asset in assets:
         if asset.type.value == "fund":
             quote_codes.append(f"jj{asset.code}")
-        elif asset.type.value == "fx":
-            continue  # 汇率序列自带最新价，不需要快照
+        elif asset.type.value == "fx" or asset.source == "csindex":
+            continue  # 汇率与中证指数序列自带最新价，不需要快照
         elif asset.em_secid and asset.code.startswith(("sh", "sz")):
             quote_codes.append(asset.code)
     quotes = fetch_quote_prices(quote_codes) if not args.dry_run else {}
@@ -142,12 +153,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\n[{index}/{len(assets)}] {asset.symbol} {asset.name} ({asset.type.value})", flush=True)
         if args.dry_run:
             continue
+        if asset.source == "derived":
+            print("  [跳过] 派生序列，由 build.py 生成", flush=True)
+            continue
 
         path = os.path.join(HISTORY_DIR, history_filename(asset))
         series = None
         used_source = ""
 
-        for provider in providers.get(asset.type.value, []):
+        chain = providers["by_source"].get(asset.source) or providers["by_type"].get(
+            asset.type.value, []
+        )
+        for provider in chain:
             try:
                 series = provider.fetch(asset, until_year=until_year, since=since_date)
             except Exception as exc:  # noqa: BLE001 - 单源失败不致命

@@ -46,6 +46,71 @@ def read_history(path: str) -> dict | None:
         return None
 
 
+# ---------------------------------------------------------------- 派生序列
+
+# 派生序列：由两个真实序列逐日计算得到，不请求任何网络。
+# 目前只有一项：人民币计价的黄金 = 美元金价 × 美元兑人民币汇率。
+DERIVED_SERIES = [
+    {
+        "symbol": "GOLDCNY",
+        "type": "index",
+        "name": "黄金（人民币计价，合成）",
+        "group": "大类资产",
+        "currency": "CNY",
+        "source": "derived",
+        "price_basis": "GLD × 美元兑人民币（合成）",
+        "inputs": ["etf_us.GLD.AM.json", "fx_USDCNY.json"],
+    }
+]
+
+
+def build_derived_series() -> list[str]:
+    """把注册表里 source=derived 的资产按定义算出来写入 data/history。"""
+    written: list[str] = []
+    for spec in DERIVED_SERIES:
+        paths = [os.path.join(HISTORY_DIR, name) for name in spec["inputs"]]
+        payloads = [read_history(p) for p in paths]
+        if any(p is None for p in payloads):
+            print(f"  [派生] {spec['symbol']} 缺少输入数据，跳过")
+            continue
+
+        a, b = payloads
+        b_map = dict(zip(b["dates"], b["prices"]))
+        dates: list[str] = []
+        prices: list[float] = []
+        for date, price in zip(a["dates"], a["prices"]):
+            rate = b_map.get(date)
+            if rate is None or price <= 0 or rate <= 0:
+                continue
+            dates.append(date)
+            prices.append(round(price * rate, 4))
+
+        if not dates:
+            continue
+
+        out = {
+            "schema": 2,
+            "symbol": spec["symbol"],
+            "name": spec["name"],
+            "type": spec["type"],
+            "market": "CN",
+            "group": spec["group"],
+            "currency": spec["currency"],
+            "source": spec["source"],
+            "price_basis": spec["price_basis"],
+            "last_close": prices[-1],
+            "start": dates[0],
+            "end": dates[-1],
+            "count": len(dates),
+            "dates": dates,
+            "prices": prices,
+        }
+        write_json(os.path.join(HISTORY_DIR, f"{spec['type']}_{spec['symbol']}.json"), out)
+        print(f"  派生 {spec['symbol']}：{len(dates)} 条 {dates[0]} ~ {dates[-1]}")
+        written.append(spec["symbol"])
+    return written
+
+
 def write_json(path: str, payload, *, pretty: bool = False) -> None:
     tmp = f"{path}.tmp"
     with open(tmp, "w", encoding="utf-8", newline="") as f:
@@ -59,6 +124,9 @@ def write_json(path: str, payload, *, pretty: bool = False) -> None:
 def main() -> int:
     assets = load_asset_defs()
     periods = load_periods()
+
+    print("生成派生序列：")
+    build_derived_series()
 
     index: list[dict] = []
     group_order: list[str] = []

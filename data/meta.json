@@ -1,10 +1,10 @@
 {
   "schema": 2,
-  "generated_at": "2026-11-25T19:11:30+08:00",
+  "generated_at": "2026-11-25T22:27:51+08:00",
   "data_date": "2026-11-25",
   "benchmark": "000300",
-  "total_assets": 74,
-  "available_assets": 74,
+  "total_assets": 81,
+  "available_assets": 81,
   "insufficient_assets": 0,
   "unavailable_assets": 0,
   "groups": [
@@ -26,7 +26,8 @@
     "美股个股",
     "策略ETF",
     "债券指数",
-    "汇率"
+    "汇率",
+    "策略指数"
   ],
   "types": [
     "index",
@@ -36,6 +37,8 @@
     "fx"
   ],
   "sources": [
+    "csindex",
+    "derived",
     "eastmoney",
     "sina",
     "tencent"

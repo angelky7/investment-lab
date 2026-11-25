@@ -277,7 +277,14 @@ async function renderHedgeCheck(token) {
   const host = document.getElementById("corr-result");
   if (!host || token !== tokens.corr) return;
 
-  const wanted = [...CHECK_ASSETS, ...DEFENSIVE_ASSETS, { key: "index:000300", label: "沪深300" }];
+  // 防御性检验用「沪深300全收益指数」（2005 起）做基准，与红利类指数同期；
+  // 黄金检验仍用价格口径的沪深300（2005 起），两者互不影响。
+  const wanted = [
+    ...CHECK_ASSETS,
+    ...DEFENSIVE_ASSETS,
+    { key: "index:000300", label: "沪深300" },
+    { key: "index:H00300", label: "沪深300（全收益，参照）" },
+  ];
   const seen = new Set();
   const refs = wanted
     .filter((item) => {
@@ -350,7 +357,7 @@ async function renderHedgeCheck(token) {
   host.appendChild(card);
 
   // 第二张：红利低波是不是「避险」？
-  const benchSeries = series.find((s) => s.key === "index:000300") || series[0];
+  const benchSeries = series.find((s) => s.key === "index:H00300") || series[0];
   const defensive = buildDefensiveCheck(
     series.filter((s) => DEFENSIVE_ASSETS.some((item) => item.key === s.key)),
     benchSeries
@@ -362,7 +369,7 @@ async function renderHedgeCheck(token) {
   defCard.innerHTML = `
     <div class="chart-head">
       <h3>数据检验：红利低波算「避险」吗？</h3>
-      <span class="hint">「跌得慢」是防御性，「不跟着跌」才是避险——两者常被混为一谈</span>
+      <span class="hint">20 年全收益口径 · 「跌得慢」是防御性，「不跟着跌」才是避险</span>
     </div>
     <p class="section-desc">
       红利低波靠「高股息 + 低波动」选股，长期波动确实比宽基小。但这不等于它会在下跌时不跌。
@@ -1025,8 +1032,9 @@ async function renderStrategy() {
       return;
     }
 
-    // 对照组：100% 沪深300ETF
-    const stockAsset = findAsset(state.assets, "etf:510300");
+    // 对照组：100% 股票。用策略里的第一档（股票档）本身，
+    // 否则拿 510300（2012 上市）做对照会把整个窗口截断到 2012 年。
+    const stockAsset = findAsset(state.assets, strategy.sleeves[0].key);
     const all = sleeveAssets.map((s) => s.asset);
     if (stockAsset && !all.some((a) => a.type === stockAsset.type && a.symbol === stockAsset.symbol)) {
       all.push(stockAsset);
