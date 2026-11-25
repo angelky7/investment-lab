@@ -185,6 +185,8 @@ def main() -> int:
         calendars.setdefault(market, day_union)
 
     gap_assets = 0
+    source_gap_assets = 0
+    suspension_gap_assets = 0
     for info in reports:
         if info.get("status") != "ok":
             continue
@@ -211,6 +213,18 @@ def main() -> int:
         else:
             info["completeness"] = "gaps"
             gap_assets += 1
+        # 成因判定：个股/基金的长缺口是停牌（市场事实）；指数与 ETF 不可能停牌，
+        # 同理源端空洞才是数据问题
+        if gaps["max_run"] >= SUSPICIOUS_RUN:
+            # 只有 A 股的个股与场外基金存在「长时间停牌 / 暂停估值」这种市场事实；
+            # 港股、美股个股与所有指数、ETF 的长期缺口只能是数据源问题。
+            can_suspend = asset.market.value == "CN" and asset.type.value in ("stock", "fund")
+            if can_suspend:
+                info["gap_cause"] = "suspension"
+                suspension_gap_assets += 1
+            else:
+                info["gap_cause"] = "source"
+                source_gap_assets += 1
 
         # 指数与 ETF 不存在停牌，长缺口几乎只能是数据源空洞
         if asset.type.value in ("index", "etf") and gaps["max_run"] >= SUSPICIOUS_RUN:
@@ -261,6 +275,8 @@ def main() -> int:
             "warning_count": len(all_warnings),
             "total_points": sum(r.get("count", 0) for r in reports),
             "assets_with_gaps": gap_assets,
+            "assets_with_suspension_gaps": suspension_gap_assets,
+            "assets_with_source_gaps": source_gap_assets,
             "assets_complete": sum(1 for r in reports if r.get("completeness") == "complete"),
         },
         "errors": all_errors,
@@ -277,8 +293,9 @@ def main() -> int:
     print(f"数据质量：{ok}/{len(reports)} 个资产可用，共 {report['summary']['total_points']} 条记录")
     print(f"最新数据日期：{latest_end or '无'}（距今 {stale_days if stale_days is not None else '?'} 天）")
     print(
-        f"完整性：完全对齐 {report['summary']['assets_complete']} 项，"
-        f"存在明显缺口 {gap_assets} 项"
+        f"完整性：完全对齐 {report['summary']['assets_complete']} 项；"
+        f"停牌型缺口 {suspension_gap_assets} 项（市场事实），"
+        f"疑似源端空洞 {source_gap_assets} 项（数据问题）"
     )
     for market, info in report["calendars"].items():
         print(f"  {market} 交易日历：{info['days']} 天 {info['start']} ~ {info['end']}")

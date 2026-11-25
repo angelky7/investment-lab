@@ -1,10 +1,10 @@
 {
   "schema": 2,
-  "generated_at": "2026-11-25T18:25:22+08:00",
-  "data_date": "2026-11-24",
+  "generated_at": "2026-11-25T18:46:10+08:00",
+  "data_date": "2026-11-25",
   "benchmark": "000300",
-  "total_assets": 57,
-  "available_assets": 57,
+  "total_assets": 71,
+  "available_assets": 71,
   "insufficient_assets": 0,
   "unavailable_assets": 0,
   "groups": [
@@ -20,7 +20,11 @@
     "行业ETF",
     "跨境ETF",
     "大类资产",
-    "场外基金"
+    "场外基金",
+    "债券基金",
+    "公用事业",
+    "美股个股",
+    "策略ETF"
   ],
   "types": [
     "index",

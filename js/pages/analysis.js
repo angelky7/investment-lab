@@ -6,7 +6,14 @@
  */
 
 import { initShell, showError, loadingHtml } from "../core/shell.js";
-import { loadIndex, loadMeta, loadSeries, loadSeriesMany, findAsset } from "../core/store.js";
+import {
+  loadIndex,
+  loadMeta,
+  loadSeries,
+  loadSeriesMany,
+  findAsset,
+  benchmarkFor,
+} from "../core/store.js";
 import {
   alignByDate,
   cumulative,
@@ -30,8 +37,6 @@ import {
   tone,
 } from "../core/format.js";
 
-const BENCHMARK_KEY = "index:000300";
-
 const state = {
   assets: [],
   meta: null,
@@ -43,15 +48,20 @@ const state = {
   compareKeys: [],
 };
 
-let benchPromise = null;
 let seq = 0; // 防止并发渲染交错
+const benchCache = new Map();
 
-function benchmarkSeries(assets) {
-  if (!benchPromise) {
-    const bench = findAsset(assets, BENCHMARK_KEY) || null;
-    benchPromise = bench ? loadSeries(bench).catch(() => null) : Promise.resolve(null);
+/** 按资产所属市场加载对应基准，同市场只请求一次 */
+function benchmarkSeries(assets, asset) {
+  const info = benchmarkFor(asset);
+  if (!benchCache.has(info.key)) {
+    const bench = findAsset(assets, info.key) || null;
+    benchCache.set(
+      info.key,
+      bench ? loadSeries(bench).catch(() => null) : Promise.resolve(null)
+    );
   }
-  return benchPromise;
+  return Promise.all([benchCache.get(info.key), Promise.resolve(info)]);
 }
 
 /** 按日期窗口裁切工具 */
@@ -212,10 +222,11 @@ async function renderSingle() {
   chartsHost.innerHTML = "";
 
   try {
-    const [series, bench] = await Promise.all([
+    const [series, benchResult] = await Promise.all([
       loadSeries(asset),
-      benchmarkSeries(state.assets),
+      benchmarkSeries(state.assets, asset),
     ]);
+    const [bench, benchInfo] = benchResult;
     if (token !== seq) return;
 
     const years = yearsOf(state.range);
@@ -258,11 +269,16 @@ async function renderSingle() {
       return;
     }
 
-    metricsHost.innerHTML = metricsHtml(metricsFor(result, series));
+    const isBenchmark = state.key === benchInfo.key;
+    metricsHost.innerHTML = metricsHtml(metricsFor(result, series, benchInfo.name, isBenchmark));
 
     chartsHost.innerHTML = [
       chartCard("chart-price", "价格走势", `${series.name} · ${rangeLabel(win.dates[0], win.dates[win.dates.length - 1])}`),
-      chartCard("chart-cum", "累计收益对比", benchPrices ? "与沪深300 同窗口对齐" : "无基准数据"),
+      chartCard(
+        "chart-cum",
+        "累计收益对比",
+        benchPrices ? `与${benchInfo.name} 同窗口对齐` : "无基准数据"
+      ),
       chartCard("chart-dd", "回撤曲线", "每个点相对此前最高点"),
       chartCard("chart-roll", "滚动一年年化收益", "看收益的时间稳定性，而不是只有一个数字"),
       chartCard("chart-dist", "日收益分布", "直方图 · 越集中说明日常波动越小"),
@@ -281,7 +297,11 @@ async function renderSingle() {
 
     const cumSeries = [{ name: series.name, values: cumulative(usePrices), color: "var(--il-chart-1)" }];
     if (benchPrices) {
-      cumSeries.push({ name: "沪深300", values: cumulative(benchPrices), color: "var(--il-chart-3)" });
+      cumSeries.push({
+        name: benchInfo.name,
+        values: cumulative(benchPrices),
+        color: "var(--il-chart-3)",
+      });
     }
     lineChart(document.getElementById("chart-cum"), {
       labels: useDates,
@@ -485,7 +505,7 @@ async function main() {
   }
 }
 
-function metricsFor(result, series) {
+function metricsFor(result, series, benchName = "沪深300", isBenchmark = false) {
   const mdd = result.maxDrawdown;
   const recovery = mdd?.recoveryDays;
   const items = [
@@ -525,14 +545,22 @@ function metricsFor(result, series) {
     },
     { label: "最佳单日", value: pct(result.winLoss?.bestDay ?? null), tone: "pos", sub: "单日最大涨幅" },
     { label: "最差单日", value: pct(result.winLoss?.worstDay ?? null), tone: "neg", sub: "单日最大跌幅" },
-    { label: "Beta", value: num(result.beta), sub: "相对沪深300的敏感度" },
+    {
+      label: "Beta",
+      value: isBenchmark ? "1.00" : num(result.beta),
+      sub: isBenchmark ? "该资产本身即基准" : `相对${benchName}的敏感度`,
+    },
     {
       label: "Alpha（年化）",
       value: pct(result.alpha),
       tone: tone(result.alpha),
       sub: "扣除 Beta 解释后的超额",
     },
-    { label: "与基准相关性", value: num(result.correlation), sub: "日收益相关系数" },
+    {
+      label: "与基准相关性",
+      value: isBenchmark ? "1.00" : num(result.correlation),
+      sub: isBenchmark ? "该资产本身即基准" : `与${benchName}的日收益相关系数`,
+    },
     {
       label: "最新价格",
       value: price(series.lastClose ?? series.prices[series.prices.length - 1]),

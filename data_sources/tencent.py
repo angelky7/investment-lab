@@ -249,10 +249,16 @@ class TencentSource:
             else:
                 empty_windows += 1
                 if empty_windows >= 2:
-                    print(f"  [{asset.code}] 连续 {empty_windows} 个窗口无数据，提前结束", flush=True)
-                    if not buckets:
+                    if buckets:
+                        print(f"  [{asset.code}] 连续 {empty_windows} 个窗口无数据，提前结束", flush=True)
+                        break
+                    # 还没有任何数据：可能是「from 年份早于上市年份」的新资产，
+                    # 只要距起始年份还没超过 6 年就继续往后找，避免把晚报资产直接判死。
+                    if year - asset.from_year < 6:
+                        empty_windows = 0
+                    else:
+                        print(f"  [{asset.code}] 连续 {empty_windows} 个窗口无数据，代码可能有误", flush=True)
                         return None
-                    break
             print(f"  [{asset.code}] {year}-{end_year}: {len(window_bars)} 条", flush=True)
             year = end_year + 1
 

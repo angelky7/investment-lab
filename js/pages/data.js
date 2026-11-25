@@ -41,7 +41,6 @@ function renderSummary(meta, quality, assets) {
     .filter(Boolean)
     .sort()[0];
   const summary = quality?.summary || {};
-  const gapAssets = summary.assets_with_gaps ?? 0;
 
   const items = [
     {
@@ -57,8 +56,10 @@ function renderSummary(meta, quality, assets) {
     { label: "记录总数", value: count(totalPoints), sub: `最早追溯至 ${earliest || "—"}` },
     {
       label: "完整对齐",
-      value: `${count(summary.assets_complete ?? 0)} 项`,
-      sub: `存在明显缺口 ${count(gapAssets)} 项`,
+      value: `${count(summary.assets_complete ?? 0)} / ${count(summary.total ?? 0)} 项`,
+      sub: `停牌型缺口 ${count(summary.assets_with_suspension_gaps ?? 0)} · 源端空洞 ${count(
+        summary.assets_with_source_gaps ?? 0
+      )}`,
     },
     {
       label: "校验结果",
@@ -124,7 +125,11 @@ function renderGaps(quality) {
     return;
   }
 
-  const explained = { index: "指数不会停牌 → 数据源空洞", etf: "ETF 不会停牌 → 数据源空洞" };
+  // gap_cause 由 validate.py 依据「市场 + 类型」判定，前端只负责翻译
+  const CAUSE_LABEL = {
+    suspension: "长期停牌（股改 / 重组 / 停牌潮），市场事实",
+    source: "数据源空洞，源端本身没有这段数据",
+  };
 
   host.innerHTML = `
     <div class="card">
@@ -144,9 +149,7 @@ function renderGaps(quality) {
         rows: withGaps.slice(0, 20).map((asset) => {
           const first = (asset.missing_runs || [])[0] || {};
           const ratio = asset.missing_ratio ?? 0;
-          const reason =
-            explained[asset.type] ||
-            (asset.max_missing_run >= 20 ? "长期停牌（如股改、重组、2015 停牌潮）" : "短时停牌或数据源空洞");
+          const reason = CAUSE_LABEL[asset.gap_cause] || "短时停牌或数据源空洞";
           return {
             cells: [
               { html: `<strong>${asset.name}</strong> <span class="muted small">${asset.symbol}</span>` },

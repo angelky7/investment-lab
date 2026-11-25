@@ -13,6 +13,7 @@ import {
   loadPeriods,
   loadSeries,
   loadSeriesMany,
+  benchmarkFor,
 } from "../core/store.js";
 import { alignByDate, sliceLastYears } from "../core/series.js";
 import {
@@ -62,15 +63,17 @@ const state = {
   rebalanceInterval: 63,
 };
 
-let benchPromise = null;
 const tokens = { corr: 0, dca: 0, stress: 0, rebalance: 0 };
 
-function benchmark(assets) {
-  if (!benchPromise) {
-    const asset = findAsset(assets, BENCHMARK_KEY);
-    benchPromise = asset ? loadSeries(asset).catch(() => null) : Promise.resolve(null);
+const benchCache = new Map();
+
+/** 按基准键加载序列，结果缓存（压力测试里会用到三个市场的基准） */
+function benchmark(assets, key = BENCHMARK_KEY) {
+  if (!benchCache.has(key)) {
+    const asset = findAsset(assets, key);
+    benchCache.set(key, asset ? loadSeries(asset).catch(() => null) : Promise.resolve(null));
   }
-  return benchPromise;
+  return benchCache.get(key);
 }
 
 function assetName(assets, key) {
@@ -474,9 +477,25 @@ async function renderStress() {
       weights[s.key] = normalized[i] ?? 0;
     });
 
+    // Beta 按各资产所属市场各自的基准估算：美股用标普500、港股用恒生，
+    // 否则「美股个股相对 A 股」的回归系数没有解释力。
     const betas = {};
-    if (bench) {
-      for (const s of named) betas[s.key] = estimateBeta(s.dates, s.prices, bench.dates, bench.prices);
+    const benchCache = new Map();
+    for (const item of named) {
+      const assetRef = findAsset(state.assets, item.key);
+      const info = benchmarkFor(assetRef || {});
+      if (!benchCache.has(info.key)) {
+        benchCache.set(info.key, await benchmark(state.assets, info.key));
+      }
+      const marketBench = await benchCache.get(info.key);
+      if (marketBench) {
+        betas[item.key] = estimateBeta(
+          item.dates,
+          item.prices,
+          marketBench.dates,
+          marketBench.prices
+        );
+      }
     }
 
     const rows = stressTest(named, scenarios, {

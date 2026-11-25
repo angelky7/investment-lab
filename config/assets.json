@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "notes": "权威资产登记表。data/ 目录下的文件均由 scripts/fetch.py 依据本表生成，请勿手工编辑 data/。from 为最早采集年份（约等于上市/发布年份），用于减少无效请求。",
+  "notes": "权威资产登记表。data/ 目录下的文件均由 scripts/fetch.py 依据本表生成，请勿手工编辑 data/。from 为最早采集年份（约等于上市/发布年份），用于减少无效请求。  美股个股使用腾讯 us.{TICKER}.OQ 代码（纳斯达克）；红利低波系列采用 ETF 序列。",
   "sources": {
     "tencent": {
       "label": "腾讯行情（日K线，前复权）",
@@ -620,18 +620,31 @@
       "symbol": "110011",
       "type": "fund",
       "code": "110011",
-      "name": "易方达中小盘混合",
+      "name": "易方达优质精选混合(QDII)",
       "group": "场外基金",
       "market": "CN",
       "from": 2008,
       "source": "eastmoney",
-      "em_secid": ""
+      "em_secid": "",
+      "note": "原名「易方达中小盘混合」，基金已更名，这里采用官方现名。"
     },
     {
       "symbol": "001512",
       "type": "fund",
       "code": "001512",
-      "name": "易方达中证海外互联ETF联接A",
+      "name": "易方达中债3-5年期国债指数",
+      "group": "债券基金",
+      "market": "CN",
+      "from": 2015,
+      "source": "eastmoney",
+      "em_secid": "",
+      "note": "场外债券指数基金；旧登记表把它错标成了「易方达中证海外互联ETF联接」，已按官方名称更正。"
+    },
+    {
+      "symbol": "161725",
+      "type": "fund",
+      "code": "161725",
+      "name": "招商中证白酒指数(LOF)A",
       "group": "场外基金",
       "market": "CN",
       "from": 2015,
@@ -639,15 +652,161 @@
       "em_secid": ""
     },
     {
-      "symbol": "161725",
+      "symbol": "600900",
+      "type": "stock",
+      "code": "sh600900",
+      "em_secid": "1.600900",
+      "name": "长江电力",
+      "group": "公用事业",
+      "market": "CN",
+      "from": 2005,
+      "source": "tencent",
+      "note": "水电龙头，现金流稳定、分红比例高，常被用来对比“类债券”权益资产。"
+    },
+    {
+      "symbol": "us.AAPL.OQ",
+      "type": "stock",
+      "code": "us.AAPL.OQ",
+      "em_secid": "105.AAPL",
+      "name": "苹果",
+      "group": "美股个股",
+      "market": "US",
+      "from": 2007,
+      "source": "tencent"
+    },
+    {
+      "symbol": "us.MSFT.OQ",
+      "type": "stock",
+      "code": "us.MSFT.OQ",
+      "em_secid": "105.MSFT",
+      "name": "微软",
+      "group": "美股个股",
+      "market": "US",
+      "from": 2007,
+      "source": "tencent"
+    },
+    {
+      "symbol": "us.NVDA.OQ",
+      "type": "stock",
+      "code": "us.NVDA.OQ",
+      "em_secid": "105.NVDA",
+      "name": "英伟达",
+      "group": "美股个股",
+      "market": "US",
+      "from": 2009,
+      "source": "tencent"
+    },
+    {
+      "symbol": "us.GOOGL.OQ",
+      "type": "stock",
+      "code": "us.GOOGL.OQ",
+      "em_secid": "105.GOOGL",
+      "name": "谷歌A（Alphabet）",
+      "group": "美股个股",
+      "market": "US",
+      "from": 2007,
+      "source": "tencent"
+    },
+    {
+      "symbol": "us.AMZN.OQ",
+      "type": "stock",
+      "code": "us.AMZN.OQ",
+      "em_secid": "105.AMZN",
+      "name": "亚马逊",
+      "group": "美股个股",
+      "market": "US",
+      "from": 2007,
+      "source": "tencent"
+    },
+    {
+      "symbol": "us.META.OQ",
+      "type": "stock",
+      "code": "us.META.OQ",
+      "em_secid": "105.META",
+      "name": "Meta Platforms",
+      "group": "美股个股",
+      "market": "US",
+      "from": 2012,
+      "source": "tencent"
+    },
+    {
+      "symbol": "us.TSLA.OQ",
+      "type": "stock",
+      "code": "us.TSLA.OQ",
+      "em_secid": "105.TSLA",
+      "name": "特斯拉",
+      "group": "美股个股",
+      "market": "US",
+      "from": 2011,
+      "source": "tencent"
+    },
+    {
+      "symbol": "512890",
+      "type": "etf",
+      "code": "sh512890",
+      "em_secid": "1.512890",
+      "name": "红利低波ETF（华泰柏瑞）",
+      "group": "策略ETF",
+      "market": "CN",
+      "from": 2019,
+      "source": "tencent",
+      "note": "跟踪中证红利低波动指数。该指数的点位接口对公开行情不可用，因此采用可投资的 ETF 序列。"
+    },
+    {
+      "symbol": "515100",
+      "type": "etf",
+      "code": "sh515100",
+      "em_secid": "1.515100",
+      "name": "红利低波100ETF（景顺长城）",
+      "group": "策略ETF",
+      "market": "CN",
+      "from": 2020,
+      "source": "tencent",
+      "note": "跟踪中证红利低波动100指数；同样用 ETF 序列代替不可得的指数点位。"
+    },
+    {
+      "symbol": "004102",
       "type": "fund",
-      "code": "161725",
-      "name": "招商中证白酒指数（LOF）",
+      "code": "004102",
+      "em_secid": "",
+      "name": "中信保诚稳悦债券A",
+      "group": "债券基金",
+      "market": "CN",
+      "from": 2017,
+      "source": "eastmoney"
+    },
+    {
+      "symbol": "016662",
+      "type": "fund",
+      "code": "016662",
+      "em_secid": "",
+      "name": "平安元福短债发起式A",
+      "group": "债券基金",
+      "market": "CN",
+      "from": 2022,
+      "source": "eastmoney"
+    },
+    {
+      "symbol": "011062",
+      "type": "fund",
+      "code": "011062",
+      "em_secid": "",
+      "name": "广发中债7-10年国开债指数E",
+      "group": "债券基金",
+      "market": "CN",
+      "from": 2021,
+      "source": "eastmoney"
+    },
+    {
+      "symbol": "008163",
+      "type": "fund",
+      "code": "008163",
+      "em_secid": "",
+      "name": "南方标普红利低波50ETF联接A",
       "group": "场外基金",
       "market": "CN",
-      "from": 2015,
-      "source": "eastmoney",
-      "em_secid": ""
+      "from": 2020,
+      "source": "eastmoney"
     }
   ]
 }

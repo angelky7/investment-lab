@@ -13,6 +13,21 @@
 import { scaleDisplay } from "./series.js";
 
 const BASE = "data";
+
+/**
+ * 各市场的默认基准。
+ * 用 A 股基准去算美股个股的 Beta / Alpha 没有意义（交易日历与驱动因素都不同），
+ * 所以按资产所属市场选择：A 股→沪深300，港股→恒生指数，美股→标普500。
+ */
+export const BENCHMARK_BY_MARKET = {
+  CN: { key: "index:000300", name: "沪深300" },
+  HK: { key: "index:hkHSI", name: "恒生指数" },
+  US: { key: "index:us.INX", name: "标普500" },
+};
+
+export function benchmarkFor(asset) {
+  return BENCHMARK_BY_MARKET[asset?.market] || BENCHMARK_BY_MARKET.CN;
+}
 const indexCache = new Map();
 
 let assetsPromise = null;

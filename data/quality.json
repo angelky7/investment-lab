@@ -1,8 +1,8 @@
 {
   "schema": 3,
-  "generated_at": "2026-11-25T18:25:22+08:00",
-  "data_date": "2026-11-24",
-  "stale_days": 1,
+  "generated_at": "2026-11-25T18:47:02+08:00",
+  "data_date": "2026-11-25",
+  "stale_days": 0,
   "calendars": {
     "CN": {
       "days": 5316,
@@ -21,14 +21,16 @@
     }
   },
   "summary": {
-    "total": 57,
-    "files_ok": 57,
+    "total": 71,
+    "files_ok": 71,
     "missing": 0,
     "error_count": 0,
-    "warning_count": 18,
-    "total_points": 216300,
-    "assets_with_gaps": 1,
-    "assets_complete": 37
+    "warning_count": 20,
+    "total_points": 262875,
+    "assets_with_gaps": 2,
+    "assets_with_suspension_gaps": 17,
+    "assets_with_source_gaps": 3,
+    "assets_complete": 47
   },
   "errors": [],
   "warnings": [
@@ -49,7 +51,9 @@
     "隆基绿能（stock 601012）: 连续缺 18 个交易日（2013-12-17 ~ 2014-01-10），多为停牌或数据源空洞",
     "海螺水泥（stock 600585）: 连续缺 14 个交易日（2006-02-10 ~ 2006-03-01），多为停牌或数据源空洞",
     "恒瑞医药（stock 600276）: 连续缺 17 个交易日（2006-05-26 ~ 2006-06-19），多为停牌或数据源空洞",
-    "万科A（stock 000002）: 连续缺 130 个交易日（2015-12-21 ~ 2016-07-01），多为停牌或数据源空洞"
+    "万科A（stock 000002）: 连续缺 130 个交易日（2015-12-21 ~ 2016-07-01），多为停牌或数据源空洞",
+    "长江电力（stock 600900）: 连续缺 251 个交易日（2008-05-08 ~ 2009-05-15），多为停牌或数据源空洞",
+    "特斯拉（stock us.TSLA.OQ）: 连续缺 27 个交易日（2011-02-15 ~ 2011-03-24），多为停牌或数据源空洞"
   ],
   "assets": [
     {
@@ -222,7 +226,8 @@
           "days": 10
         }
       ],
-      "completeness": "complete"
+      "completeness": "complete",
+      "gap_cause": "source"
     },
     {
       "symbol": "us.INX",
@@ -280,7 +285,8 @@
           "days": 1
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "source"
     },
     {
       "symbol": "000510",
@@ -354,7 +360,8 @@
           "days": 1
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "600036",
@@ -396,7 +403,8 @@
           "days": 5
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "601398",
@@ -480,7 +488,8 @@
           "days": 9
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "300059",
@@ -522,7 +531,8 @@
           "days": 1
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "000001",
@@ -564,7 +574,8 @@
           "days": 9
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "600519",
@@ -606,7 +617,8 @@
           "days": 1
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "000858",
@@ -648,7 +660,8 @@
           "days": 4
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "002714",
@@ -675,7 +688,8 @@
           "days": 10
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "601888",
@@ -717,7 +731,8 @@
           "days": 1
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "300750",
@@ -775,7 +790,8 @@
           "days": 1
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "002230",
@@ -817,7 +833,8 @@
           "days": 3
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "688981",
@@ -881,7 +898,8 @@
           "days": 4
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "600031",
@@ -1002,7 +1020,8 @@
           "days": 1
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "600585",
@@ -1044,7 +1063,8 @@
           "days": 2
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "600276",
@@ -1086,7 +1106,8 @@
           "days": 1
         }
       ],
-      "completeness": "minor"
+      "completeness": "minor",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "300760",
@@ -1144,7 +1165,8 @@
           "days": 3
         }
       ],
-      "completeness": "gaps"
+      "completeness": "gaps",
+      "gap_cause": "suspension"
     },
     {
       "symbol": "510300",
@@ -1489,7 +1511,7 @@
     },
     {
       "symbol": "110011",
-      "name": "易方达中小盘混合",
+      "name": "易方达优质精选混合(QDII)",
       "type": "fund",
       "group": "场外基金",
       "market": "CN",
@@ -1531,9 +1553,9 @@
     },
     {
       "symbol": "001512",
-      "name": "易方达中证海外互联ETF联接A",
+      "name": "易方达中债3-5年期国债指数",
       "type": "fund",
-      "group": "场外基金",
+      "group": "债券基金",
       "market": "CN",
       "status": "ok",
       "count": 2730,
@@ -1573,7 +1595,7 @@
     },
     {
       "symbol": "161725",
-      "name": "招商中证白酒指数（LOF）",
+      "name": "招商中证白酒指数(LOF)A",
       "type": "fund",
       "group": "场外基金",
       "market": "CN",
@@ -1597,6 +1619,419 @@
         }
       ],
       "completeness": "complete"
+    },
+    {
+      "symbol": "600900",
+      "name": "长江电力",
+      "type": "stock",
+      "group": "公用事业",
+      "market": "CN",
+      "status": "ok",
+      "count": 4963,
+      "start": "2004-09-21",
+      "end": "2026-11-25",
+      "missing_trading_days": 423,
+      "missing_ratio": 0.07957,
+      "max_missing_run": 251,
+      "missing_runs": [
+        {
+          "from": "2008-05-08",
+          "to": "2009-05-15",
+          "days": 251
+        },
+        {
+          "from": "2015-06-15",
+          "to": "2015-11-13",
+          "days": 102
+        },
+        {
+          "from": "2005-07-22",
+          "to": "2005-08-12",
+          "days": 16
+        },
+        {
+          "from": "2005-06-20",
+          "to": "2005-07-04",
+          "days": 11
+        },
+        {
+          "from": "2021-11-29",
+          "to": "2021-12-10",
+          "days": 10
+        }
+      ],
+      "completeness": "gaps",
+      "gap_cause": "suspension"
+    },
+    {
+      "symbol": "us.AAPL.OQ",
+      "name": "苹果",
+      "type": "stock",
+      "group": "美股个股",
+      "market": "US",
+      "status": "ok",
+      "count": 4954,
+      "start": "2007-03-19",
+      "end": "2026-11-24",
+      "missing_trading_days": 2,
+      "missing_ratio": 0.0004,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2012-06-29",
+          "to": "2012-06-29",
+          "days": 1
+        },
+        {
+          "from": "2014-07-16",
+          "to": "2014-07-16",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "us.MSFT.OQ",
+      "name": "微软",
+      "type": "stock",
+      "group": "美股个股",
+      "market": "US",
+      "status": "ok",
+      "count": 4954,
+      "start": "2007-03-19",
+      "end": "2026-11-24",
+      "missing_trading_days": 2,
+      "missing_ratio": 0.0004,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2012-06-29",
+          "to": "2012-06-29",
+          "days": 1
+        },
+        {
+          "from": "2014-07-16",
+          "to": "2014-07-16",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "us.NVDA.OQ",
+      "name": "英伟达",
+      "type": "stock",
+      "group": "美股个股",
+      "market": "US",
+      "status": "ok",
+      "count": 4319,
+      "start": "2009-09-16",
+      "end": "2026-11-24",
+      "missing_trading_days": 6,
+      "missing_ratio": 0.00139,
+      "max_missing_run": 2,
+      "missing_runs": [
+        {
+          "from": "2010-02-02",
+          "to": "2010-02-03",
+          "days": 2
+        },
+        {
+          "from": "2010-04-15",
+          "to": "2010-04-16",
+          "days": 2
+        },
+        {
+          "from": "2012-06-29",
+          "to": "2012-06-29",
+          "days": 1
+        },
+        {
+          "from": "2014-07-16",
+          "to": "2014-07-16",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "us.GOOGL.OQ",
+      "name": "谷歌A（Alphabet）",
+      "type": "stock",
+      "group": "美股个股",
+      "market": "US",
+      "status": "ok",
+      "count": 4954,
+      "start": "2007-03-19",
+      "end": "2026-11-24",
+      "missing_trading_days": 2,
+      "missing_ratio": 0.0004,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2012-06-29",
+          "to": "2012-06-29",
+          "days": 1
+        },
+        {
+          "from": "2014-07-16",
+          "to": "2014-07-16",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "us.AMZN.OQ",
+      "name": "亚马逊",
+      "type": "stock",
+      "group": "美股个股",
+      "market": "US",
+      "status": "ok",
+      "count": 4954,
+      "start": "2007-03-19",
+      "end": "2026-11-24",
+      "missing_trading_days": 2,
+      "missing_ratio": 0.0004,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2012-06-29",
+          "to": "2012-06-29",
+          "days": 1
+        },
+        {
+          "from": "2014-07-16",
+          "to": "2014-07-16",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "us.META.OQ",
+      "name": "Meta Platforms",
+      "type": "stock",
+      "group": "美股个股",
+      "market": "US",
+      "status": "ok",
+      "count": 3649,
+      "start": "2012-05-18",
+      "end": "2026-11-24",
+      "missing_trading_days": 2,
+      "missing_ratio": 0.00055,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2012-06-29",
+          "to": "2012-06-29",
+          "days": 1
+        },
+        {
+          "from": "2014-07-16",
+          "to": "2014-07-16",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "us.TSLA.OQ",
+      "name": "特斯拉",
+      "type": "stock",
+      "group": "美股个股",
+      "market": "US",
+      "status": "ok",
+      "count": 3953,
+      "start": "2011-01-26",
+      "end": "2026-11-24",
+      "missing_trading_days": 29,
+      "missing_ratio": 0.00728,
+      "max_missing_run": 27,
+      "missing_runs": [
+        {
+          "from": "2011-02-15",
+          "to": "2011-03-24",
+          "days": 27
+        },
+        {
+          "from": "2012-06-29",
+          "to": "2012-06-29",
+          "days": 1
+        },
+        {
+          "from": "2014-07-16",
+          "to": "2014-07-16",
+          "days": 1
+        }
+      ],
+      "completeness": "minor",
+      "gap_cause": "source"
+    },
+    {
+      "symbol": "512890",
+      "name": "红利低波ETF（华泰柏瑞）",
+      "type": "etf",
+      "group": "策略ETF",
+      "market": "CN",
+      "status": "ok",
+      "count": 1902,
+      "start": "2019-01-18",
+      "end": "2026-11-25",
+      "missing_trading_days": 1,
+      "missing_ratio": 0.00053,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2021-10-22",
+          "to": "2021-10-22",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "515100",
+      "name": "红利低波100ETF（景顺长城）",
+      "type": "etf",
+      "group": "策略ETF",
+      "market": "CN",
+      "status": "ok",
+      "count": 1552,
+      "start": "2020-07-03",
+      "end": "2026-11-25",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "004102",
+      "name": "中信保诚稳悦债券A",
+      "type": "fund",
+      "group": "债券基金",
+      "market": "CN",
+      "status": "ok",
+      "count": 2379,
+      "start": "2017-02-10",
+      "end": "2026-11-24",
+      "missing_trading_days": 6,
+      "missing_ratio": 0.00252,
+      "max_missing_run": 4,
+      "missing_runs": [
+        {
+          "from": "2017-02-13",
+          "to": "2017-02-16",
+          "days": 4
+        },
+        {
+          "from": "2017-02-20",
+          "to": "2017-02-21",
+          "days": 2
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "016662",
+      "name": "平安元福短债发起式A",
+      "type": "fund",
+      "group": "债券基金",
+      "market": "CN",
+      "status": "ok",
+      "count": 968,
+      "start": "2022-11-08",
+      "end": "2026-11-24",
+      "missing_trading_days": 16,
+      "missing_ratio": 0.01631,
+      "max_missing_run": 4,
+      "missing_runs": [
+        {
+          "from": "2022-11-14",
+          "to": "2022-11-17",
+          "days": 4
+        },
+        {
+          "from": "2022-11-21",
+          "to": "2022-11-24",
+          "days": 4
+        },
+        {
+          "from": "2022-11-28",
+          "to": "2022-12-01",
+          "days": 4
+        },
+        {
+          "from": "2022-11-09",
+          "to": "2022-11-10",
+          "days": 2
+        },
+        {
+          "from": "2022-12-05",
+          "to": "2022-12-06",
+          "days": 2
+        }
+      ],
+      "completeness": "minor"
+    },
+    {
+      "symbol": "011062",
+      "name": "广发中债7-10年国开债指数E",
+      "type": "fund",
+      "group": "债券基金",
+      "market": "CN",
+      "status": "ok",
+      "count": 1428,
+      "start": "2021-01-06",
+      "end": "2026-11-24",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "008163",
+      "name": "南方标普红利低波50ETF联接A",
+      "type": "fund",
+      "group": "场外基金",
+      "market": "CN",
+      "status": "ok",
+      "count": 1646,
+      "start": "2020-01-21",
+      "end": "2026-11-24",
+      "missing_trading_days": 14,
+      "missing_ratio": 0.00845,
+      "max_missing_run": 4,
+      "missing_runs": [
+        {
+          "from": "2020-02-03",
+          "to": "2020-02-06",
+          "days": 4
+        },
+        {
+          "from": "2020-02-10",
+          "to": "2020-02-13",
+          "days": 4
+        },
+        {
+          "from": "2020-02-17",
+          "to": "2020-02-20",
+          "days": 4
+        },
+        {
+          "from": "2020-01-22",
+          "to": "2020-01-22",
+          "days": 1
+        },
+        {
+          "from": "2020-02-24",
+          "to": "2020-02-24",
+          "days": 1
+        }
+      ],
+      "completeness": "minor"
     }
   ]
 }
