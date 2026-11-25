@@ -139,7 +139,7 @@ class CsindexSource:
             group=asset.group,
             currency="CNY",
             source=self.name,
-            price_basis=PriceBasis.INDEX_TOTAL_RETURN.value,
+            price_basis=asset.price_basis or PriceBasis.INDEX_TOTAL_RETURN.value,
             last_close=bars[-1].price,
             bars=bars,
         )

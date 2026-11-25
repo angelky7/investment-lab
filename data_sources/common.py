@@ -125,6 +125,9 @@ class AssetDef:
     from_date: str = ""
     em_secid: str = ""  # 东方财富 secid，如 1.600519 / 0.159915 / 100.SPX
     note: str = ""  # 数据口径说明（例如「仅采用正式发布后的历史」）
+    # 价格口径。留空则由数据源决定；中证指数的价格版与全收益版必须显式写清，
+    # 否则「不含分红」的指数会被误标成「含分红再投资」，直接误导长期收益判断。
+    price_basis: str = ""
 
 
 class DataSource(ABC):
