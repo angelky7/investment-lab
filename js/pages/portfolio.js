@@ -78,6 +78,16 @@ function assetName(assets, key) {
   return asset ? asset.name : key;
 }
 
+/**
+ * 等权分配，并把 100 的余数补给前几项，保证合计恰好 100（避免 33+33+33=99 的尴尬）。
+ */
+function evenWeights(count) {
+  if (count <= 0) return [];
+  const base = Math.floor(100 / count);
+  const remainder = 100 - base * count;
+  return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
+}
+
 function normalizeWeights(weights) {
   const total = weights.reduce((a, b) => a + b, 0);
   if (!total) return weights.map(() => 1 / Math.max(1, weights.length));
@@ -554,7 +564,7 @@ function avgPortfolio(rows) {
 function scenarioBars(row, named, weights) {
   const items = [];
   items.push({
-    name: "沪深300",
+    name: "基准 沪深300",
     value: row.benchmarkReturn,
     strong: false,
   });
@@ -829,7 +839,7 @@ function buildStressWeights() {
     key,
     name: assetName(state.assets, key),
   }));
-  state.stressWeights = keys.map(() => Math.round(100 / Math.max(1, keys.length)));
+  state.stressWeights = evenWeights(keys.length);
   weightRows(host, {
     keys,
     weights: state.stressWeights,
@@ -846,8 +856,8 @@ function buildRebalanceWeights() {
     key,
     name: assetName(state.assets, key),
   }));
-  if (keys.length === 3) state.rebalanceWeights = [50, 30, 20];
-  else state.rebalanceWeights = keys.map(() => Math.round(100 / Math.max(1, keys.length)));
+  state.rebalanceWeights =
+    keys.length === 3 ? [50, 30, 20] : evenWeights(keys.length);
 
   weightRows(host, {
     keys,

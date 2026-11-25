@@ -30,6 +30,11 @@
     "data:fetch:incremental": "python scripts/fetch.py --mode incremental",
     "data:build": "python scripts/build.py",
     "data:validate": "python scripts/validate.py",
-    "data:refresh": "python scripts/fetch.py --mode incremental && python scripts/build.py && python scripts/validate.py"
+    "data:refresh": "python scripts/fetch.py --mode incremental && python scripts/build.py && python scripts/validate.py",
+    "test:e2e": "node tests/e2e/smoke.mjs",
+    "test:all:with-e2e": "npm run test:all && npm run test:e2e"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.1"
   }
 }

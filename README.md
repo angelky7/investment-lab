@@ -195,9 +195,11 @@ python scripts/check_links.py    # 静态引用与 ES 模块导入检查
 | 前端 | `node --test` | 序列对齐、指标公式、组合引擎、XIRR、压力测试、格式化 |
 | 数据管线 | `python -m unittest discover -s tests -p "test_*.py"` | K 线/净值解析、去重排序、校验规则、登记表一致性 |
 | 静态检查 | `python scripts/check_links.py` | 页面引用是否存在、ES 模块导入名是否存在 |
-| 端到端 | `node _pw/smoke.mjs`（本地） | 无头 Chrome 逐页加载与切换所有子页签，零控制台报错 |
+| 端到端 | `npm run test:e2e` | 无头 Chrome 逐页加载、切换所有子页签、截图，要求零控制台报错 |
 
-测试重点放在「会悄悄算错」的地方：日期对齐、分红口径、年化折算、分期投入的年化口径。
+端到端脚本需要本机有 Chrome（`npx playwright install chromium` 亦可），
+它复用系统浏览器，不额外下载几百 MB。测试重点放在「会悄悄算错」的地方：
+日期对齐、分红口径、年化折算、分期投入的年化口径。
 
 ---
 
