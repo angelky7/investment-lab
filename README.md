@@ -11,6 +11,18 @@
 - 计算全部在浏览器里完成，公式开源，任何一个数字都能用 Excel 或 Python 复算；
 - 数据每天由 GitHub Actions 自动更新并部署。
 
+![首页](docs/screenshots/home.png)
+
+<sub>首页：四项资产的最新真实数字，以及七个入口。</sub>
+
+| 资产分析（深色主题） | 历史时期复盘 |
+|---|---|
+| ![资产分析](docs/screenshots/analysis.png) | ![历史时期](docs/screenshots/history.png) |
+
+![组合压力测试](docs/screenshots/portfolio-stress.png)
+
+<sub>压力测试用真实历史区间的资产跌幅回答「如果那段行情重演，我现在这个组合会怎样」。</sub>
+
 ---
 
 ## 目录
