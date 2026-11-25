@@ -108,7 +108,7 @@ def main() -> int:
         index.append(entry)
 
     # assets.json 保持稳定顺序：先按分组顺序，再按类型，最后按代码
-    type_order = {"index": 0, "etf": 1, "stock": 2, "fund": 3}
+    type_order = {"index": 0, "etf": 1, "stock": 2, "fund": 3, "fx": 4}
     index.sort(
         key=lambda e: (
             group_order.index(e["group"]),
@@ -128,7 +128,7 @@ def main() -> int:
         "insufficient_assets": status_counter["insufficient"],
         "unavailable_assets": status_counter["unavailable"],
         "groups": group_order,
-        "types": ["index", "etf", "stock", "fund"],
+        "types": ["index", "etf", "stock", "fund", "fx"],
         "sources": sorted({a.source for a in assets}),
         "min_ok_points": MIN_OK_POINTS,
         "period_count": len(periods.get("periods", [])),

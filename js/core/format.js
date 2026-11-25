@@ -97,6 +97,7 @@ export const TYPE_LABEL = {
   etf: "ETF",
   stock: "股票",
   fund: "基金",
+  fx: "汇率",
 };
 
 export function typeLabel(type) {

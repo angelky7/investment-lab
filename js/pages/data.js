@@ -14,7 +14,7 @@ import { metricsHtml, notice, tableHtml } from "../ui/cards.js";
 import { count, dateLabel, num, pct } from "../core/format.js";
 
 const MARKET_LABEL = { CN: "A 股", HK: "港股", US: "美股" };
-const TYPE_LABEL = { index: "指数", etf: "ETF", stock: "股票", fund: "基金" };
+const TYPE_LABEL = { index: "指数", etf: "ETF", stock: "股票", fund: "基金", fx: "汇率" };
 
 async function loadQuality() {
   const resp = await fetch(`data/quality.json?v=${Date.now().toString(36)}`, { cache: "no-store" });

@@ -6,6 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  bandRebalance,
   correlationMatrix,
   dcaBacktest,
   estimateBeta,
@@ -191,4 +192,59 @@ test("stressTest 对缺数据的资产用 beta 估算并标注", () => {
   const late = rows[0].assets.find((a) => a.key === "late");
   assert.equal(late.estimated, true);
   assert.ok(Math.abs(late.return - 1.5 * -0.3) < 1e-9);
+});
+const GRID_DATES = (n, startYear = 2020) =>
+  Array.from({ length: n }, (_, i) => {
+    const d = new Date(Date.UTC(startYear, 0, 1) + i * 86400000);
+    return d.toISOString().slice(0, 10);
+  });
+
+test("bandRebalance 在单档暴涨越过阈值时再平衡", () => {
+  const dates = GRID_DATES(300);
+  // 四档各 25%，其中 a 每天涨 1%，其余不动 → a 的权重很快越过 35%
+  const a = dates.map((_, i) => 100 * Math.pow(1.01, i));
+  const flat = dates.map(() => 100);
+  const result = bandRebalance(
+    dates,
+    { a, b: flat, c: flat, d: flat },
+    [0.25, 0.25, 0.25, 0.25],
+    { lower: 0.15, upper: 0.35 }
+  );
+
+  assert.ok(result);
+  assert.ok(result.rebalances >= 2, `应多次触发再平衡，实际 ${result.rebalances}`);
+  assert.equal(result.events.length, result.rebalances);
+  // 每次再平衡的触发档都确实越界了
+  for (const event of result.events) {
+    assert.ok(event.weight > 0.35 || event.weight < 0.15, `触发时权重 ${event.weight} 应越界`);
+  }
+  // 再平衡把 a 的权重拉回目标附近：没有再平衡的话它会远高于 35%
+  const driftWeight = (() => {
+    const units = [0.25, 0.25, 0.25, 0.25].map((w) => (10000 * w) / 100);
+    const prices = [a[a.length - 1], 100, 100, 100];
+    const values = units.map((u, i) => u * prices[i]);
+    return values[0] / values.reduce((x, y) => x + y, 0);
+  })();
+  const finalWeight = result.sleeveFinal.a / result.finalValue;
+  assert.ok(finalWeight < driftWeight, `再平衡后权重 ${finalWeight} 应低于不调整的 ${driftWeight}`);
+});
+
+test("bandRebalance 在窄幅波动时不触发", () => {
+  const dates = GRID_DATES(200, 2021);
+  // 四档都在 100 附近小幅震荡，权重始终在 25%±几个百分点以内
+  const wave = (phase) => dates.map((_, i) => 100 + Math.sin(i / 12 + phase) * 2);
+  const result = bandRebalance(
+    dates,
+    { a: wave(0), b: wave(1.5), c: wave(3), d: wave(4.5) },
+    [0.25, 0.25, 0.25, 0.25],
+    { lower: 0.15, upper: 0.35 }
+  );
+  assert.ok(result);
+  assert.equal(result.rebalances, 0);
+});
+
+test("bandRebalance 拒绝不合法输入", () => {
+  const dates = ["2024-01-01", "2024-01-02", "2024-01-03"];
+  assert.equal(bandRebalance(dates, { a: [1, 2, 3] }, [1], {}), null);
+  assert.equal(bandRebalance(dates, { a: [1, 2, 3], b: [1, 2, 3] }, [0.5, 0.4], {}), null);
 });

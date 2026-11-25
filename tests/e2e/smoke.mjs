@@ -57,7 +57,11 @@ const CASES = [
     tabs: null,
     label: "analysis-compare",
   },
-  { path: "portfolio.html", tabs: "#mode-tabs", values: ["corr", "dca", "stress", "rebalance"] },
+  {
+    path: "portfolio.html",
+    tabs: "#mode-tabs",
+    values: ["corr", "dca", "stress", "rebalance", "strategy"],
+  },
   { path: "history.html", tabs: null },
   { path: "calculator.html", tabs: "#calc-tabs", values: ["compound", "dca", "drawdown", "rebalance"] },
   { path: "data.html", tabs: null },

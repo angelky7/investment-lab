@@ -270,14 +270,17 @@ async function renderSingle() {
     }
 
     const isBenchmark = state.key === benchInfo.key;
-    metricsHost.innerHTML = metricsHtml(metricsFor(result, series, benchInfo.name, isBenchmark));
+    const isFx = asset.type === "fx";
+    metricsHost.innerHTML = metricsHtml(
+      metricsFor(result, series, benchInfo.name, isBenchmark, isFx)
+    );
 
     chartsHost.innerHTML = [
       chartCard("chart-price", "价格走势", `${series.name} · ${rangeLabel(win.dates[0], win.dates[win.dates.length - 1])}`),
       chartCard(
         "chart-cum",
-        "累计收益对比",
-        benchPrices ? `与${benchInfo.name} 同窗口对齐` : "无基准数据"
+        isFx ? "汇率走势（累计变化）" : "累计收益对比",
+        isFx ? "汇改前后的台阶式跳变是真实历史" : benchPrices ? `与${benchInfo.name} 同窗口对齐` : "无基准数据"
       ),
       chartCard("chart-dd", "回撤曲线", "每个点相对此前最高点"),
       chartCard("chart-roll", "滚动一年年化收益", "看收益的时间稳定性，而不是只有一个数字"),
@@ -296,7 +299,7 @@ async function renderSingle() {
     });
 
     const cumSeries = [{ name: series.name, values: cumulative(usePrices), color: "var(--il-chart-1)" }];
-    if (benchPrices) {
+    if (benchPrices && !isFx) {
       cumSeries.push({
         name: benchInfo.name,
         values: cumulative(benchPrices),
@@ -505,7 +508,7 @@ async function main() {
   }
 }
 
-function metricsFor(result, series, benchName = "沪深300", isBenchmark = false) {
+function metricsFor(result, series, benchName = "沪深300", isBenchmark = false, isFx = false) {
   const mdd = result.maxDrawdown;
   const recovery = mdd?.recoveryDays;
   const items = [
@@ -547,8 +550,8 @@ function metricsFor(result, series, benchName = "沪深300", isBenchmark = false
     { label: "最差单日", value: pct(result.winLoss?.worstDay ?? null), tone: "neg", sub: "单日最大跌幅" },
     {
       label: "Beta",
-      value: isBenchmark ? "1.00" : num(result.beta),
-      sub: isBenchmark ? "该资产本身即基准" : `相对${benchName}的敏感度`,
+      value: isFx ? "—" : isBenchmark ? "1.00" : num(result.beta),
+      sub: isFx ? "汇率不适用相对基准指标" : isBenchmark ? "该资产本身即基准" : `相对${benchName}的敏感度`,
     },
     {
       label: "Alpha（年化）",
@@ -558,8 +561,8 @@ function metricsFor(result, series, benchName = "沪深300", isBenchmark = false
     },
     {
       label: "与基准相关性",
-      value: isBenchmark ? "1.00" : num(result.correlation),
-      sub: isBenchmark ? "该资产本身即基准" : `与${benchName}的日收益相关系数`,
+      value: isFx ? "—" : isBenchmark ? "1.00" : num(result.correlation),
+      sub: isFx ? "汇率不适用相对基准指标" : isBenchmark ? "该资产本身即基准" : `与${benchName}的日收益相关系数`,
     },
     {
       label: "最新价格",

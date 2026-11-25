@@ -807,6 +807,42 @@
       "market": "CN",
       "from": 2020,
       "source": "eastmoney"
+    },
+    {
+      "symbol": "000012",
+      "type": "index",
+      "code": "sh000012",
+      "em_secid": "1.000012",
+      "name": "上证国债指数",
+      "group": "债券指数",
+      "market": "CN",
+      "from": 2003,
+      "source": "tencent",
+      "note": "2003 年起的债券指数，用来给「债券」这一档提供足够长的历史。"
+    },
+    {
+      "symbol": "us.GLD.AM",
+      "type": "etf",
+      "code": "us.GLD.AM",
+      "em_secid": "106.GLD",
+      "name": "黄金ETF-SPDR（GLD）",
+      "group": "大类资产",
+      "market": "US",
+      "from": 2004,
+      "source": "tencent",
+      "note": "2004-11 上市的美元计价黄金 ETF；人民币投资者请对照 518880 与美元兑人民币汇率。"
+    },
+    {
+      "symbol": "USDCNY",
+      "type": "fx",
+      "code": "fx_susdcny",
+      "em_secid": "",
+      "name": "美元兑人民币（在岸）",
+      "group": "汇率",
+      "market": "CN",
+      "from": 1994,
+      "source": "sina",
+      "note": "1994 年起的在岸汇率日 K（新浪财经）；汇改前后的台阶式跳变是真实历史，不是数据错误。"
     }
   ]
 }

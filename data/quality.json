@@ -1,6 +1,6 @@
 {
   "schema": 3,
-  "generated_at": "2026-11-25T18:47:02+08:00",
+  "generated_at": "2026-11-25T19:11:31+08:00",
   "data_date": "2026-11-25",
   "stale_days": 0,
   "calendars": {
@@ -21,16 +21,16 @@
     }
   },
   "summary": {
-    "total": 71,
-    "files_ok": 71,
+    "total": 74,
+    "files_ok": 74,
     "missing": 0,
     "error_count": 0,
     "warning_count": 20,
-    "total_points": 262875,
+    "total_points": 282247,
     "assets_with_gaps": 2,
     "assets_with_suspension_gaps": 17,
     "assets_with_source_gaps": 3,
-    "assets_complete": 47
+    "assets_complete": 49
   },
   "errors": [],
   "warnings": [
@@ -2029,6 +2029,86 @@
           "from": "2020-02-24",
           "to": "2020-02-24",
           "days": 1
+        }
+      ],
+      "completeness": "minor"
+    },
+    {
+      "symbol": "000012",
+      "name": "上证国债指数",
+      "type": "index",
+      "group": "债券指数",
+      "market": "CN",
+      "status": "ok",
+      "count": 5771,
+      "start": "2003-02-24",
+      "end": "2026-11-25",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "us.GLD.AM",
+      "name": "黄金ETF-SPDR（GLD）",
+      "type": "etf",
+      "group": "大类资产",
+      "market": "US",
+      "status": "ok",
+      "count": 5538,
+      "start": "2004-11-18",
+      "end": "2026-11-24",
+      "missing_trading_days": 1,
+      "missing_ratio": 0.00018,
+      "max_missing_run": 1,
+      "missing_runs": [
+        {
+          "from": "2015-04-09",
+          "to": "2015-04-09",
+          "days": 1
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "USDCNY",
+      "name": "美元兑人民币（在岸）",
+      "type": "fx",
+      "group": "汇率",
+      "market": "CN",
+      "status": "ok",
+      "count": 8063,
+      "start": "1994-08-30",
+      "end": "2026-11-25",
+      "missing_trading_days": 29,
+      "missing_ratio": 0.00546,
+      "max_missing_run": 5,
+      "missing_runs": [
+        {
+          "from": "2006-01-11",
+          "to": "2006-01-17",
+          "days": 5
+        },
+        {
+          "from": "2005-01-04",
+          "to": "2005-01-06",
+          "days": 3
+        },
+        {
+          "from": "2006-01-19",
+          "to": "2006-01-20",
+          "days": 2
+        },
+        {
+          "from": "2017-03-02",
+          "to": "2017-03-03",
+          "days": 2
+        },
+        {
+          "from": "2017-03-07",
+          "to": "2017-03-08",
+          "days": 2
         }
       ],
       "completeness": "minor"

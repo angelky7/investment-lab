@@ -188,6 +188,54 @@ class TestEastmoneyParser(unittest.TestCase):
         self.assertEqual(secid_for(us), "100.SPX")
 
 
+FUND_FX_SAMPLE = (
+    '/*<script>location.href=\'//sina.com\';</script>*/\n'
+    'var _=fx_susdcny("'
+    "2005-07-20,8.2765,8.2765,8.2765,8.2765,|"
+    "2005-07-21,8.2765,8.2765,8.2765,8.2765,|"
+    "2005-07-22,8.1100,8.1100,8.1100,8.1100,|"
+    "2015-08-11,6.3101,6.2856,6.3286,6.3248,|"
+    "2026-11-25,6.6613,6.6581,6.6760,6.6751,"
+    '");'
+)
+
+
+class TestSinaForexParser(unittest.TestCase):
+    def test_parses_close_and_ohlc(self):
+        from data_sources.sina import parse_forex
+
+        bars = parse_forex(FUND_FX_SAMPLE)
+        self.assertEqual(len(bars), 5)
+        self.assertEqual(bars[0].date, "2005-07-20")
+        # 第 5 个字段是收盘（自检：实时快照最新价 6.6751 与末行一致）
+        self.assertAlmostEqual(bars[-1].price, 6.6751)
+        row = bars[3]  # 2015-08-11
+        self.assertEqual(row.date, "2015-08-11")
+        self.assertAlmostEqual(row.open, 6.3101)
+        self.assertAlmostEqual(row.low, 6.2856)
+        self.assertAlmostEqual(row.high, 6.3286)
+        self.assertAlmostEqual(row.price, 6.3248)
+        # 低必须不高于开/收，高必须不低于开/收
+        for bar in bars:
+            self.assertLessEqual(bar.low, min(bar.open, bar.price) + 1e-9)
+            self.assertGreaterEqual(bar.high, max(bar.open, bar.price) - 1e-9)
+
+    def test_parses_2005_reform_step(self):
+        from data_sources.sina import parse_forex
+
+        bars = parse_forex(FUND_FX_SAMPLE)
+        by_date = {b.date: b.price for b in bars}
+        # 2005-07-21 汇改：8.2765 → 8.11，这是真实历史跳变
+        self.assertAlmostEqual(by_date["2005-07-21"], 8.2765)
+        self.assertAlmostEqual(by_date["2005-07-22"], 8.11)
+
+    def test_rejects_garbage(self):
+        from data_sources.sina import parse_forex
+
+        self.assertEqual(parse_forex("<html>blocked</html>"), [])
+        self.assertEqual(parse_forex('var _=fx("");'), [])
+
+
 class TestDedupeSort(unittest.TestCase):
     def test_dedupes_and_sorts(self):
         bars = [
@@ -319,7 +367,7 @@ class TestRegistry(unittest.TestCase):
             self.assertTrue(asset.name, f"{asset.symbol} 名称为空")
             self.assertTrue(asset.group, f"{asset.symbol} 缺少分组")
             self.assertGreaterEqual(asset.from_year, 1990)
-            if asset.type.value != "fund":
+            if asset.type.value not in ("fund", "fx"):
                 self.assertTrue(asset.em_secid, f"{asset.symbol} 缺少 em_secid")
 
     def test_periods_config(self):

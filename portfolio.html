@@ -39,6 +39,7 @@
               <mdui-tab value="dca">定投回测</mdui-tab>
               <mdui-tab value="stress">压力测试</mdui-tab>
               <mdui-tab value="rebalance">再平衡</mdui-tab>
+              <mdui-tab value="strategy">策略组合</mdui-tab>
             </mdui-tabs>
           </mdui-card>
         </section>
@@ -117,6 +118,28 @@
             </div>
           </div>
           <div id="rebalance-result" class="stack" style="margin-top:1rem" aria-live="polite"></div>
+        </section>
+
+
+        <!-- 策略组合 -->
+        <section class="section hidden" id="panel-strategy">
+          <div class="card">
+            <h2 class="section-title">策略组合回测</h2>
+            <p class="section-desc">
+              单个资产的指标看多了容易陷进「哪只更好」，而真正决定长期结果的往往是
+              <strong>配比与再平衡规则</strong>。这里把几种被广泛讨论的配置方法放进同一段时间里跑一遍，
+              并和「100% 股票」对照，让你看清楚的不是谁收益最高，而是<strong>代价是什么</strong>。
+            </p>
+            <div class="row">
+              <div id="strategy-select" style="flex:1 1 18rem"></div>
+              <div style="flex:0 0 auto">
+                <div class="small muted" style="margin-bottom:.2rem">再平衡规则</div>
+                <div id="strategy-rule" class="small" style="line-height:2.2"></div>
+              </div>
+            </div>
+            <div id="strategy-intro" style="margin-top:0.9rem"></div>
+          </div>
+          <div id="strategy-result" class="stack" style="margin-top:1rem" aria-live="polite"></div>
         </section>
 
         <section class="section">

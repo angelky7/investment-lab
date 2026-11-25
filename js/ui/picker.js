@@ -11,7 +11,7 @@ import { icon } from "../core/icons.js";
 import { typeLabel, escapeHtml } from "../core/format.js";
 import { searchAssets, usableAssets } from "../core/store.js";
 
-const TYPES = ["index", "etf", "stock", "fund"];
+const TYPES = ["index", "etf", "stock", "fund", "fx"];
 
 /** 类型切换标签 */
 export function typeTabs(host, { value = "index", onChange, types = TYPES } = {}) {

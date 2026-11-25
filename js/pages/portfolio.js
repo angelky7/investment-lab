@@ -17,6 +17,7 @@ import {
 } from "../core/store.js";
 import { alignByDate, sliceLastYears } from "../core/series.js";
 import {
+  bandRebalance,
   correlationMatrix,
   dcaBacktest,
   estimateBeta,
@@ -24,6 +25,8 @@ import {
   rebalanceSimulation,
   stressTest,
 } from "../core/portfolio.js";
+import { annualizedVolatility, maxDrawdown, sharpeRatio } from "../core/stats.js";
+import { STRATEGIES, findStrategy } from "../core/strategies.js";
 import { lineChart } from "../core/charts.js";
 import {
   assetSelect,
@@ -61,9 +64,10 @@ const state = {
   rebalanceKeys: ["index:000300", "etf:511010", "etf:518880"],
   rebalanceWeights: [50, 30, 20],
   rebalanceInterval: 63,
+  strategyId: "permanent",
 };
 
-const tokens = { corr: 0, dca: 0, stress: 0, rebalance: 0 };
+const tokens = { corr: 0, dca: 0, stress: 0, rebalance: 0, strategy: 0 };
 
 const benchCache = new Map();
 
@@ -779,6 +783,284 @@ function rebalanceAdvice(diff, result, names, weights) {
   return `${base}${tail}`;
 }
 
+/* -------------------------------- 策略组合 ------------------------------- */
+
+const RULE_TEXT = {
+  band: (s) => `阈值带：任一档低于 ${Math.round(s.rule.lower * 100)}% 或高于 ${Math.round(s.rule.upper * 100)}% 时调回目标`,
+  annual: () => "每年（252 个交易日）调回目标权重",
+  none: () => "不调仓",
+};
+
+function normalizeTo(prices, initial) {
+  const base = prices[0];
+  return prices.map((p) => (base > 0 ? (p / base) * initial : 0));
+}
+
+async function renderStrategy() {
+  const token = ++tokens.strategy;
+  const host = document.getElementById("strategy-result");
+  const intro = document.getElementById("strategy-intro");
+  const ruleHost = document.getElementById("strategy-rule");
+  if (state.mode !== "strategy") return;
+
+  const strategy = findStrategy(state.strategyId);
+  ruleHost.textContent = (RULE_TEXT[strategy.rule.type] || (() => "—"))(strategy);
+
+  intro.innerHTML = `
+    <p class="section-desc" style="margin:0 0 .5rem"><strong>${strategy.tagline}</strong></p>
+    <p class="section-desc" style="margin:0">${strategy.description}</p>`;
+
+  host.innerHTML = loadingHtml("正在对齐各档交易日并对策略回测…");
+
+  try {
+    const sleeveAssets = strategy.sleeves
+      .map((sleeve) => ({ ...sleeve, asset: findAsset(state.assets, sleeve.key) }))
+      .filter((s) => s.asset);
+
+    if (sleeveAssets.length !== strategy.sleeves.length) {
+      host.innerHTML = notice("策略里有资产不在数据索引中，请检查登记表。", "warn");
+      return;
+    }
+
+    // 对照组：100% 沪深300ETF
+    const stockAsset = findAsset(state.assets, "etf:510300");
+    const all = sleeveAssets.map((s) => s.asset);
+    if (stockAsset && !all.some((a) => a.type === stockAsset.type && a.symbol === stockAsset.symbol)) {
+      all.push(stockAsset);
+    }
+
+    const seriesList = await loadSeriesMany(all);
+    if (token !== tokens.strategy) return;
+
+    const byKey = new Map(seriesList.map((s) => [s.key, s]));
+    const sleeves = sleeveAssets.map((s) => ({ ...s, series: byKey.get(s.key) }));
+    const stock = stockAsset ? byKey.get(`${stockAsset.type}:${stockAsset.symbol}`) : null;
+
+    if (sleeves.some((s) => !s.series) || !stock) {
+      host.innerHTML = notice("所选策略的部分资产数据加载失败。", "warn");
+      return;
+    }
+
+    const entries = sleeves.map((s) => ({
+      key: s.key,
+      dates: s.series.dates,
+      prices: s.series.prices,
+    }));
+    entries.push({ key: "stock", dates: stock.dates, prices: stock.prices });
+
+    const aligned = alignByDate(entries);
+    if (aligned.dates.length < 250) {
+      host.innerHTML = notice(
+        `四档资产共同的交易日只有 ${aligned.dates.length} 天，不足以回测。请稍后再试或更换策略。`,
+        "warn"
+      );
+      return;
+    }
+
+    const initial = 10000;
+    const weights = strategy.sleeves.map((s) => s.weight / 100);
+    const values = {};
+    strategy.sleeves.forEach((s) => {
+      values[s.key] = aligned.values[s.key];
+    });
+
+    let result;
+    if (strategy.rule.type === "band") {
+      result = bandRebalance(aligned.dates, values, weights, {
+        lower: strategy.rule.lower,
+        upper: strategy.rule.upper,
+        initial,
+      });
+    } else if (strategy.rule.type === "annual") {
+      const sim = rebalanceSimulation(aligned.dates, values, weights, {
+        everyDays: 252,
+        initial,
+      });
+      result = sim
+        ? { ...sim, rebalances: sim.rebalances, driftSeries: sim.noRebalanceSeries, driftFinal: sim.driftFinal, sleeveFinal: {} }
+        : null;
+    } else {
+      // 不调仓，单档满仓
+      const series = aligned.values[strategy.sleeves[0].key];
+      result = {
+        valueSeries: normalizeTo(series, initial),
+        driftSeries: normalizeTo(series, initial),
+        rebalances: 0,
+        finalValue: 0,
+        driftFinal: 0,
+        sleeveFinal: {},
+        sleeveFinalWeight: [100],
+      };
+      result.finalValue = result.valueSeries[result.valueSeries.length - 1];
+      result.driftFinal = result.finalValue;
+    }
+
+    if (!result) {
+      host.innerHTML = notice("回测失败，请检查策略权重配置。", "warn");
+      return;
+    }
+
+    const dates = aligned.dates;
+    const stockSeries = normalizeTo(aligned.values.stock, initial);
+    const stats = (series) => {
+      const total = series[series.length - 1] / initial - 1;
+      const years = (Date.parse(`${dates[dates.length - 1]}T00:00:00Z`) - Date.parse(`${dates[0]}T00:00:00Z`)) / (365.25 * 86400000);
+      return {
+        annualized: years > 0 ? Math.pow(1 + total, 1 / years) - 1 : null,
+        volatility: annualizedVolatility(series, dates),
+        sharpe: sharpeRatio(series, 0.025, dates),
+        maxDrawdown: maxDrawdown(series, dates)?.value ?? null,
+        total,
+      };
+    };
+
+    const mine = stats(result.valueSeries);
+    const stocks = stats(stockSeries);
+
+    const sleeveRows = strategy.sleeves.map((sleeve, i) => {
+      const series = byKey.get(sleeve.key);
+      const finalValue = result.sleeveFinal?.[sleeve.key];
+      const finalWeight = result.sleeveFinalWeight?.[i];
+      return {
+        name: sleeve.label,
+        weight: sleeve.weight,
+        role: sleeve.role,
+        since: series ? series.dates[0] : "—",
+        finalValue,
+        finalWeight,
+      };
+    });
+
+    host.innerHTML = `
+      <div class="card">
+        <div class="chart-head">
+          <h3>${strategy.name} · 净值曲线</h3>
+          <span class="hint">${rangeLabel(dates[0], dates[dates.length - 1])} · ${aligned.dates.length} 个共同交易日</span>
+        </div>
+        ${metricsHtml([
+          {
+            label: "年化收益",
+            value: pct(mine.annualized),
+            tone: tone(mine.annualized),
+            sub: `区间累计 ${pct(mine.total)}`,
+          },
+          {
+            label: "年化波动",
+            value: pct(mine.volatility, { signed: false }),
+            sub: `同区间 100% 股票 ${pct(stocks.volatility, { signed: false })}`,
+          },
+          {
+            label: "最大回撤",
+            value: pct(mine.maxDrawdown),
+            tone: "neg",
+            sub: `同区间 100% 股票 ${pct(stocks.maxDrawdown)}`,
+          },
+          {
+            label: "夏普比率",
+            value: num(mine.sharpe),
+            sub: `同区间 100% 股票 ${num(stocks.sharpe)}`,
+          },
+          {
+            label: "再平衡次数",
+            value: strategy.rule.type === "none" ? "0 次" : `${result.rebalances} 次`,
+            sub: RULE_TEXT[strategy.rule.type]?.(strategy) || "",
+          },
+          {
+            label: "期末市值",
+            value: money(result.finalValue),
+            sub: `初始投入 ${money(initial)}`,
+          },
+        ])}
+        <p class="section-desc" style="margin-top:0.9rem">
+          ${strategyConclusion(strategy, mine, stocks)}
+        </p>
+        <div class="chart" id="chart-strategy"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">四档配置</h2>
+        ${tableHtml({
+          columns: [
+            { label: "资产", align: "left" },
+            { label: "目标权重" },
+            { label: "作用" },
+            { label: "期末权重" },
+            { label: "数据起点" },
+          ],
+          rows: sleeveRows.map((row) => ({
+            cells: [
+              { html: `<strong>${row.name}</strong>` },
+              { html: pct(row.weight / 100, { signed: false }) },
+              { html: row.role, cls: "small muted" },
+              {
+                html: Number.isFinite(row.finalWeight) ? pct(row.finalWeight / 100, { signed: false }) : "—",
+                cls: Number.isFinite(row.finalWeight) && Math.abs(row.finalWeight - row.weight) > 10 ? "pos" : "",
+              },
+              { html: row.since, cls: "small" },
+            ],
+          })),
+          caption:
+            "目标权重是纪律，期末权重是市场投票的结果。期末与目标偏离越多，" +
+            "说明这段时间里某类资产的偏离越剧烈——正是再平衡要处理的情况。",
+        })}
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">这套方法的代价</h2>
+        <ul class="section-desc" style="margin:0;padding-left:1.1rem;line-height:1.9">
+          ${strategy.notes.map((n) => `<li>${n}</li>`).join("")}
+          <li>回测忽略交易成本与税费；阈值带再平衡会比年度再平衡更频繁，摩擦成本略高。</li>
+          <li>策略的收益完全取决于所选资产的历史，未来四种经济状态的相对表现可能完全不同。</li>
+        </ul>
+      </div>`;
+
+    const colors = ["var(--il-chart-1)", "var(--il-chart-3)"];
+    lineChart(document.getElementById("chart-strategy"), {
+      labels: dates,
+      series: [
+        { name: strategy.name, values: result.valueSeries, color: colors[0] },
+        { name: "100% 股票", values: stockSeries, color: colors[1], fill: false, width: 1.5 },
+      ],
+      formatter: (v) => `¥${Math.round(v / 10000)}万`,
+      tipFormatter: (v) => money(v),
+      labelFormatter: (d) => d.slice(0, 4),
+      tipDateFormatter: dateLabel,
+      tall: true,
+    });
+  } catch (err) {
+    if (token !== tokens.strategy) return;
+    showError(host, err.message);
+  }
+}
+
+function strategyConclusion(strategy, mine, stocks) {
+  if (strategy.rule.type === "none") {
+    return `这是标尺：${pct(mine.annualized)} 的年化、${pct(mine.maxDrawdown)} 的最大回撤。下面所有配置方案都要和它比。`;
+  }
+  const betterReturn = (mine.annualized ?? -1) > (stocks.annualized ?? -1);
+  const lessRisk =
+    Math.abs(mine.maxDrawdown ?? 0) < Math.abs(stocks.maxDrawdown ?? 0);
+  const retDiff = Math.abs((mine.annualized ?? 0) - (stocks.annualized ?? 0));
+  const ddDiff = Math.abs(Math.abs(mine.maxDrawdown ?? 0) - Math.abs(stocks.maxDrawdown ?? 0));
+
+  if (lessRisk && !betterReturn) {
+    return `与 100% 股票相比，这套配置的年化低了 ${pct(retDiff, { signed: false })}，
+      但最大回撤浅了 ${pct(ddDiff, { signed: false })}。换句话说，它用一部分收益换来了「拿得住」——
+      这正是配置类策略的真实交易：不是提高收益，而是降低你被迫在最低点卖出的概率。`;
+  }
+  if (betterReturn && lessRisk) {
+    return `这段历史里它既提高了年化（多 ${pct(retDiff, { signed: false })}），
+      又降低了最大回撤（浅 ${pct(ddDiff, { signed: false })}）。这种「两头都赢」通常来自资产之间的低相关性，
+      但也要警惕：它可能只是这十几年的特定行情，而不是永久规律。`;
+  }
+  if (!lessRisk && betterReturn) {
+    return `它的年化更高（多 ${pct(retDiff, { signed: false })}），但回撤也更深（深 ${pct(ddDiff, { signed: false })}）。
+      这就是「承担更多风险换取更多收益」的常规形态，没有免费的午餐。`;
+  }
+  return `这段历史里它的年化更低、回撤更深，说明这个配比在 A 股的特定阶段并不占优。
+    配置不是万灵药——它解决的是「你不知道未来哪种资产会涨」的问题，而不是「保证赚更多」。`;
+}
+
 /* --------------------------------- 启动 --------------------------------- */
 
 function buildControls() {
@@ -840,6 +1122,21 @@ function buildControls() {
     },
   });
 
+  const strategyHost = document.getElementById("strategy-select");
+  strategyHost.innerHTML = `
+    <mdui-select id="strategy-picker" variant="outlined" label="选择策略" style="width:100%">
+      ${STRATEGIES.map(
+        (item) =>
+          `<mdui-menu-item value="${item.id}">${item.name} · ${item.tagline}</mdui-menu-item>`
+      ).join("")}
+    </mdui-select>`;
+  const strategyPicker = strategyHost.querySelector("mdui-select");
+  strategyPicker.value = state.strategyId;
+  strategyPicker.addEventListener("change", () => {
+    state.strategyId = strategyPicker.value;
+    renderStrategy();
+  });
+
   const interval = document.getElementById("rebalance-interval");
   interval.addEventListener("change", () => {
     state.rebalanceInterval = Number(interval.value) || 63;
@@ -891,13 +1188,14 @@ function buildRebalanceWeights() {
 
 function setMode(mode) {
   state.mode = mode;
-  for (const name of ["corr", "dca", "stress", "rebalance"]) {
+  for (const name of ["corr", "dca", "stress", "rebalance", "strategy"]) {
     document.getElementById(`panel-${name}`).classList.toggle("hidden", mode !== name);
   }
   if (mode === "corr") renderCorrelation();
   if (mode === "dca") renderDca();
   if (mode === "stress") renderStress();
   if (mode === "rebalance") renderRebalance();
+  if (mode === "strategy") renderStrategy();
 }
 
 async function main() {

@@ -20,6 +20,7 @@ class AssetType(str, Enum):
     ETF = "etf"
     INDEX = "index"
     FUND = "fund"
+    FX = "fx"  # 汇率（如美元兑人民币），只有收盘价，没有复权概念
 
 
 class Market(str, Enum):
@@ -42,6 +43,7 @@ class PriceBasis(str, Enum):
     INDEX_CLOSE = "指数收盘点位"
     FUND_ACC_NAV = "基金累计净值"
     FUND_NAV = "基金单位净值"
+    FX_CLOSE = "汇率日收盘"
 
 
 @dataclass

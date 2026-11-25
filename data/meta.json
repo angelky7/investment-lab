@@ -1,10 +1,10 @@
 {
   "schema": 2,
-  "generated_at": "2026-11-25T18:46:10+08:00",
+  "generated_at": "2026-11-25T19:11:30+08:00",
   "data_date": "2026-11-25",
   "benchmark": "000300",
-  "total_assets": 71,
-  "available_assets": 71,
+  "total_assets": 74,
+  "available_assets": 74,
   "insufficient_assets": 0,
   "unavailable_assets": 0,
   "groups": [
@@ -24,16 +24,20 @@
     "债券基金",
     "公用事业",
     "美股个股",
-    "策略ETF"
+    "策略ETF",
+    "债券指数",
+    "汇率"
   ],
   "types": [
     "index",
     "etf",
     "stock",
-    "fund"
+    "fund",
+    "fx"
   ],
   "sources": [
     "eastmoney",
+    "sina",
     "tencent"
   ],
   "min_ok_points": 250,

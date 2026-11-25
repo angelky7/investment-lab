@@ -306,6 +306,114 @@ export function rebalanceSimulation(dates, values, weights, options = {}) {
   };
 }
 
+
+/* ------------------------------ 阈值带再平衡 ----------------------------- */
+
+/**
+ * 阈值带再平衡（哈里·布朗永久组合的原版规则）。
+ *
+ * 布朗的规则不是「每年调一次」，而是：任一档的权重偏离目标超过一定幅度就调整回来。
+ * 经典设定是每档 25%，跌破 15% 或涨过 35% 时再平衡（即 ±10 个百分点）。
+ *
+ * @param {string[]} dates 已对齐的交易日
+ * @param {Record<string, number[]>} values 各档价格（已对齐、等长）
+ * @param {number[]} weights 目标权重
+ * @param {{lower?: number, upper?: number, initial?: number}} [options]
+ */
+export function bandRebalance(dates, values, weights, options = {}) {
+  const keys = Object.keys(values);
+  if (keys.length !== weights.length || keys.length < 2) return null;
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (Math.abs(sum - 1) > 0.01) return null;
+
+  const length = dates.length;
+  if (length < 3) return null;
+
+  const lower = options.lower ?? 0.15;
+  const upper = options.upper ?? 0.35;
+  const initial = options.initial ?? 10000;
+
+  const priceArrays = keys.map((k) => values[k]);
+  if (priceArrays.some((arr) => arr.length !== length || !(arr[0] > 0))) return null;
+
+  const holdings = weights.map((w, i) => (initial * w) / priceArrays[i][0]);
+  const driftUnits = weights.map((w, i) => (initial * w) / priceArrays[i][0]);
+
+  const valueSeries = new Array(length).fill(0);
+  const driftSeries = new Array(length).fill(0);
+  const events = [];
+
+  let breaches = 0;
+
+  for (let t = 0; t < length; t += 1) {
+    let total = 0;
+    let driftTotal = 0;
+    for (let i = 0; i < keys.length; i += 1) {
+      total += holdings[i] * priceArrays[i][t];
+      driftTotal += driftUnits[i] * priceArrays[i][t];
+    }
+    valueSeries[t] = total;
+    driftSeries[t] = driftTotal;
+
+    if (t === length - 1 || !(total > 0)) continue;
+
+    // 检查是否越界
+    let outOfBand = false;
+    let worst = null;
+    for (let i = 0; i < keys.length; i += 1) {
+      const weight = (holdings[i] * priceArrays[i][t]) / total;
+      if (weight < lower || weight > upper) {
+        outOfBand = true;
+        const deviation = Math.abs(weight - weights[i]);
+        if (!worst || deviation > worst.deviation) {
+          worst = { key: keys[i], weight, deviation };
+        }
+      }
+    }
+
+    if (outOfBand) {
+      for (let i = 0; i < keys.length; i += 1) {
+        holdings[i] = (total * weights[i]) / priceArrays[i][t];
+      }
+      breaches += 1;
+      events.push({
+        date: dates[t],
+        index: t,
+        value: total,
+        trigger: worst ? worst.key : "",
+        weight: worst ? worst.weight : null,
+      });
+    }
+  }
+
+  const finalValue = valueSeries[length - 1];
+  const sleeveFinal = {};
+  keys.forEach((key, i) => {
+    sleeveFinal[key] = holdings[i] * priceArrays[i][length - 1];
+  });
+
+  return {
+    keys,
+    weights,
+    lower,
+    upper,
+    initial,
+    rebalances: breaches,
+    events,
+    valueSeries,
+    driftSeries,
+    finalValue,
+    driftFinal: driftSeries[length - 1],
+    totalReturn: finalValue / initial - 1,
+    driftReturn: driftSeries[length - 1] / initial - 1,
+    annualizedReturn: annualizedReturn(valueSeries, dates),
+    driftAnnualized: annualizedReturn(driftSeries, dates),
+    years: yearsBetween(dates[0], dates[dates.length - 1]),
+    sleeveFinal,
+    sleeveFinalWeight: keys.map((key) => (sleeveFinal[key] / finalValue) * 100),
+  };
+}
+
 /* -------------------------------- 压力测试 ------------------------------- */
 
 /**
