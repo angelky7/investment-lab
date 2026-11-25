@@ -2,7 +2,7 @@ name: Update Data
 
 on:
   schedule:
-    # UTC 0:00 = 北京时间 08:00，每个交易日跑一次增量
+    # UTC 0:00 = 北京时间 08:00，每天跑一次增量
     - cron: "0 0 * * *"
   workflow_dispatch:
     inputs:
@@ -51,6 +51,10 @@ jobs:
         continue-on-error: true
         run: python scripts/validate.py
 
+      - name: Write job summary
+        if: always()
+        run: python scripts/summary.py >> "$GITHUB_STEP_SUMMARY"
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
@@ -63,26 +67,8 @@ jobs:
             git push
           fi
 
-      - name: Summary
-        run: |
-          {
-            echo "### 数据更新结果"
-            echo ""
-            echo "- 抓取步骤: \`${{ steps.fetch.outcome }}\`"
-            echo "- 校验步骤: \`${{ steps.validate.outcome }}\`"
-            python - <<'PY'
-import json, pathlib
-meta = json.loads(pathlib.Path("data/meta.json").read_text(encoding="utf-8"))
-q = json.loads(pathlib.Path("data/quality.json").read_text(encoding="utf-8"))
-print(f"- 数据截止: {meta['data_date']}")
-print(f"- 资产: {meta['total_assets']} 项（可用 {meta['available_assets']}）")
-print(f"- 记录: {q['summary']['total_points']}")
-print(f"- 错误 {q['summary']['error_count']} / 警告 {q['summary']['warning_count']}")
-PY
-          } >> "$GITHUB_STEP_SUMMARY"
-
       - name: Fail if validation found errors
         if: steps.validate.outcome == 'failure'
         run: |
-          echo "::error::数据校验发现完整性问题，请查看 data/quality.json"
+          echo "::error::数据校验发现完整性问题，详情见 data/quality.json"
           exit 1
