@@ -23,9 +23,13 @@
 |---|---|
 | ![组合压力测试](docs/screenshots/portfolio-stress.png) | ![数据缺口](docs/screenshots/data-gaps.png) |
 
-<img src="docs/screenshots/mobile-analysis.png" width="300" alt="竖屏资产分析页" />
+<p>
+  <img src="docs/screenshots/mobile-analysis.png" width="300" alt="竖屏资产分析页（A股 ETF）" />
+  <img src="docs/screenshots/mobile-us-stock.png" width="300" alt="竖屏资产分析页（美股个股）" />
+</p>
 
-<sub>竖屏（390×844）：指标卡两列、图表自适应、表单控件独占一行；已适配 320–430px 宽度与横屏手机。</sub>
+<sub>竖屏（390×844）：指标卡两列、图表自适应、表单控件独占一行；
+美股个股的 Beta 与相关性按标普500 计算；已适配 320–430px 宽度与横屏手机。</sub>
 
 ---
 
