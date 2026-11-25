@@ -1,138 +1,159 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>投资计算器 · 长期投资实验室</title>
-  <meta name="description" content="复利、定投、回撤、恢复与再平衡计算工具。">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/mobile.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>投资计算器 · 投资实验室</title>
+  <meta name="description" content="复利、定投、回撤与回本、再平衡：四个最常用的投资计算工具，结果随输入实时更新。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2300695c'/%3E%3Cpath d='M8 22l5-6 4 3.5L24 10' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="vendor/mdui/mdui.css" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script defer src="vendor/mdui/mdui.global.js"></script>
 </head>
 <body>
-  <header class="site-header">
-    <a href="index.html" class="back-link">&larr; 首页</a>
-    <h1 class="site-title">投资计算器</h1>
-    <p class="site-subtitle">数据驱动决策，而非凭感觉。</p>
-  </header>
+  <mdui-layout>
+    <mdui-top-app-bar>
+      <mdui-button-icon id="nav-open" aria-label="打开导航菜单">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3.5 6h17M3.5 12h17M3.5 18h17"/></svg>
+      </mdui-button-icon>
+      <mdui-top-app-bar-title>投资计算器</mdui-top-app-bar-title>
+      <div style="flex:1"></div>
+      <mdui-button-icon id="theme-toggle" class="btn-theme" aria-label="切换深色/浅色主题"><svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg><svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.6A4.4 4.4 0 1 0 12 16.4a4.4 4.4 0 0 0 0-8.8zM12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4"/></svg></mdui-button-icon>
+    </mdui-top-app-bar>
 
-  <main class="calc-content">
-    <!-- 复利计算器 -->
-    <section class="calc-card" id="calc-compound">
-      <h2 class="calc-title">复利计算器</h2>
-      <p class="calc-desc">计算一笔初始资金在固定年化收益率下，经过若干年后的最终价值。</p>
-      <div class="calc-form">
-        <label>初始本金（元）<input type="number" id="cp-principal" value="10000" min="0" step="1000"></label>
-        <label>每月追加（元）<input type="number" id="cp-monthly" value="0" min="0" step="100"></label>
-        <label>年化收益率（%）<input type="number" id="cp-rate" value="8" min="0" max="100" step="0.1"></label>
-        <label>投资年限<input type="number" id="cp-years" value="10" min="1" max="100" step="1"></label>
-        <button class="btn btn--primary" onclick="calcCompound()">计算</button>
-      </div>
-      <div class="calc-result" id="cp-result" hidden>
-        <table class="result-table">
-          <tr><td>最终金额</td><td id="cp-final"></td></tr>
-          <tr><td>累计投入本金</td><td id="cp-total-principal"></td></tr>
-          <tr><td>累计收益</td><td id="cp-gain"></td></tr>
-          <tr><td>总收益率</td><td id="cp-total-return"></td></tr>
-        </table>
-      </div>
-    </section>
+    <mdui-layout-main>
+      <main class="page">
+        <header class="page-head">
+          <span class="eyebrow">Calculator</span>
+          <h1>投资计算器</h1>
+          <p class="lead">
+            这四个小工具都用假设的常数收益率，目的是把「复利」「分期投入」「回撤不对称」「再平衡」
+            这四个机制的数学关系摆到台面上。结果不是预测，任何真实投资都不会每年正好给你这个数字。
+          </p>
+        </header>
 
-    <!-- 定投计算器 -->
-    <section class="calc-card" id="calc-dca">
-      <h2 class="calc-title">定投计算器</h2>
-      <p class="calc-desc">模拟定期定额投资的最终结果。</p>
-      <div class="calc-form">
-        <label>每次投入金额（元）<input type="number" id="dca-amount" value="1000" min="0" step="100"></label>
-        <label>投入频率
-          <select id="dca-freq">
-            <option value="monthly">每月</option>
-            <option value="weekly">每周</option>
-          </select>
-        </label>
-        <label>年化收益率（%）<input type="number" id="dca-rate" value="8" min="0" max="100" step="0.1"></label>
-        <label>投资年限<input type="number" id="dca-years" value="10" min="1" max="100" step="1"></label>
-        <button class="btn btn--primary" onclick="calcDCA()">计算</button>
-      </div>
-      <div class="calc-result" id="dca-result" hidden>
-        <table class="result-table">
-          <tr><td>最终金额</td><td id="dca-final"></td></tr>
-          <tr><td>累计投入本金</td><td id="dca-total"></td></tr>
-          <tr><td>累计收益</td><td id="dca-gain"></td></tr>
-          <tr><td>总收益率</td><td id="dca-return"></td></tr>
-        </table>
-      </div>
-    </section>
+        <section class="section">
+          <mdui-card variant="filled" class="card">
+            <mdui-tabs id="calc-tabs" value="compound" variant="secondary" full-width>
+              <mdui-tab value="compound">复利</mdui-tab>
+              <mdui-tab value="dca">定投</mdui-tab>
+              <mdui-tab value="drawdown">回撤与回本</mdui-tab>
+              <mdui-tab value="rebalance">再平衡</mdui-tab>
+            </mdui-tabs>
+          </mdui-card>
+        </section>
 
-    <!-- 回撤计算器 -->
-    <section class="calc-card" id="calc-drawdown">
-      <h2 class="calc-title">回撤计算器</h2>
-      <p class="calc-desc">从最高点到最低点的跌幅。</p>
-      <div class="calc-form">
-        <label>最高点价格（元）<input type="number" id="dd-high" value="100" min="0.01" step="0.01"></label>
-        <label>最低点价格（元）<input type="number" id="dd-low" value="70" min="0.01" step="0.01"></label>
-        <button class="btn btn--primary" onclick="calcDrawdown()">计算</button>
-      </div>
-      <div class="calc-result" id="dd-result" hidden>
-        <p id="dd-output"></p>
-      </div>
-    </section>
-
-    <!-- 恢复计算器 -->
-    <section class="calc-card" id="calc-recovery">
-      <h2 class="calc-title">恢复计算器</h2>
-      <p class="calc-desc">资产下跌一定比例后，需要上涨多少才能回到原点？</p>
-      <div class="calc-result" id="rc-table"></div>
-    </section>
-
-    <!-- 再平衡计算器 -->
-    <section class="calc-card" id="calc-rebalance">
-      <h2 class="calc-title">再平衡计算器</h2>
-      <p class="calc-desc">计算当前持仓与目标权重之间的偏差，明确需要调整的金额。</p>
-      <div class="calc-form" id="rb-form">
-        <label>总投资金额（元）<input type="number" id="rb-total" value="100000" min="0" step="10000"></label>
-        <div id="rb-assets">
-          <div class="rb-asset-row">
-            <label>资产名称<input type="text" class="rb-name" value="股票基金" placeholder="名称"></label>
-            <label>当前金额<input type="number" class="rb-current" value="50000" min="0" step="1000"></label>
-            <label>目标比例（%）<input type="number" class="rb-target" value="50" min="0" max="100" step="1"></label>
+        <!-- 复利 -->
+        <section class="section" id="panel-compound">
+          <div class="card">
+            <h2 class="section-title">复利与定投增长</h2>
+            <p class="section-desc">
+              期初一笔本金，加上每月固定追加，按月复利增长。改变年化收益率，观察曲线形状的变化——
+              前十年几乎看不出差别，后十年会突然拉开，这就是复利的时间属性。
+            </p>
+            <div class="row">
+              <div style="flex:1 1 9rem">
+                <mdui-text-field id="cp-principal" label="期初本金" type="number" value="100000" prefix="¥" min="0" step="1000" variant="outlined"></mdui-text-field>
+              </div>
+              <div style="flex:1 1 9rem">
+                <mdui-text-field id="cp-monthly" label="每月追加" type="number" value="2000" prefix="¥" min="0" step="500" variant="outlined"></mdui-text-field>
+              </div>
+              <div style="flex:1 1 7rem">
+                <mdui-text-field id="cp-rate" label="年化收益" type="number" value="7" suffix="%" min="-20" max="30" step="0.5" variant="outlined"></mdui-text-field>
+              </div>
+              <div style="flex:1 1 7rem">
+                <mdui-text-field id="cp-years" label="年限" type="number" value="20" suffix="年" min="1" max="60" step="1" variant="outlined"></mdui-text-field>
+              </div>
+            </div>
           </div>
-          <div class="rb-asset-row">
-            <label>资产名称<input type="text" class="rb-name" value="债券基金" placeholder="名称"></label>
-            <label>当前金额<input type="number" class="rb-current" value="30000" min="0" step="1000"></label>
-            <label>目标比例（%）<input type="number" class="rb-target" value="30" min="0" max="100" step="1"></label>
-          </div>
-          <div class="rb-asset-row">
-            <label>资产名称<input type="text" class="rb-name" value="货币基金" placeholder="名称"></label>
-            <label>当前金额<input type="number" class="rb-current" value="20000" min="0" step="1000"></label>
-            <label>目标比例（%）<input type="number" class="rb-target" value="20" min="0" max="100" step="1"></label>
-          </div>
-        </div>
-        <button class="btn btn--primary" onclick="calcRebalance()">计算再平衡</button>
-      </div>
-      <div class="calc-result" id="rb-result" hidden></div>
-    </section>
-  </main>
+          <div id="cp-result" class="stack" style="margin-top:1rem"></div>
+        </section>
 
-  <footer class="site-footer">
-    <p class="disclaimer">
-      本网站用于投资知识学习、历史数据分析和模拟研究，不构成投资、税务或法律建议。
-    </p>
-    <p class="copyright">长期投资实验室 &mdash; 授人以渔</p>
-  </footer>
+        <!-- 定投 -->
+        <section class="section hidden" id="panel-dca">
+          <div class="card">
+            <h2 class="section-title">定投终值</h2>
+            <p class="section-desc">
+              每期投入固定金额，按假设收益率增长。注意这里的「总收益率」是用总投入做分母，
+              随着期数增加，分母不断变大，所以它天然低于年化收益率。
+            </p>
+            <div class="row">
+              <div style="flex:1 1 9rem">
+                <mdui-text-field id="an-amount" label="每期投入" type="number" value="1000" prefix="¥" min="0" step="100" variant="outlined"></mdui-text-field>
+              </div>
+              <div style="flex:1 1 8rem">
+                <mdui-select id="an-freq" variant="outlined" label="投入频率" value="12">
+                  <mdui-menu-item value="12">每月</mdui-menu-item>
+                  <mdui-menu-item value="52">每周</mdui-menu-item>
+                  <mdui-menu-item value="4">每季</mdui-menu-item>
+                  <mdui-menu-item value="1">每年</mdui-menu-item>
+                </mdui-select>
+              </div>
+              <div style="flex:1 1 7rem">
+                <mdui-text-field id="an-rate" label="年化收益" type="number" value="8" suffix="%" min="-20" max="30" step="0.5" variant="outlined"></mdui-text-field>
+              </div>
+              <div style="flex:1 1 7rem">
+                <mdui-text-field id="an-years" label="年限" type="number" value="15" suffix="年" min="1" max="60" step="1" variant="outlined"></mdui-text-field>
+              </div>
+            </div>
+          </div>
+          <div id="an-result" class="stack" style="margin-top:1rem"></div>
+        </section>
 
-  <script src="js/calculator.js"></script>
-  <script>
-    /* 页面加载时渲染恢复表格 */
-    (function renderRecovery() {
-      const drops = [10, 20, 30, 40, 50];
-      let html = '<table class="result-table"><tr><th>跌幅</th><th>需上涨</th></tr>';
-      drops.forEach(d => {
-        const gainNeeded = (d / (100 - d) * 100).toFixed(2);
-        html += `<tr><td>${d}%</td><td>${gainNeeded}%</td></tr>`;
-      });
-      html += '</table>';
-      document.getElementById('rc-table').innerHTML = html;
-    })();
-  </script>
+        <!-- 回撤 -->
+        <section class="section hidden" id="panel-drawdown">
+          <div class="card">
+            <h2 class="section-title">回撤与回本</h2>
+            <p class="section-desc">
+              输入一个高点和之后的低点，看看跌下去和涨回来有多不对称。
+              这个不对称是所有风险控制的数学根源。
+            </p>
+            <div class="row">
+              <div style="flex:1 1 9rem">
+                <mdui-text-field id="dd-high" label="前期高点" type="number" value="100" prefix="¥" min="0.01" step="1" variant="outlined"></mdui-text-field>
+              </div>
+              <div style="flex:1 1 9rem">
+                <mdui-text-field id="dd-low" label="之后低点" type="number" value="70" prefix="¥" min="0.01" step="1" variant="outlined"></mdui-text-field>
+              </div>
+            </div>
+          </div>
+          <div id="dd-result" class="stack" style="margin-top:1rem"></div>
+        </section>
+
+        <!-- 再平衡 -->
+        <section class="section hidden" id="panel-rebalance">
+          <div class="card">
+            <h2 class="section-title">再平衡调整表</h2>
+            <p class="section-desc">
+              填入各资产当前市值与目标权重，算出该买多少、卖多少。
+              目标权重合计必须为 100%。
+            </p>
+            <div id="rb-inputs"></div>
+            <div class="row" style="margin-top:0.75rem">
+              <div style="flex:1 1 10rem">
+                <mdui-text-field id="rb-total" label="组合总额（留空则用当前市值合计）" type="number" value="" prefix="¥" min="0" step="1000" variant="outlined"></mdui-text-field>
+              </div>
+              <mdui-button variant="tonal" id="rb-add">添加一行</mdui-button>
+            </div>
+          </div>
+          <div id="rb-result" class="stack" style="margin-top:1rem"></div>
+        </section>
+
+        <section class="section">
+          <div class="notice" data-tone="warn">
+            <span>
+              <strong>这些数字不能直接用：</strong>
+              真实市场的年化收益不是常数，它会以剧烈波动的方式实现。
+              同样「年化 8%」的二十年，中间可能有两次 40% 的回撤。
+              计算器的价值在于理解机制，而不是推算你未来的账户余额。
+            </span>
+          </div>
+        </section>
+      </main>
+    </mdui-layout-main>
+  </mdui-layout>
+
+  <div id="site-nav"></div>
+  <script type="module" src="js/pages/calculator.js"></script>
 </body>
 </html>

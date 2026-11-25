@@ -1,6 +1,9 @@
-# 长期投资实验室 — Python 依赖
-# GitHub Actions 环境下使用 pip install -r requirements.txt
+# Python 侧只使用标准库（urllib / json / dataclasses / unittest），
+# 因此无需安装任何第三方包。工作流里的 `pip install -r requirements.txt`
+# 会正常执行并通过。
+#
+# 若你想用更省事的 HTTP 客户端，可以取消下面一行的注释：
+# requests>=2.31
 
-# 核心依赖（标准库足够，无需第三方包）
-# requests 可选，用于更稳定的 HTTP 请求；标准库 urllib 作为默认方案
-requests>=2.28
+# 本地开发可选工具（CI 未使用）：
+# coverage>=7.4

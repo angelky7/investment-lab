@@ -1,17 +1,20 @@
 # Python
 __pycache__/
 *.py[cod]
-*.egg-info/
+.venv/
 venv/
 
-# IDE
-.vscode/
-.idea/
+# Node
+node_modules/
+npm-debug.log*
 
-# OS
+# 数据抓取中间产物
+data/*.tmp
+data/history/*.tmp
+data/fetch_report.json.bak
+
+# 编辑器 / 系统
 .DS_Store
 Thumbs.db
-
-# Temp
-output/
-temp/
+.idea/
+.vscode/data/fetch_report.json

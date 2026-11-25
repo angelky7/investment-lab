@@ -1,376 +1,279 @@
-"""
-data_sources/tencent.py — 腾讯行情数据源
+"""腾讯行情数据源（日 K 线，后复权）。
 
-使用腾讯公开行情接口获取股票、ETF、指数和基金数据。
-接口均为公开 HTTP 端点，无需 API Key。
+接口（公开、无需 Key）：
 
-接口说明：
-- 日K线（前复权，股票/ETF/指数）：
-  http://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={market}{symbol},day,,,320,qfq
-- 实时行情快照（股票/ETF/指数/基金）：
-  http://qt.gtimg.cn/q={codes}
-  基金前缀 jj（如 jj000001），返回单位净值/累计净值/涨跌幅
-- 基金净值（天天基金，仅最新一条，历史数据需用东方财富接口）：
-  http://fundgz.1234567.com.cn/js/{symbol}.js
+    https://proxy.finance.qq.com/ifzqgtimg/appstock/app/newfqkline/get?param={code},day,{start},{end},{count},{复权方式}
+
+实测结论（2026-11 校验，勿凭直觉改动）：
+
+1. ``web.ifzq.gtimg.cn/appstock/app/fqkline/get`` 现已对部分 IP 返回 501，
+   而 ``/newfqkline/get`` 正常，因此主用 newfqkline。
+2. 区间请求返回的是「结束日之前最后 count 行」，不是区间内的全部行。
+   必须按窗口切片：窗口 count 要略大于窗口内交易日数，否则会从窗口中间开始。
+   2 年窗口约 490 个交易日，用 count=520 安全。
+3. count 上限不稳定（640 可用、900 有时只回 640），所以窗口不要开太大。
+4. **必须用 hfq（后复权）**：qfq 对高分红股票会返回负数历史价
+   （实测 600519 在 2013-2015 年为 -187 元），根本没法算收益率。
+   后复权值恒为正，且包含分红再投资，是长期收益分析的正确口径。
+   展示用价格由前端按 last_close 折算，等价于标准前复权。
+5. 响应是 GBK 编码 JSON，K 线行格式 [日期, 开, 收, 高, 低, 量]；
+   同一个响应里的 ``qt`` 块含实时快照，index 3 就是最新真实价。
+6. 美股指数用 us.IXIC / us.INX / us.DJI 这类代码，同样走该接口。
 """
+
+from __future__ import annotations
 
 import json
-import re
 import time
 import urllib.request
-import urllib.error
 from typing import Optional
 
 from data_sources.common import (
-    AssetData, AssetMeta, AssetType, Market, DataSource, PricePoint
+    AssetDef,
+    AssetSeries,
+    AssetType,
+    Bar,
+    Market,
+    PriceBasis,
+    dedupe_sort,
 )
 
-# 请求超时（秒）
-REQUEST_TIMEOUT = 15
-# 请求间隔（秒），避免频率限制
-REQUEST_DELAY = 0.5
+HOSTS = ("proxy.finance.qq.com/ifzqgtimg", "web.ifzq.gtimg.cn")
+KLINE_PATH = "appstock/app/newfqkline/get"
+REQUEST_TIMEOUT = 25
+REQUEST_DELAY = 0.45
+RETRIES = 3
+# 2 年窗口 ≈ 490 个交易日，520 留足余量
+WINDOW_YEARS = 2
+WINDOW_COUNT = 520
+ADJUST = "hfq"
+
+UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
 
 
-def _http_get(url: str) -> Optional[bytes]:
-    """带超时和重试的 HTTP GET 请求。"""
-    for attempt in range(3):
+def http_get(url: str, referer: str = "https://gu.qq.com/") -> Optional[bytes]:
+    """带重试的 GET。失败返回 None，不向调用方抛异常。"""
+    last_error = ""
+    for attempt in range(RETRIES):
         try:
             req = urllib.request.Request(
                 url,
-                headers={
-                    "User-Agent": (
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                        "AppleWebKit/537.36"
-                    ),
-                    "Referer": "https://finance.qq.com/",
-                },
+                headers={"User-Agent": UA, "Referer": referer, "Accept": "*/*"},
             )
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
                 return resp.read()
-        except Exception as e:
-            if attempt == 2:
-                print(f"  [HTTP] 请求失败（已重试3次）: {url[:80]} - {e}")
-                return None
-            time.sleep(1)
+        except Exception as exc:  # noqa: BLE001 - 网络异常一律重试
+            last_error = f"{type(exc).__name__}: {exc}"
+            time.sleep(1.5 * (attempt + 1))
+    print(f"  [http] 放弃 {url[:100]} … {last_error}", flush=True)
     return None
 
 
-def _parse_tencent_kline(raw: bytes, symbol: str, name: str,
-                         asset_type: AssetType, market: Market) -> Optional[AssetData]:
-    """解析腾讯日K线 JSON 响应。
+def parse_kline(raw: bytes) -> tuple[list[Bar], dict]:
+    """解析腾讯 K 线响应，返回 (bars, meta)。
 
-    腾讯接口返回格式：
-    {
-      "code": 0,
-      "data": {
-        "{market}{symbol}": {
-          "qfqday": [["2025-01-02", "10.50", "10.80", "10.20", "10.60", "123456.00"], ...]
-          // 或 "day"（不复权）
-        }
-      }
-    }
-
-    每行: [日期, 开盘, 最高, 最低, 收盘, 成交量]
+    meta 可能包含 ``last_close``（实时快照最新价）、``name``、``quote_time``。
+    纯函数，便于用固定 fixture 做离线单测。
     """
+    empty: tuple[list[Bar], dict] = ([], {})
     try:
-        text = raw.decode("gbk", errors="replace")
-        # 腾讯接口返回的是 JSONP 风格的纯 JSON
-        obj = json.loads(text)
-    except Exception as e:
-        print(f"  [解析] JSON 解析失败: {e}")
-        return None
+        obj = json.loads(raw.decode("gbk", errors="replace"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return empty
+    if not isinstance(obj, dict) or obj.get("code") != 0:
+        return empty
 
-    if obj.get("code") != 0:
-        print(f"  [接口] 返回 code={obj.get('code')}")
-        return None
+    data_block = obj.get("data")
+    if not isinstance(data_block, dict) or not data_block:
+        return empty
 
-    data_block = obj.get("data", {})
-    if not data_block:
-        return None
-
-    # 取第一个 key（代码对应的数据块）
-    stock_key = list(data_block.keys())[0]
+    stock_key = next(iter(data_block))
     stock_data = data_block[stock_key]
+    if not isinstance(stock_data, dict):
+        return empty
 
-    # 优先取前复权数据，其次不复权
-    rows = stock_data.get("qfqday") or stock_data.get("day")
-    if not rows:
-        print(f"  [数据] 无日K线数据")
-        return None
+    rows = (
+        stock_data.get("hfqday")
+        or stock_data.get("qfqday")
+        or stock_data.get("day")
+        or []
+    )
+    if not isinstance(rows, list):
+        return empty
 
-    price_points = []
+    bars: list[Bar] = []
     for row in rows:
+        if not isinstance(row, list) or len(row) < 6:
+            continue
+        date = str(row[0]).strip()
+        if len(date) != 10 or date[4] != "-" or date[7] != "-":
+            continue
         try:
-            # 跳过空行或无效行
-            if not row or len(row) < 6:
-                continue
-            date_str = str(row[0]).strip()
-            if not date_str or date_str == "date":
-                continue
-            price_points.append(PricePoint(
-                date=date_str,
-                price=float(row[2]) if row[2] else 0,
-                open=float(row[1]) if row[1] else 0,
-                high=float(row[3]) if row[3] else 0,
-                low=float(row[4]) if row[4] else 0,
-                volume=float(row[5]) if len(row) > 5 and row[5] else 0,
-            ))
-        except (ValueError, IndexError):
+            bars.append(
+                Bar(
+                    date=date,
+                    price=float(row[2]),   # 收
+                    open=float(row[1]),    # 开
+                    high=float(row[3]),    # 高
+                    low=float(row[4]),     # 低
+                    volume=float(row[5]) if row[5] not in ("", None) else None,
+                )
+            )
+        except (TypeError, ValueError):
             continue
 
-    if not price_points:
-        return None
+    meta: dict = {}
+    quote = stock_data.get("qt")
+    if isinstance(quote, dict) and stock_key in quote:
+        fields = quote[stock_key]
+        if isinstance(fields, list) and len(fields) > 4:
+            try:
+                price = float(fields[3])
+                if price > 0:
+                    meta["last_close"] = price
+            except (TypeError, ValueError):
+                pass
+            if len(fields) > 1 and isinstance(fields[1], str):
+                meta["name"] = fields[1]
+            if len(fields) > 30 and isinstance(fields[30], str) and len(fields[30]) >= 8:
+                ts = fields[30]
+                meta["quote_time"] = f"{ts[0:4]}-{ts[4:6]}-{ts[6:8]}"
 
-    return AssetData(
-        symbol=symbol,
-        name=name,
-        asset_type=asset_type,
-        market=market,
-        currency="CNY",
-        data=price_points,
-        data_start=price_points[0].date,
-        data_end=price_points[-1].date,
-        source="tencent",
-    )
+    return bars, meta
 
 
-def _parse_fund_nav(raw: bytes, symbol: str, name: str) -> Optional[AssetData]:
-    """解析天天基金净值 JSONP 响应。
+def parse_quote_snapshot(raw: bytes) -> dict[str, dict]:
+    """解析 ``qt.gtimg.cn`` 批量快照。返回 {code: {name, price, change_pct}}。
 
-    返回格式：jsonpgz({...})
-    包含字段：jzrq（净值日期）, dwjz（单位净值）
+    每行形如 ``v_sh600519="1~贵州茅台~600519~1463.78~...";``，
+    字段 3 为最新价，字段 32 为涨跌幅。基金（jj 前缀）字段布局不同，
+    这里只取名称与最新净值，够用于展示。
     """
+    out: dict[str, dict] = {}
     try:
-        text = raw.decode("utf-8", errors="replace")
-    except Exception:
-        return None
-
-    # 提取 JSONP 中的 JSON 对象
-    match = re.search(r"jsonpgz\((\{.*?\})\)", text, re.DOTALL)
-    if not match:
-        print(f"  [解析] 无法提取 JSONP 数据")
-        return None
-
-    try:
-        obj = json.loads(match.group(1))
-    except json.JSONDecodeError as e:
-        print(f"  [解析] JSONP 内 JSON 解析失败: {e}")
-        return None
-
-    date_str = obj.get("jzrq", "")
-    nav_str = obj.get("dwjz", "")
-    if not date_str or not nav_str:
-        return None
-
-    try:
-        nav = float(nav_str)
-    except ValueError:
-        return None
-
-    # 注意：天天基金单次请求通常只返回最新净值，
-    # 完整的净值历史需要多个请求或使用历史接口。
-    # Phase 2 先以单点数据构建基础框架，后续 Phase 可扩展为累计历史。
-
-    price_point = PricePoint(
-        date=date_str,
-        price=nav,
-    )
-
-    return AssetData(
-        symbol=symbol,
-        name=name or obj.get("name", f"基金{symbol}"),
-        asset_type=AssetType.FUND,
-        market=Market.CN,
-        currency="CNY",
-        data=[price_point],
-        data_start=date_str,
-        data_end=date_str,
-        source="tencent",
-    )
-
-
-class TencentDataSource(DataSource):
-    """腾讯行情数据源实现。
-
-    支持：
-    - A 股股票（沪深）
-    - A 股 ETF
-    - 主要指数（沪深300/中证500/上证等）
-    - 公募基金（通过天天基金接口）
-    """
-
-    @property
-    def name(self) -> str:
-        return "tencent"
-
-    # ---------- 股票 / ETF ----------
-
-    def _get_kline(self, full_symbol: str, symbol: str, name: str,
-                   asset_type: AssetType, market: Market) -> Optional[AssetData]:
-        """获取日K线数据（股票、ETF、指数共用）。
-
-        full_symbol: 如 "sz000001" / "sh000300"
-        count=320: 约 1 年历史数据（过大 count 会导致 API 返回空列表）
-        始终使用 qfq（前复权），确保价格连续性。
-        """
-        url = (
-            f"http://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
-            f"?param={full_symbol},day,,,320,qfq"
-        )
-        raw = _http_get(url)
-        if raw is None:
-            return None
-        time.sleep(REQUEST_DELAY)
-        return _parse_tencent_kline(raw, symbol, name, asset_type, market)
-
-    def get_stock_history(self, symbol: str, market: str = "sz") -> Optional[AssetData]:
-        code = f"{market}{symbol}"
-        return self._get_kline(code, symbol, "", AssetType.STOCK, Market.CN)
-
-    def get_etf_history(self, symbol: str, market: str = "sz") -> Optional[AssetData]:
-        code = f"{market}{symbol}"
-        return self._get_kline(code, symbol, "", AssetType.ETF, Market.CN)
-
-    # ---------- 指数 ----------
-
-    # 常见指数代码映射
-    INDEX_MAP = {
-        "000300": ("沪深300", "sh000300"),
-        "000905": ("中证500", "sh000905"),
-        "000852": ("中证1000", "sh000852"),
-        "000001": ("上证指数", "sh000001"),
-        "399001": ("深证成指", "sz399001"),
-        "399006": ("创业板指", "sz399006"),
-        "000016": ("上证50", "sh000016"),
-        "000688": ("科创50", "sh000688"),
-        "399673": ("创业板50", "sz399673"),
-        # 海外指数
-        "us.IXIC": ("纳斯达克综合指数", "us.IXIC"),
-        "us.SPX": ("标普500", "us.INX"),
-        "us.DJI": ("道琼斯工业平均", "us.DJI"),
-    }
-
-    def get_index_history(self, symbol: str) -> Optional[AssetData]:
-        # 标准化：去掉 sh/sz 前缀后再查
-        clean = symbol.replace("sh", "").replace("sz", "")
-        if clean in self.INDEX_MAP:
-            name, full_code = self.INDEX_MAP[clean]
+        text = raw.decode("gbk", errors="replace")
+    except UnicodeDecodeError:
+        return out
+    for line in text.strip().splitlines():
+        line = line.strip()
+        if not line.startswith("v_") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        fields = value.strip().strip(";").strip('"').split("~")
+        if len(fields) < 5:
+            continue
+        code = key[2:]
+        if code.startswith("jj"):
+            # 基金：1=名称 5=单位净值 7=涨跌幅
+            price = fields[5] if len(fields) > 5 else ""
+            name = fields[1] if len(fields) > 1 else ""
+            pct = fields[7] if len(fields) > 7 else ""
         else:
-            # 尝试直接用传入的 symbol
-            full_code = symbol
-            name = ""
-
-        return self._get_kline(full_code, clean, name, AssetType.INDEX, Market.CN)
-
-    # ---------- 实时行情快照（qt.gtimg.cn） ----------
-
-    def get_batch_quotes(self, codes: list[str]) -> list[dict]:
-        """批量获取资产实时行情快照。
-
-        使用 qt.gtimg.cn 接口，支持股票/ETF/指数/基金。
-        基金代码需加 jj 前缀（如 jj000001）。
-
-        返回字段：
-        - code: 代码
-        - name: 名称
-        - price: 当前价（基金为单位净值）
-        - change_pct: 涨跌幅%
-        - date: 日期
-        - acc_nav: 累计净值（仅基金）
-
-        注：这只是最新的实时快照，不是历史数据。
-        """
-        if not codes:
-            return []
-
-        url = f"http://qt.gtimg.cn/q={','.join(codes)}"
-        raw = _http_get(url)
-        if raw is None:
-            return []
-
+            price = fields[3]
+            name = fields[1]
+            pct = fields[32] if len(fields) > 32 else ""
         try:
-            text = raw.decode("gbk", errors="replace")
-        except Exception:
-            return []
+            price_f = float(price)
+        except (TypeError, ValueError):
+            continue
+        if price_f <= 0:
+            continue
+        try:
+            pct_f = float(pct)
+        except (TypeError, ValueError):
+            pct_f = None
+        out[code] = {"name": name, "price": price_f, "change_pct": pct_f}
+    return out
 
-        results = []
-        for line in text.strip().split("\n"):
-            line = line.strip()
-            if not line or "=" not in line:
-                continue
-            key, val = line.split("=", 1)
-            if not key.startswith("v_"):
-                continue
-            # 去掉引号和分号
-            val = val.strip().strip('"').rstrip(";")
-            parts = val.split("~")
-            if len(parts) < 9:
-                continue
 
-            is_fund = key.startswith("v_jj")
-
-            if is_fund:
-                # 基金字段布局：
-                # [0]=code [1]=name [2]=price(0) [5]=单位净值 [6]=累计净值 [7]=涨跌幅% [8]=日期
-                result = {
-                    "code": parts[0],
-                    "name": parts[1],
-                    "price": float(parts[5]) if len(parts) > 5 and parts[5] else 0,
-                    "change_pct": float(parts[7]) if len(parts) > 7 and parts[7] else 0,
-                    "date": parts[8] if len(parts) > 8 else "",
-                }
-                if len(parts) > 6 and parts[6]:
-                    result["acc_nav"] = float(parts[6])
-                results.append(result)
-            else:
-                # 股票/ETF/指数字段布局：
-                # [0]=market [1]=name [2]=code [3]=现价 [30]=日期(yyyyMMddHHmmss) [31]=涨跌额 [32]=涨跌幅%
-                if len(parts) < 33:
-                    continue
-                result = {
-                    "code": parts[2],
-                    "name": parts[1],
-                    "price": float(parts[3]) if parts[3] else 0,
-                    "change_pct": float(parts[32]) if parts[32] else 0,
-                    "date": parts[30][:8] if len(parts) > 30 and parts[30] else "",
-                }
-                results.append(result)
-
-        return results
-
-    def get_fund_quote(self, symbol: str) -> Optional[dict]:
-        """获取单只基金实时净值快照。
-
-        使用 qt.gtimg.cn jj 前缀接口。
-        返回：{code, name, price(单位净值), acc_nav(累计净值), change_pct, date}
-        """
-        results = self.get_batch_quotes([f"jj{symbol}"])
-        return results[0] if results else None
-
-    # ---------- 基金 ----------
-
-    def get_fund_history(self, symbol: str) -> Optional[AssetData]:
-        """获取基金净值。
-
-        注意：天天基金单次接口只返回最新净值。
-        完整历史净值需要额外的历史接口（后续 Phase 扩展）。
-        实时快照请使用 get_fund_quote()。
-        """
-        url = f"http://fundgz.1234567.com.cn/js/{symbol}.js"
-        raw = _http_get(url)
+def fetch_quote_prices(codes: list[str]) -> dict[str, dict]:
+    """批量抓取最新快照（一次请求）。失败返回空字典。"""
+    if not codes:
+        return {}
+    # 一次请求上限约 60 个代码，分批更稳
+    result: dict[str, dict] = {}
+    for i in range(0, len(codes), 50):
+        chunk = codes[i : i + 50]
+        raw = http_get(f"https://qt.gtimg.cn/q={','.join(chunk)}", referer="https://gu.qq.com/")
         if raw is None:
-            return None
+            continue
+        result.update(parse_quote_snapshot(raw))
         time.sleep(REQUEST_DELAY)
-        return _parse_fund_nav(raw, symbol, "")
+    return result
 
 
-# 工厂函数：获取默认数据源实例
-_default_source: Optional[TencentDataSource] = None
+class TencentSource:
+    """腾讯行情数据源（股票 / ETF / 指数）。"""
 
+    name = "tencent"
 
-def get_default_source() -> TencentDataSource:
-    """获取默认数据源（单例）。"""
-    global _default_source
-    if _default_source is None:
-        _default_source = TencentDataSource()
-    return _default_source
+    def __init__(self, delay: float = REQUEST_DELAY) -> None:
+        self.delay = delay
+
+    def fetch_window(self, code: str, start_year: int, end_year: int) -> tuple[list[Bar], dict]:
+        """抓取 [start_year, end_year] 窗口。空列表代表该窗口无数据。"""
+        param = (
+            f"{code},day,{start_year}-01-01,{end_year}-12-31,"
+            f"{WINDOW_COUNT},{ADJUST}"
+        )
+        for host in HOSTS:
+            raw = http_get(f"https://{host}/{KLINE_PATH}?param={param}")
+            if raw is None:
+                continue
+            bars, meta = parse_kline(raw)
+            time.sleep(self.delay)
+            if bars:
+                return bars, meta
+        return [], {}
+
+    def fetch(self, asset: AssetDef, until_year: int, since: str = "") -> Optional[AssetSeries]:
+        start_year = asset.from_year
+        if since:
+            start_year = max(start_year, int(since[:4]))
+
+        buckets: list[Bar] = []
+        meta: dict = {}
+        empty_windows = 0
+        year = start_year
+        while year <= until_year:
+            end_year = min(year + WINDOW_YEARS - 1, until_year)
+            window_bars, window_meta = self.fetch_window(asset.code, year, end_year)
+            if window_bars:
+                buckets.extend(window_bars)
+                empty_windows = 0
+                # 最新窗口的快照更可信，用它覆盖旧的
+                meta.update(window_meta)
+            else:
+                empty_windows += 1
+                if empty_windows >= 2:
+                    print(f"  [{asset.code}] 连续 {empty_windows} 个窗口无数据，提前结束", flush=True)
+                    if not buckets:
+                        return None
+                    break
+            print(f"  [{asset.code}] {year}-{end_year}: {len(window_bars)} 条", flush=True)
+            year = end_year + 1
+
+        bars = dedupe_sort(buckets)
+        if since:
+            bars = [b for b in bars if b.date >= since]
+        if not bars:
+            return None
+
+        is_index = asset.type is AssetType.INDEX
+        return AssetSeries(
+            symbol=asset.symbol,
+            name=asset.name,
+            type=asset.type,
+            market=asset.market,
+            group=asset.group,
+            currency="USD" if asset.market is Market.US else "CNY",
+            source=self.name,
+            price_basis=(
+                PriceBasis.INDEX_CLOSE.value if is_index else PriceBasis.HFQ_CLOSE.value
+            ),
+            last_close=meta.get("last_close"),
+            bars=bars,
+        )

@@ -1,0 +1,819 @@
+{
+  "schema": 2,
+  "generated_at": "2026-11-25T13:39:36+08:00",
+  "data_date": "2026-11-24",
+  "stale_days": 1,
+  "summary": {
+    "total": 55,
+    "files_ok": 55,
+    "missing": 0,
+    "error_count": 0,
+    "warning_count": 15,
+    "total_points": 207742
+  },
+  "errors": [],
+  "warnings": [
+    "601318: 1 处日期断档 > 20 天",
+    "600036: 1 处日期断档 > 20 天",
+    "300059: 1 处日期断档 > 20 天",
+    "000001: 2 处日期断档 > 20 天",
+    "600519: 2 处日期断档 > 20 天",
+    "000858: 2 处日期断档 > 20 天",
+    "002714: 1 处日期断档 > 20 天",
+    "601888: 1 处日期断档 > 20 天",
+    "002415: 1 处日期断档 > 20 天",
+    "002230: 1 处日期断档 > 20 天",
+    "000725: 1 处日期断档 > 20 天",
+    "601012: 1 处日期断档 > 20 天",
+    "600585: 2 处日期断档 > 20 天",
+    "600276: 2 处日期断档 > 20 天",
+    "000002: 3 处日期断档 > 20 天"
+  ],
+  "assets": [
+    {
+      "symbol": "000300",
+      "status": "ok",
+      "count": 5316,
+      "start": "2005-01-04",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "沪深300",
+      "type": "index",
+      "group": "宽基指数"
+    },
+    {
+      "symbol": "000905",
+      "status": "ok",
+      "count": 4865,
+      "start": "2006-11-16",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "中证500",
+      "type": "index",
+      "group": "宽基指数"
+    },
+    {
+      "symbol": "000852",
+      "status": "ok",
+      "count": 3165,
+      "start": "2013-11-19",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "中证1000",
+      "type": "index",
+      "group": "宽基指数"
+    },
+    {
+      "symbol": "000001",
+      "status": "ok",
+      "count": 5353,
+      "start": "2004-11-11",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "上证指数",
+      "type": "index",
+      "group": "宽基指数"
+    },
+    {
+      "symbol": "399001",
+      "status": "ok",
+      "count": 5353,
+      "start": "2004-11-11",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "深证成指",
+      "type": "index",
+      "group": "宽基指数"
+    },
+    {
+      "symbol": "399006",
+      "status": "ok",
+      "count": 4001,
+      "start": "2010-06-01",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "创业板指",
+      "type": "index",
+      "group": "宽基指数"
+    },
+    {
+      "symbol": "000016",
+      "status": "ok",
+      "count": 5353,
+      "start": "2004-11-11",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "上证50",
+      "type": "index",
+      "group": "宽基指数"
+    },
+    {
+      "symbol": "000688",
+      "status": "ok",
+      "count": 1670,
+      "start": "2020-01-02",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "科创50",
+      "type": "index",
+      "group": "宽基指数"
+    },
+    {
+      "symbol": "399673",
+      "status": "ok",
+      "count": 3024,
+      "start": "2014-06-18",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "创业板50",
+      "type": "index",
+      "group": "宽基指数"
+    },
+    {
+      "symbol": "us.NDX",
+      "status": "ok",
+      "count": 4256,
+      "start": "2009-12-09",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "纳斯达克100指数",
+      "type": "index",
+      "group": "海外指数"
+    },
+    {
+      "symbol": "us.INX",
+      "status": "ok",
+      "count": 4266,
+      "start": "2009-12-09",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "标普500",
+      "type": "index",
+      "group": "海外指数"
+    },
+    {
+      "symbol": "us.DJI",
+      "status": "ok",
+      "count": 4264,
+      "start": "2009-12-09",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "道琼斯工业平均指数",
+      "type": "index",
+      "group": "海外指数"
+    },
+    {
+      "symbol": "601318",
+      "status": "ok",
+      "count": 4731,
+      "start": "2007-03-01",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2010-06-28",
+          "to": "2010-09-02",
+          "days": 66
+        }
+      ],
+      "gap_count": 1,
+      "name": "中国平安",
+      "type": "stock",
+      "group": "金融"
+    },
+    {
+      "symbol": "600036",
+      "status": "ok",
+      "count": 5324,
+      "start": "2004-09-09",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2006-01-11",
+          "to": "2006-02-27",
+          "days": 47
+        }
+      ],
+      "gap_count": 1,
+      "name": "招商银行",
+      "type": "stock",
+      "group": "金融"
+    },
+    {
+      "symbol": "601398",
+      "status": "ok",
+      "count": 4857,
+      "start": "2006-10-27",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "工商银行",
+      "type": "stock",
+      "group": "金融"
+    },
+    {
+      "symbol": "600030",
+      "status": "ok",
+      "count": 5292,
+      "start": "2004-09-20",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "中信证券",
+      "type": "stock",
+      "group": "金融"
+    },
+    {
+      "symbol": "300059",
+      "status": "ok",
+      "count": 3987,
+      "start": "2010-03-19",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2015-02-06",
+          "to": "2015-04-16",
+          "days": 69
+        }
+      ],
+      "gap_count": 1,
+      "name": "东方财富",
+      "type": "stock",
+      "group": "金融"
+    },
+    {
+      "symbol": "000001",
+      "status": "ok",
+      "count": 5242,
+      "start": "2004-09-13",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2005-09-27",
+          "to": "2005-10-21",
+          "days": 24
+        },
+        {
+          "from": "2010-06-29",
+          "to": "2010-09-02",
+          "days": 65
+        }
+      ],
+      "gap_count": 2,
+      "name": "平安银行",
+      "type": "stock",
+      "group": "金融"
+    },
+    {
+      "symbol": "600519",
+      "status": "ok",
+      "count": 5340,
+      "start": "2004-08-19",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2006-02-23",
+          "to": "2006-04-17",
+          "days": 53
+        },
+        {
+          "from": "2006-04-25",
+          "to": "2006-05-25",
+          "days": 30
+        }
+      ],
+      "gap_count": 2,
+      "name": "贵州茅台",
+      "type": "stock",
+      "group": "消费"
+    },
+    {
+      "symbol": "000858",
+      "status": "ok",
+      "count": 5263,
+      "start": "2004-09-16",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2006-01-24",
+          "to": "2006-03-02",
+          "days": 37
+        },
+        {
+          "from": "2015-07-29",
+          "to": "2015-11-02",
+          "days": 96
+        }
+      ],
+      "gap_count": 2,
+      "name": "五粮液",
+      "type": "stock",
+      "group": "消费"
+    },
+    {
+      "symbol": "002714",
+      "status": "ok",
+      "count": 3091,
+      "start": "2014-01-28",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2015-04-03",
+          "to": "2015-04-28",
+          "days": 25
+        }
+      ],
+      "gap_count": 1,
+      "name": "牧原股份",
+      "type": "stock",
+      "group": "消费"
+    },
+    {
+      "symbol": "601888",
+      "status": "ok",
+      "count": 4091,
+      "start": "2009-10-15",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2015-03-13",
+          "to": "2015-06-04",
+          "days": 83
+        }
+      ],
+      "gap_count": 1,
+      "name": "中国中免",
+      "type": "stock",
+      "group": "消费"
+    },
+    {
+      "symbol": "300750",
+      "status": "ok",
+      "count": 2052,
+      "start": "2018-06-11",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "宁德时代",
+      "type": "stock",
+      "group": "科技"
+    },
+    {
+      "symbol": "002415",
+      "status": "ok",
+      "count": 3950,
+      "start": "2010-05-28",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2015-07-08",
+          "to": "2015-09-09",
+          "days": 63
+        }
+      ],
+      "gap_count": 1,
+      "name": "海康威视",
+      "type": "stock",
+      "group": "科技"
+    },
+    {
+      "symbol": "002230",
+      "status": "ok",
+      "count": 4417,
+      "start": "2008-05-12",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2016-03-15",
+          "to": "2016-05-18",
+          "days": 64
+        }
+      ],
+      "gap_count": 1,
+      "name": "科大讯飞",
+      "type": "stock",
+      "group": "科技"
+    },
+    {
+      "symbol": "688981",
+      "status": "ok",
+      "count": 1536,
+      "start": "2020-07-16",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "中芯国际",
+      "type": "stock",
+      "group": "科技"
+    },
+    {
+      "symbol": "000725",
+      "status": "ok",
+      "count": 5281,
+      "start": "2004-09-14",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2005-10-14",
+          "to": "2005-11-04",
+          "days": 21
+        }
+      ],
+      "gap_count": 1,
+      "name": "京东方A",
+      "type": "stock",
+      "group": "科技"
+    },
+    {
+      "symbol": "600031",
+      "status": "ok",
+      "count": 5323,
+      "start": "2004-10-15",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "三一重工",
+      "type": "stock",
+      "group": "制造"
+    },
+    {
+      "symbol": "002594",
+      "status": "ok",
+      "count": 3729,
+      "start": "2011-06-30",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "比亚迪",
+      "type": "stock",
+      "group": "制造"
+    },
+    {
+      "symbol": "601012",
+      "status": "ok",
+      "count": 3512,
+      "start": "2012-04-11",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2013-12-16",
+          "to": "2014-01-13",
+          "days": 28
+        }
+      ],
+      "gap_count": 1,
+      "name": "隆基绿能",
+      "type": "stock",
+      "group": "制造"
+    },
+    {
+      "symbol": "600585",
+      "status": "ok",
+      "count": 5330,
+      "start": "2004-09-24",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2006-01-13",
+          "to": "2006-02-06",
+          "days": 24
+        },
+        {
+          "from": "2006-02-09",
+          "to": "2006-03-02",
+          "days": 21
+        }
+      ],
+      "gap_count": 2,
+      "name": "海螺水泥",
+      "type": "stock",
+      "group": "制造"
+    },
+    {
+      "symbol": "600276",
+      "status": "ok",
+      "count": 5342,
+      "start": "2004-09-27",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2006-04-27",
+          "to": "2006-05-18",
+          "days": 21
+        },
+        {
+          "from": "2006-05-25",
+          "to": "2006-06-20",
+          "days": 26
+        }
+      ],
+      "gap_count": 2,
+      "name": "恒瑞医药",
+      "type": "stock",
+      "group": "医药"
+    },
+    {
+      "symbol": "300760",
+      "status": "ok",
+      "count": 1968,
+      "start": "2018-10-16",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "迈瑞医疗",
+      "type": "stock",
+      "group": "医药"
+    },
+    {
+      "symbol": "000002",
+      "status": "ok",
+      "count": 5188,
+      "start": "2004-09-16",
+      "end": "2026-11-24",
+      "gaps": [
+        {
+          "from": "2005-11-04",
+          "to": "2005-12-02",
+          "days": 28
+        },
+        {
+          "from": "2012-12-25",
+          "to": "2013-01-21",
+          "days": 27
+        },
+        {
+          "from": "2015-12-18",
+          "to": "2016-07-04",
+          "days": 199
+        }
+      ],
+      "gap_count": 3,
+      "name": "万科A",
+      "type": "stock",
+      "group": "地产"
+    },
+    {
+      "symbol": "510300",
+      "status": "ok",
+      "count": 3522,
+      "start": "2012-05-28",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "沪深300ETF（华泰柏瑞）",
+      "type": "etf",
+      "group": "宽基ETF"
+    },
+    {
+      "symbol": "510500",
+      "status": "ok",
+      "count": 3325,
+      "start": "2013-03-15",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "中证500ETF（南方）",
+      "type": "etf",
+      "group": "宽基ETF"
+    },
+    {
+      "symbol": "510050",
+      "status": "ok",
+      "count": 5287,
+      "start": "2005-02-23",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "上证50ETF（华夏）",
+      "type": "etf",
+      "group": "宽基ETF"
+    },
+    {
+      "symbol": "159915",
+      "status": "ok",
+      "count": 3630,
+      "start": "2011-12-09",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "创业板ETF（易方达）",
+      "type": "etf",
+      "group": "宽基ETF"
+    },
+    {
+      "symbol": "588000",
+      "status": "ok",
+      "count": 1461,
+      "start": "2020-11-16",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "科创50ETF（华夏）",
+      "type": "etf",
+      "group": "宽基ETF"
+    },
+    {
+      "symbol": "159919",
+      "status": "ok",
+      "count": 3520,
+      "start": "2012-05-28",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "沪深300ETF（嘉实）",
+      "type": "etf",
+      "group": "宽基ETF"
+    },
+    {
+      "symbol": "512100",
+      "status": "ok",
+      "count": 2441,
+      "start": "2016-11-04",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "中证1000ETF（南方）",
+      "type": "etf",
+      "group": "宽基ETF"
+    },
+    {
+      "symbol": "512880",
+      "status": "ok",
+      "count": 2499,
+      "start": "2016-08-08",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "证券ETF（国泰）",
+      "type": "etf",
+      "group": "行业ETF"
+    },
+    {
+      "symbol": "512690",
+      "status": "ok",
+      "count": 1834,
+      "start": "2019-05-06",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "酒ETF（鹏华）",
+      "type": "etf",
+      "group": "行业ETF"
+    },
+    {
+      "symbol": "159995",
+      "status": "ok",
+      "count": 1649,
+      "start": "2020-02-10",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "芯片ETF（华夏）",
+      "type": "etf",
+      "group": "行业ETF"
+    },
+    {
+      "symbol": "512170",
+      "status": "ok",
+      "count": 1805,
+      "start": "2019-06-17",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "医疗ETF（华宝）",
+      "type": "etf",
+      "group": "行业ETF"
+    },
+    {
+      "symbol": "159866",
+      "status": "ok",
+      "count": 1365,
+      "start": "2021-04-08",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "日经ETF（工银瑞信）",
+      "type": "etf",
+      "group": "跨境ETF"
+    },
+    {
+      "symbol": "513100",
+      "status": "ok",
+      "count": 3288,
+      "start": "2013-05-15",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "纳指ETF（国泰）",
+      "type": "etf",
+      "group": "跨境ETF"
+    },
+    {
+      "symbol": "513500",
+      "status": "ok",
+      "count": 3124,
+      "start": "2014-01-15",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "标普500ETF（博时）",
+      "type": "etf",
+      "group": "跨境ETF"
+    },
+    {
+      "symbol": "159920",
+      "status": "ok",
+      "count": 3423,
+      "start": "2012-10-22",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "恒生ETF（华夏）",
+      "type": "etf",
+      "group": "跨境ETF"
+    },
+    {
+      "symbol": "518880",
+      "status": "ok",
+      "count": 3239,
+      "start": "2013-07-29",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "黄金ETF（华安）",
+      "type": "etf",
+      "group": "大类资产"
+    },
+    {
+      "symbol": "511010",
+      "status": "ok",
+      "count": 3321,
+      "start": "2013-03-25",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "国债ETF（国泰）",
+      "type": "etf",
+      "group": "大类资产"
+    },
+    {
+      "symbol": "511880",
+      "status": "ok",
+      "count": 3305,
+      "start": "2013-04-18",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "银华日利（货币ETF）",
+      "type": "etf",
+      "group": "大类资产"
+    },
+    {
+      "symbol": "110011",
+      "status": "ok",
+      "count": 4444,
+      "start": "2008-06-19",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "易方达中小盘混合",
+      "type": "fund",
+      "group": "场外基金"
+    },
+    {
+      "symbol": "001512",
+      "status": "ok",
+      "count": 2730,
+      "start": "2015-07-08",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "易方达中证海外互联ETF联接A",
+      "type": "fund",
+      "group": "场外基金"
+    },
+    {
+      "symbol": "161725",
+      "status": "ok",
+      "count": 2798,
+      "start": "2015-05-27",
+      "end": "2026-11-24",
+      "gaps": [],
+      "gap_count": 0,
+      "name": "招商中证白酒指数（LOF）",
+      "type": "fund",
+      "group": "场外基金"
+    }
+  ]
+}

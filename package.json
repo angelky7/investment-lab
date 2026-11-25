@@ -1,0 +1,35 @@
+{
+  "name": "investment-lab",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "开源投资实验室：用 20 年真实行情讲解收益、风险、分散与再平衡，零构建、零框架依赖，界面基于 MDUI 2。",
+  "homepage": "https://angelky7.github.io/investment-lab/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/angelky7/investment-lab.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "investing",
+    "education",
+    "backtest",
+    "mdui",
+    "static-site",
+    "github-pages"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "test:py": "python -m unittest discover -s tests -p \"test_*.py\"",
+    "test:all": "node --test && python -m unittest discover -s tests -p \"test_*.py\"",
+    "serve": "python -m http.server 8080",
+    "data:fetch": "python scripts/fetch.py",
+    "data:fetch:incremental": "python scripts/fetch.py --mode incremental",
+    "data:build": "python scripts/build.py",
+    "data:validate": "python scripts/validate.py",
+    "data:refresh": "python scripts/fetch.py --mode incremental && python scripts/build.py && python scripts/validate.py"
+  }
+}

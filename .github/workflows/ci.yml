@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "data/**"
+      - "**.md"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  js-tests:
+    name: 前端计算引擎测试
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 语法检查（所有 ESM 模块）
+        run: |
+          found=0
+          for f in $(find js -name '*.js'); do
+            cp "$f" "/tmp/$(echo "$f" | tr '/' '_').mjs"
+            node --check "/tmp/$(echo "$f" | tr '/' '_').mjs" || found=1
+          done
+          exit $found
+
+      - name: 单元测试
+        run: node --test
+
+  python-tests:
+    name: 数据管线测试
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 单元测试
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: 校验已提交的数据
+        run: python scripts/validate.py
+
+  data-integrity:
+    name: 产物完整性
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 重新构建索引并确认无差异
+        run: |
+          python scripts/build.py
+          # meta.json 含有构建时间戳，不参与比较
+          if ! git diff --quiet -- data/assets.json data/periods.json; then
+            echo "::error::data/ 索引与 config/ 登记表不同步，请运行 python scripts/build.py 后提交"
+            git diff --stat -- data/
+            exit 1
+          fi
+
+      - name: 检查页面引用的静态资源是否存在
+        run: python scripts/check_links.py

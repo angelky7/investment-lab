@@ -1,0 +1,38 @@
+{
+  "schema": 2,
+  "generated_at": "2026-11-25T13:39:24+08:00",
+  "data_date": "2026-11-24",
+  "benchmark": "000300",
+  "total_assets": 55,
+  "available_assets": 55,
+  "insufficient_assets": 0,
+  "unavailable_assets": 0,
+  "groups": [
+    "宽基指数",
+    "海外指数",
+    "金融",
+    "消费",
+    "科技",
+    "制造",
+    "医药",
+    "地产",
+    "宽基ETF",
+    "行业ETF",
+    "跨境ETF",
+    "大类资产",
+    "场外基金"
+  ],
+  "types": [
+    "index",
+    "etf",
+    "stock",
+    "fund"
+  ],
+  "sources": [
+    "eastmoney",
+    "tencent"
+  ],
+  "min_ok_points": 250,
+  "period_count": 7,
+  "scenario_count": 5
+}

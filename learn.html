@@ -1,385 +1,301 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>投资课程 · 长期投资实验室</title>
-  <meta name="description" content="从零开始学习投资，系统掌握资产分析、风险管理和组合构建。">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/mobile.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>投资课程 · 投资实验室</title>
+  <meta name="description" content="36 节投资课：从股票、基金、指数讲到夏普、Beta、压力测试与行为偏差，每级配一个必须动脑的测验。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2300695c'/%3E%3Cpath d='M8 22l5-6 4 3.5L24 10' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="vendor/mdui/mdui.css" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script defer src="vendor/mdui/mdui.global.js"></script>
 </head>
 <body>
-  <header class="site-header">
-    <a href="index.html" class="back-link">&larr; 首页</a>
-    <h1 class="site-title">投资课程</h1>
-    <p class="site-subtitle">系统学习，理解本质，形成自己的判断。</p>
-  </header>
+  <mdui-layout>
+    <mdui-top-app-bar>
+      <mdui-button-icon id="nav-open" aria-label="打开导航菜单">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3.5 6h17M3.5 12h17M3.5 18h17"/></svg>
+      </mdui-button-icon>
+      <mdui-top-app-bar-title>投资课程</mdui-top-app-bar-title>
+      <div style="flex:1"></div>
+      <mdui-button-icon id="theme-toggle" class="btn-theme" aria-label="切换深色/浅色主题"><svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg><svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.6A4.4 4.4 0 1 0 12 16.4a4.4 4.4 0 0 0 0-8.8zM12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4"/></svg></mdui-button-icon>
+    </mdui-top-app-bar>
 
-  <main class="learn-content">
-    <section class="course-section">
-      <button class="course-toggle" aria-expanded="false" onclick="toggleSection(this)">
-        <span class="course-level course-level--beginner">小白</span>
-        <h2>投资入门</h2>
-        <span class="toggle-icon">+</span>
-      </button>
-      <div class="course-body" hidden>
-        <ul class="course-list">
-          <li>
-            <h3>什么是股票</h3>
-            <p>股票代表公司的一部分所有权。买入股票意味着你成为公司的股东，享有公司成长带来的收益，也承担经营不善的风险。</p>
-          </li>
-          <li>
-            <h3>什么是基金</h3>
-            <p>基金是集合众多投资者资金、由专业管理人统一投资的工具。公募基金门槛低、信息透明，适合普通投资者。</p>
-          </li>
-          <li>
-            <h3>什么是 ETF</h3>
-            <p>ETF（交易型开放式指数基金）跟踪特定指数，像股票一样在交易所买卖。费用低、透明度高，是入门投资的常用工具。</p>
-          </li>
-          <li>
-            <h3>什么是指数</h3>
-            <p>指数是一篮子资产的价格加权平均，反映市场整体或某一板块的表现。例如沪深300代表A股大盘股走势。</p>
-          </li>
-          <li>
-            <h3>什么是债券</h3>
-            <p>债券是发行人向投资者借款的凭证，约定按期付息、到期还本。债券通常波动小于股票，是组合中降低风险的工具。</p>
-          </li>
-          <li>
-            <h3>什么是 QDII</h3>
-            <p>QDII（合格境内机构投资者）基金允许境内投资者间接投资海外市场，是配置全球资产的一种方式。</p>
-          </li>
-          <li>
-            <h3>什么是收益</h3>
-            <p>收益是投资获得的回报，通常以百分比表示。例如买入价100元、卖出价110元，收益为10%。收益可以来自价格上涨（资本利得）或分红。</p>
-          </li>
-          <li>
-            <h3>什么是风险</h3>
-            <p>风险意味着未来结果的不确定性。在投资中，风险通常表现为价格波动——资产可能上涨，也可能下跌。</p>
-          </li>
-          <li>
-            <h3>什么是回撤
-              <button class="why-btn" onclick="toggleWhy(event,'why-dd')">为什么？</button>
-            </h3>
-            <p>回撤是指资产从历史高点下跌的幅度。例如资产从最高100元跌到70元，回撤为30%。回撤衡量的是持有过程中可能承受的账面亏损。</p>
-            <div class="why-content" id="why-dd">因为长期收益很好，并不代表投资过程容易承受。一个资产可能长期上涨，但中途经历非常大的回撤。如果你在中途因恐慌卖出，后面的涨幅与你无关。</div>
-          </li>
-          <li>
-            <h3>什么是复利</h3>
-            <p>复利是"利滚利"——收益再投资产生新收益。时间越长，复利效应越显著。年化8%的收益，10年后本金翻倍有余。</p>
-          </li>
-        </ul>
-      </div>
-    </section>
+    <mdui-layout-main>
+      <main class="page">
+        <header class="page-head">
+          <span class="eyebrow">Course</span>
+          <h1>投资课程</h1>
+          <p class="lead">
+            三级共 36 节。不要只读，每级末尾的测验要真的动笔算一遍——
+            「看懂」和「会算」之间隔着一整个投资的难度。
+          </p>
+        </header>
 
-    <!-- 小白互动测验 -->
-    <section class="quiz-section">
-      <h3 class="quiz-title">互动测验</h3>
-      <div class="quiz-card" id="quiz-beginner">
-        <div class="quiz-step active" data-step="1">
-          <p class="quiz-question">一个资产从 100 跌到 70，回撤是多少？</p>
-          <div class="quiz-input-row">
-            <input type="text" id="quiz-b1" placeholder="输入百分比，如 30" onkeydown="if(event.key==='Enter')checkBeginnerStep1()">
-            <button class="quiz-next-btn" onclick="checkBeginnerStep1()">确认</button>
-          </div>
-          <div class="quiz-feedback" id="quiz-b1-fb"></div>
+        <section class="section">
+          <mdui-tabs id="learn-tabs" value="beginner" variant="primary" full-width>
+            <mdui-tab value="beginner">小白</mdui-tab>
+            <mdui-tab value="intermediate">进阶</mdui-tab>
+            <mdui-tab value="advanced">高级</mdui-tab>
+            <mdui-tab value="case">决策训练</mdui-tab>
+          </mdui-tabs>
+        </section>
+
+        <div class="level-panel hidden" data-level="beginner">
+          <section class="section">
+            <div class="notice" data-tone="accent">
+              <span>
+                这一级只回答一个问题：<strong>你在买什么？</strong>
+                如果说不清一项资产背后是什么、靠什么产生回报，那就不该把钱放进去。
+              </span>
+            </div>
+          </section>
+          <section class="section">
+            <div class="course-grid">
+              <div class="lesson">
+                <h3>什么是股票</h3>
+                <p>股票是公司所有权的一部分。买入股票意味着你成为股东，享有公司成长带来的收益，也承担经营失败的风险。它的回报来自两处：公司价值增长，以及分红。</p>
+              </div>
+              <div class="lesson">
+                <h3>什么是基金</h3>
+                <p>基金把众多投资者的钱集合起来，由管理人统一投资。它的价值在于把专业分工和分散投资的门槛降到很低，代价是管理费。</p>
+              </div>
+              <div class="lesson">
+                <h3>什么是 ETF</h3>
+                <p>ETF 是可以在交易所像股票一样买卖的指数基金。它跟踪一篮子资产，费率通常低于主动基金，持仓透明，是最适合普通人的入门工具之一。</p>
+              </div>
+              <div class="lesson">
+                <h3>什么是指数</h3>
+                <p>指数是用规则把一篮子资产的价格加权成一个数字，用来代表某个市场或板块。沪深300 代表 A 股大盘股，中证500 代表中盘股。</p>
+              </div>
+              <div class="lesson">
+                <h3>什么是债券</h3>
+                <p>债券是借钱给别人并约定还本付息的凭证。它的波动通常远小于股票，是组合里用来降低整体波动的重要部分——但「低波动」不等于「不会亏」。</p>
+              </div>
+              <div class="lesson">
+                <h3>什么是 QDII</h3>
+                <p>QDII 基金让境内投资者间接投资海外市场。它提供了地域上的分散，但同时引入了汇率风险和额度限制带来的溢价问题。</p>
+              </div>
+              <div class="lesson">
+                <h3>收益究竟来自哪里</h3>
+                <p>总收益 = 价格变化 + 分红再投资。只看价格会系统性低估长期回报，高分红资产的差距尤其大。本站的价格一律采用含分红再投资的口径。</p>
+              </div>
+              <div class="lesson">
+                <h3>什么是风险</h3>
+                <p>风险不是「会亏」，而是「结果不确定」。它至少有两种：波动（过程难受）与永久性损失（真的亏掉）。前者可以靠时间稀释，后者不能。</p>
+              </div>
+              <div class="lesson">
+                <h3>什么是回撤</h3>
+                <p>回撤是从历史高点下跌的幅度。它衡量的是持有过程中你账户上真实出现过的亏损，也是绝大多数人在最低点卖出的直接原因。</p>
+                <div class="why">
+                  为什么回撤比波动更重要？因为波动是统计概念，回撤是心理现实。一个资产可能长期上涨，但中途跌掉一半——如果那半年你正好需要用钱，长期收益和你无关。
+                </div>
+              </div>
+              <div class="lesson">
+                <h3>什么是复利</h3>
+                <p>复利是「收益再投资产生新收益」。它的关键是时间，不是收益率：年化 8% 大约 9 年翻倍，年化 12% 大约 6 年翻倍，但前者更容易长期维持。</p>
+              </div>
+              <div class="lesson">
+                <h3>什么是波动率</h3>
+                <p>波动率衡量价格上下起伏的幅度，通常用日收益的标准差年化得到。它不区分上涨还是下跌，所以高波动既可能是风险，也可能只是活跃。</p>
+              </div>
+              <div class="lesson">
+                <h3>为什么要分散</h3>
+                <p>分散不会提高期望收益，它降低的是「单一资产出事」带来的毁灭性后果。前提是这些资产的涨跌原因确实不同——买五只科技 ETF 不叫分散。</p>
+              </div>
+            </div>
+          </section>
+          <section class="section">
+            <h2 class="section-title">互动测验</h2>
+            <div class="quiz" data-quiz="beginner"></div>
+          </section>
         </div>
-        <div class="quiz-step" data-step="2">
-          <p class="quiz-question">从 70 恢复到 100 需要上涨多少？</p>
-          <div class="quiz-input-row">
-            <input type="text" id="quiz-b2" placeholder="输入百分比" onkeydown="if(event.key==='Enter')checkBeginnerStep2()">
-            <button class="quiz-next-btn" onclick="checkBeginnerStep2()">确认</button>
-          </div>
-          <div class="quiz-feedback" id="quiz-b2-fb"></div>
+
+        <div class="level-panel hidden" data-level="intermediate">
+          <section class="section">
+            <div class="notice" data-tone="accent">
+              <span>
+                这一级解决的是：<strong>怎么判断贵还是便宜？</strong>
+                估值指标不是答案，它们是让你提问的工具。
+              </span>
+            </div>
+          </section>
+          <section class="section">
+            <div class="course-grid">
+              <div class="lesson">
+                <h3>PE（市盈率）</h3>
+                <p>股价 ÷ 每股收益。它回答「市场愿意为公司每 1 元利润付多少钱」。高 PE 可能是高增长预期，也可能是估值过高，区别在于利润能不能跟上。</p>
+              </div>
+              <div class="lesson">
+                <h3>PB（市净率）</h3>
+                <p>股价 ÷ 每股净资产。对银行、保险这类资产驱动型行业更有意义。PB 小于 1 可能意味着便宜，也可能意味着市场认为这些资产会减值。</p>
+              </div>
+              <div class="lesson">
+                <h3>ROE（净资产收益率）</h3>
+                <p>净利润 ÷ 净资产，衡量用股东的钱创造利润的效率。长期高 ROE 往往意味着生意本身好，但要确认它不是靠高杠杆撑起来的。</p>
+              </div>
+              <div class="lesson">
+                <h3>毛利率与净利率</h3>
+                <p>毛利率反映产品本身的赚钱能力（定价权的代理指标），净利率反映扣掉全部费用后的最终水平。两者之差告诉你钱花在哪了。</p>
+              </div>
+              <div class="lesson">
+                <h3>自由现金流</h3>
+                <p>经营现金流减资本支出。利润可以靠会计手段调整，现金流更难造假。一家长期「有利润没现金」的公司值得警惕。</p>
+              </div>
+              <div class="lesson">
+                <h3>股息率与分红再投资</h3>
+                <p>股息率 = 每股分红 ÷ 股价。分红不是白拿的钱（除权后股价下调），但它是真实现金回报，长期再投资的复利效应非常可观。</p>
+              </div>
+              <div class="lesson">
+                <h3>三张财务报表</h3>
+                <p>资产负债表看家底与杠杆，利润表看赚钱能力，现金流量表看钱是否真的到账。三张表要连起来看，单看一张几乎一定被骗。</p>
+              </div>
+              <div class="lesson">
+                <h3>护城河</h3>
+                <p>护城河是让竞争对手难以复制的结构性优势：品牌、专利、网络效应、规模经济、转换成本。它决定高利润能维持多久。</p>
+              </div>
+              <div class="lesson">
+                <h3>估值</h3>
+                <p>估值不是算出一个精确价格，而是估计一个区间。任何 DCF 模型对假设都极度敏感，所以专业的做法是：给区间、讲假设、承认误差。</p>
+              </div>
+              <div class="lesson">
+                <h3>资产配置</h3>
+                <p>把资金分到不同资产类别的过程。学术研究普遍认为，组合长期波动的绝大部分由资产配置决定，而不是选股与择时。</p>
+              </div>
+              <div class="lesson">
+                <h3>相关性</h3>
+                <p>相关性衡量两项资产是否同涨同跌，取值范围 −1 到 1。分散的有效性完全取决于它：两个高度相关的资产放在一起，只是把同一个风险放大了两倍。</p>
+                <div class="why">
+                  为什么说「危机里相关性会趋同」？因为系统性恐慌时，投资者会同时卖出一切能卖的资产换取现金。这时股票、商品甚至部分债券会一起下跌——历史相关性只是常态下的估计。
+                </div>
+              </div>
+              <div class="lesson">
+                <h3>再平衡</h3>
+                <p>定期把组合权重调回目标值，等于机械地「卖强买弱」。它不保证更高收益，但把风险水平维持在设定值，避免某类资产上涨后悄悄占满整个组合。</p>
+              </div>
+            </div>
+          </section>
+          <section class="section">
+            <h2 class="section-title">互动测验</h2>
+            <div class="quiz" data-quiz="intermediate"></div>
+          </section>
         </div>
-        <div class="quiz-step" data-step="3">
-          <p class="quiz-question">看懂了吗？</p>
-          <div class="quiz-feedback show quiz-feedback--info">
-            跌幅30%与涨幅42.86%不对等——这正是回撤的关键洞察。<br><br>
-            跌幅越大，恢复所需涨幅呈指数级增长：跌50%需要翻倍才能回本，跌80%需要涨400%。<br><br>
-            <strong>这解释了为什么控制下行风险比追逐上涨更重要。</strong>
-          </div>
+
+        <div class="level-panel hidden" data-level="advanced">
+          <section class="section">
+            <div class="notice" data-tone="accent">
+              <span>
+                这一级是：<strong>怎么判断一个「好结果」是不是运气？</strong>
+                所有指标都在描述过去，而投资发生在未来。
+              </span>
+            </div>
+          </section>
+          <section class="section">
+            <div class="course-grid">
+              <div class="lesson">
+                <h3>夏普比率</h3>
+                <p>(年化收益 − 无风险利率) ÷ 年化波动。它衡量每承担一单位波动换来多少超额回报。数值越高越好，但它把上涨波动也当成风险。</p>
+                <div class="why">
+                  夏普比率的三个软肋：假设收益接近正态分布、不区分上行与下行波动、对样本区间极度敏感。同一个资产，取 2015–2026 和取 2020–2026，夏普可能天差地别。
+                </div>
+              </div>
+              <div class="lesson">
+                <h3>索提诺比率</h3>
+                <p>与夏普类似，但分母只算下行波动。对「不介意上涨波动」的投资者更合理，也更能反映实际的心理体验。</p>
+              </div>
+              <div class="lesson">
+                <h3>卡玛比率</h3>
+                <p>年化收益 ÷ 最大回撤。它直接回答「为了这份收益，最坏时要忍多深的坑」。对需要判断「能不能拿得住」的人特别有用。</p>
+              </div>
+              <div class="lesson">
+                <h3>Beta</h3>
+                <p>资产相对市场的敏感度。Beta = 1 与大盘同步，&gt; 1 波动更大，&lt; 1 更稳。它是历史回归系数，不是物理常数，市场风格切换时会变。</p>
+              </div>
+              <div class="lesson">
+                <h3>Alpha</h3>
+                <p>扣掉 Beta 解释的部分之后，剩下的超额收益。正的 Alpha 才算「真正的选股能力」——但小样本上的 Alpha 很容易被幸存者偏差和运气放大。</p>
+              </div>
+              <div class="lesson">
+                <h3>滚动收益</h3>
+                <p>用滑动窗口计算的历史收益序列。单一年化数字会把波动抹平，滚动收益能暴露「收益是不是依赖某一段特定行情」。</p>
+              </div>
+              <div class="lesson">
+                <h3>跟踪误差与费率</h3>
+                <p>ETF 的实际回报与指数回报之差。每年 1% 的费率，在 20 年、年化 8% 的假设下会吃掉总收益的一成以上——成本是确定的，收益是不确定的。</p>
+              </div>
+              <div class="lesson">
+                <h3>压力测试</h3>
+                <p>用历史极端窗口重放：如果 2008 再来一次，你的组合会怎样？它的价值不在于预测，而在于事先确认「这个结果我能不能接受」。</p>
+              </div>
+              <div class="lesson">
+                <h3>情景分析</h3>
+                <p>自定义假设条件（利率上升 2%、汇率贬值 10%、油价翻倍），观察资产的理论变化。它是思维实验，不是预测。</p>
+              </div>
+              <div class="lesson">
+                <h3>蒙特卡洛模拟</h3>
+                <p>用大量随机路径模拟未来可能的走向，得到的是结果的概率分布，而不是一个「目标价」。它回答的是「可能范围有多宽」。</p>
+              </div>
+              <div class="lesson">
+                <h3>行为偏差</h3>
+                <p>损失厌恶让人在底部割肉、在反弹时不敢上车；锚定效应让人死守「我的成本价」；近期偏好让人把最近一年当成常态。这些偏差造成的亏损往往超过选错资产。</p>
+              </div>
+              <div class="lesson">
+                <h3>再平衡的数学</h3>
+                <p>再平衡的收益来自波动率本身：两个资产波动越大、相关性越低，机械地「卖强买弱」积累的额外收益越多。它本质是用波动换取更稳定的风险暴露。</p>
+              </div>
+            </div>
+          </section>
+          <section class="section">
+            <h2 class="section-title">互动测验</h2>
+            <div class="quiz" data-quiz="advanced"></div>
+          </section>
         </div>
-      </div>
-    </section>
 
-    <section class="course-section">
-      <button class="course-toggle" aria-expanded="false" onclick="toggleSection(this)">
-        <span class="course-level course-level--intermediate">进阶</span>
-        <h2>分析工具</h2>
-        <span class="toggle-icon">+</span>
-      </button>
-      <div class="course-body" hidden>
-        <ul class="course-list">
-          <li>
-            <h3>PE（市盈率）</h3>
-            <p>市盈率 = 股价 &divide; 每股收益。反映市场愿意为每单位盈利支付的价格。高PE可能意味着高增长预期，也可能是估值偏高。</p>
-          </li>
-          <li>
-            <h3>PB（市净率）</h3>
-            <p>市净率 = 股价 &divide; 每股净资产。常用于评估银行、保险等资产密集型行业。PB低于1可能意味着股价低于净资产。</p>
-          </li>
-          <li>
-            <h3>ROE（净资产收益率）</h3>
-            <p>ROE = 净利润 &divide; 净资产。衡量公司利用股东资金创造利润的能力。长期高ROE通常是优质公司的特征之一。</p>
-          </li>
-          <li>
-            <h3>毛利率与净利率</h3>
-            <p>毛利率反映产品本身的盈利能力，净利率反映扣除所有费用后的最终盈利水平。高毛利率通常意味着较强的定价权。</p>
-          </li>
-          <li>
-            <h3>自由现金流</h3>
-            <p>自由现金流是公司经营活动产生的现金减去资本支出后的余额。它反映了公司真正可以自由支配的现金。</p>
-          </li>
-          <li>
-            <h3>护城河</h3>
-            <p>护城河是公司抵御竞争对手的持久优势，例如品牌、专利、网络效应、规模经济或转换成本。宽护城河的公司更可能维持长期盈利。</p>
-          </li>
-          <li>
-            <h3>估值</h3>
-            <p>估值是判断资产当前价格是否合理的过程。常用方法包括市盈率、市净率、现金流折现等。估值不是精确科学，而是提供参考区间。</p>
-          </li>
-          <li>
-            <h3>资产配置</h3>
-            <p>资产配置是将资金分配到不同资产类别的过程。研究表明，资产配置解释了投资组合长期收益波动的大部分来源。</p>
-          </li>
-          <li>
-            <h3>相关性
-              <button class="why-btn" onclick="toggleWhy(event,'why-corr')">为什么？</button>
-            </h3>
-            <p>相关性衡量两项资产价格走势的同步程度。相关性低意味着它们不太可能同时下跌，有助于分散风险。</p>
-            <div class="why-content" id="why-corr">历史相关性越低，通常意味着历史上两项资产的波动不同步程度越高。但历史相关性不会保证未来保持不变。</div>
-          </li>
-          <li>
-            <h3>再平衡</h3>
-            <p>再平衡是定期将组合中各资产权重恢复到目标比例的操作。它本质上是在资产上涨后卖出部分、下跌后买入部分。</p>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- 进阶互动测验 -->
-    <section class="quiz-section">
-      <h3 class="quiz-title">互动测验</h3>
-      <div class="quiz-card" id="quiz-intermediate">
-        <div class="quiz-step active" data-step="1">
-          <p class="quiz-question">PE=50、ROE=10% 的公司，和 PE=15、ROE=15% 的公司，你觉得哪个估值更合理？</p>
-          <div class="quiz-input-row">
-            <button class="quiz-next-btn" style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);margin-right:8px;" onclick="answerIntermediate('a')">A. PE=50 那家</button>
-            <button class="quiz-next-btn" style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);margin-right:8px;" onclick="answerIntermediate('b')">B. PE=15 那家</button>
-            <button class="quiz-next-btn" style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);" onclick="answerIntermediate('c')">C. 看情况</button>
-          </div>
-          <div class="quiz-feedback" id="quiz-i1-fb"></div>
+        <div class="level-panel hidden" data-level="case">
+          <section class="section" id="case">
+            <div class="notice" data-tone="accent">
+              <span>
+                下面这道题没有标准答案。真正要练的是：<strong>做决定之前，你问了自己什么问题。</strong>
+              </span>
+            </div>
+          </section>
+          <section class="section">
+            <div class="quiz">
+              <p class="quiz-q">案例：你会把这项资产加入组合吗？</p>
+              <div class="metrics" style="margin-bottom:1rem">
+                <div class="metric"><div class="metric-label">年化收益</div><div class="metric-value pos">+12.5%</div></div>
+                <div class="metric"><div class="metric-label">最大回撤</div><div class="metric-value neg">−38%</div></div>
+                <div class="metric"><div class="metric-label">年化波动</div><div class="metric-value">25%</div></div>
+                <div class="metric"><div class="metric-label">PE 估值</div><div class="metric-value">32</div></div>
+                <div class="metric"><div class="metric-label">与现有组合相关性</div><div class="metric-value">0.45</div></div>
+                <div class="metric"><div class="metric-label">夏普</div><div class="metric-value">0.48</div></div>
+              </div>
+              <div class="quiz-opts" id="case-options">
+                <mdui-button variant="tonal" data-choice="a">A. 加入，作为核心配置</mdui-button>
+                <mdui-button variant="tonal" data-choice="b">B. 少量加入，控制比例</mdui-button>
+                <mdui-button variant="tonal" data-choice="c">C. 不加入，回撤太大</mdui-button>
+                <mdui-button variant="tonal" data-choice="d">D. 再观察一段时间</mdui-button>
+              </div>
+              <div class="quiz-feedback" id="case-feedback" hidden></div>
+            </div>
+          </section>
         </div>
-      </div>
-    </section>
 
-    <section class="course-section">
-      <button class="course-toggle" aria-expanded="false" onclick="toggleSection(this)">
-        <span class="course-level course-level--advanced">高级</span>
-        <h2>量化分析</h2>
-        <span class="toggle-icon">+</span>
-      </button>
-      <div class="course-body" hidden>
-        <ul class="course-list">
-          <li>
-            <h3>夏普比率
-              <button class="why-btn" onclick="toggleWhy(event,'why-sharpe')">为什么？</button>
-            </h3>
-            <p>夏普比率 = (收益率 - 无风险利率) &divide; 波动率。衡量每承担一单位风险获得的超额回报。夏普比率越高，风险调整后收益越好。</p>
-            <div class="why-content" id="why-sharpe">夏普比率假设收益符合正态分布，且不区分上行波动和下行波动。对于不介意上涨波动的投资者，Sortino 比率可能更有参考价值。夏普比率高不代表未来一定好。</div>
-          </li>
-          <li>
-            <h3>Sortino 比率</h3>
-            <p>Sortino比率与夏普类似，但只考虑下行波动（下跌风险），而非全部波动。对于不介意上涨波动的投资者，Sortino可能更有参考价值。</p>
-          </li>
-          <li>
-            <h3>Calmar 比率</h3>
-            <p>Calmar比率 = 年化收益率 &divide; 最大回撤。衡量收益与极端风险的比值。Calmar越高，意味着在经历最大回撤的情况下，长期收益仍然可观。</p>
-          </li>
-          <li>
-            <h3>Beta</h3>
-            <p>Beta衡量资产相对于市场的波动幅度。Beta=1表示与市场同步，Beta&gt;1表示波动大于市场，Beta&lt;1表示波动小于市场。</p>
-          </li>
-          <li>
-            <h3>Alpha</h3>
-            <p>Alpha是资产实际收益超出（或低于）按Beta调整后的预期收益的部分。正Alpha通常被视为超额收益能力的体现。</p>
-          </li>
-          <li>
-            <h3>滚动收益</h3>
-            <p>滚动收益是以滑动窗口计算的历史收益，能揭示收益随时间的变化模式，而非只看一个固定区间。例如滚动3年年化收益可以展示收益的稳定性。</p>
-          </li>
-          <li>
-            <h3>压力测试</h3>
-            <p>压力测试模拟极端市场情景下组合的表现。例如"如果再次发生类似2008年的市场波动，我的组合会怎样？"这有助于理解尾部风险。</p>
-          </li>
-          <li>
-            <h3>情景分析</h3>
-            <p>情景分析允许用户自定义假设条件，观察组合的理论变化。它是"如果……会怎样"的思维实验，不是预测。</p>
-          </li>
-          <li>
-            <h3>蒙特卡洛模拟</h3>
-            <p>蒙特卡洛模拟通过大量随机抽样来模拟资产未来可能的价格路径，给出结果的概率分布，而非单一预测值。它帮助理解"可能范围"而非"确定结果"。</p>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- 高级互动测验 -->
-    <section class="quiz-section">
-      <h3 class="quiz-title">互动测验</h3>
-      <div class="quiz-card" id="quiz-advanced">
-        <div class="quiz-step active" data-step="1">
-          <p class="quiz-question">夏普比率高就一定是好投资吗？</p>
-          <div class="quiz-input-row">
-            <button class="quiz-next-btn" style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);margin-right:8px;" onclick="answerAdvanced('yes')">是</button>
-            <button class="quiz-next-btn" style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);margin-right:8px;" onclick="answerAdvanced('no')">不一定</button>
-            <button class="quiz-next-btn" style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);" onclick="answerAdvanced('depends')">看情况</button>
+        <section class="section">
+          <div class="notice" data-tone="info">
+            <span>
+              课程里的所有指标都可以在
+              <a href="analysis.html">资产分析</a> 与
+              <a href="portfolio.html">组合分析</a> 里用真实数据验证一遍。
+              看到公式就去算一次，比读十遍定义有用。
+            </span>
           </div>
-          <div class="quiz-feedback" id="quiz-a1-fb"></div>
-        </div>
-      </div>
-    </section>
+        </section>
+      </main>
+    </mdui-layout-main>
+  </mdui-layout>
 
-    <!-- 投资案例 -->
-    <section class="quiz-section">
-      <h3 class="quiz-title">投资决策训练</h3>
-      <div class="case-card" id="case-study">
-        <p class="case-header">案例：你会把这项资产加入组合吗？</p>
-        <p class="case-desc">以下是某资产的简化数据。请基于你的判断做出选择——没有唯一正确答案。</p>
-        <div class="case-metrics">
-          <div class="case-metric">
-            <div class="label">年化收益</div>
-            <div class="value">+12.5%</div>
-          </div>
-          <div class="case-metric">
-            <div class="label">最大回撤</div>
-            <div class="value">-38%</div>
-          </div>
-          <div class="case-metric">
-            <div class="label">年化波动</div>
-            <div class="value">25%</div>
-          </div>
-          <div class="case-metric">
-            <div class="label">PE 估值</div>
-            <div class="value">32</div>
-          </div>
-          <div class="case-metric">
-            <div class="label">与组合相关性</div>
-            <div class="value">0.45</div>
-          </div>
-          <div class="case-metric">
-            <div class="label">Sharpe</div>
-            <div class="value">0.48</div>
-          </div>
-        </div>
-        <p class="quiz-question">你会选择加入组合吗？</p>
-        <div class="case-options">
-          <button class="case-option" onclick="showCaseExplanation('a')">A. 加入，作为核心配置</button>
-          <button class="case-option" onclick="showCaseExplanation('b')">B. 少量加入，控制比例</button>
-          <button class="case-option" onclick="showCaseExplanation('c')">C. 不加入，回撤太大</button>
-          <button class="case-option" onclick="showCaseExplanation('d')">D. 再观察一段时间</button>
-        </div>
-        <div class="case-explanation" id="case-explanation"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="site-footer">
-    <p class="disclaimer">
-      本网站用于投资知识学习、历史数据分析和模拟研究，不构成投资、税务或法律建议。
-    </p>
-    <p class="copyright">长期投资实验室 &mdash; 授人以渔</p>
-  </footer>
-
-  <script>
-    function toggleSection(btn) {
-      const body = btn.nextElementSibling;
-      const icon = btn.querySelector('.toggle-icon');
-      const expanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', String(!expanded));
-      body.hidden = expanded;
-      icon.textContent = expanded ? '+' : '−';
-    }
-
-    function toggleWhy(e, id) {
-      e.stopPropagation();
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('show');
-    }
-
-    // -- 小白 Quiz --
-    function checkBeginnerStep1() {
-      const input = document.getElementById('quiz-b1');
-      const fb = document.getElementById('quiz-b1-fb');
-      const val = parseFloat(input.value.replace('%',''));
-      if (Math.abs(val - 30) < 1) {
-        fb.className = 'quiz-feedback show quiz-feedback--correct';
-        fb.innerHTML = '正确！(100-70)/100 = 30%<br><button class="quiz-next-btn" onclick="goToStep(\'quiz-beginner\',2)">下一题</button>';
-      } else if (!isNaN(val)) {
-        fb.className = 'quiz-feedback show quiz-feedback--hint';
-        fb.innerHTML = '回撤 = (高点 - 低点) / 高点。试试：(100 - 70) / 100 = ?';
-      }
-    }
-    function checkBeginnerStep2() {
-      const input = document.getElementById('quiz-b2');
-      const fb = document.getElementById('quiz-b2-fb');
-      const val = parseFloat(input.value.replace('%',''));
-      if (Math.abs(val - 42.86) < 2) {
-        fb.className = 'quiz-feedback show quiz-feedback--correct';
-        fb.innerHTML = '正确！(100-70)/70 ≈ 42.86%<br><button class="quiz-next-btn" onclick="goToStep(\'quiz-beginner\',3)">查看总结</button>';
-      } else if (!isNaN(val)) {
-        fb.className = 'quiz-feedback show quiz-feedback--hint';
-        fb.innerHTML = '恢复幅度 = (高点 - 低点) / 低点。试试：(100 - 70) / 70 = ?';
-      }
-    }
-
-    // -- 进阶 Quiz --
-    function answerIntermediate(choice) {
-      const fb = document.getElementById('quiz-i1-fb');
-      fb.className = 'quiz-feedback show quiz-feedback--info';
-      if (choice === 'c') {
-        fb.innerHTML = '<strong>看情况</strong>——这是最接近投资现实的选择。<br><br>PE=50/ROE=10% 可能是一家高增长公司，市场愿意为未来盈利支付溢价。PE=15/ROE=15% 可能是一家成熟公司，盈利能力强但增长空间有限。<br><br>估值不是单一数字游戏，需要结合增长预期、行业特征和商业模式综合判断。';
-      } else if (choice === 'a') {
-        fb.innerHTML = '选择 PE=50 那家：你可能看重的是高增长潜力。高PE通常反映市场对未来盈利的高预期，但如果增长不及预期，估值可能大幅回调。';
-      } else {
-        fb.innerHTML = '选择 PE=15 那家：你可能更看重当前的盈利能力。低PE+高ROE通常意味着估值相对合理，但也可能意味着市场认为其成长空间有限。';
-      }
-    }
-
-    // -- 高级 Quiz --
-    function answerAdvanced(choice) {
-      const fb = document.getElementById('quiz-a1-fb');
-      fb.className = 'quiz-feedback show quiz-feedback--info';
-      fb.innerHTML = '<strong>不一定 / 看情况</strong>——这是关键。<br><br>夏普比率假设收益服从正态分布且波动对称，但真实市场中：<br>1. 极端事件（尾部风险）比正态分布假设更频繁<br>2. 不区分上行波动和下行波动——上涨波动也会降低夏普比率<br>3. 历史夏普比率不保证未来<br><br>因此，夏普比率是参考指标之一，不能单独作为投资决策依据。';
-    }
-
-    function goToStep(quizId, stepNum) {
-      const quiz = document.getElementById(quizId);
-      quiz.querySelectorAll('.quiz-step').forEach(s => s.classList.remove('active'));
-      const step = quiz.querySelector(`[data-step="${stepNum}"]`);
-      if (step) step.classList.add('active');
-    }
-
-    // -- 投资案例 --
-    function showCaseExplanation(choice) {
-      const el = document.getElementById('case-explanation');
-      const options = document.querySelectorAll('#case-study .case-option');
-      options.forEach(o => o.classList.remove('selected'));
-      const selected = document.querySelector(`#case-study .case-option:nth-child(${
-        choice === 'a' ? 1 : choice === 'b' ? 2 : choice === 'c' ? 3 : 4
-      })`);
-      if (selected) selected.classList.add('selected');
-
-      const explanations = {
-        a: '<strong>A. 加入，作为核心配置</strong><br><br>你可能看重的是12.5%的年化收益和中等相关性（0.45），认为分散化收益值得承受38%的回撤风险。适合长期投资期限长、风险承受能力较高的投资者。',
-        b: '<strong>B. 少量加入，控制比例</strong><br><br>这是最常见的做法——认可资产的收益潜力，但通过控制仓位来管理风险。38%的最大回撤确实不小，少量配置可以在享受收益的同时限制整体组合的下行风险。',
-        c: '<strong>C. 不加入，回撤太大</strong><br><br>38%的回撤意味着投资过程中可能承受近四成的账面亏损。如果你无法承受这种心理压力，或者投资期限较短，不加入是完全合理的决定。',
-        d: '<strong>D. 再观察一段时间</strong><br><br>等待更多数据、观察估值变化或市场环境再决定。这反映了谨慎的态度——投资不需要急于一时，充分了解后再做决定是理性的。'
-      };
-      el.innerHTML = explanations[choice];
-      el.className = 'case-explanation show';
-    }
-  </script>
+  <div id="site-nav"></div>
+  <script type="module" src="js/pages/learn.js"></script>
 </body>
 </html>

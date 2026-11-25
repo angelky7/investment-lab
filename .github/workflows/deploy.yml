@@ -6,20 +6,21 @@ on:
   workflow_run:
     workflows: ["Update Data"]
     types: [completed]
+  workflow_dispatch:
 
-# 关键权限 — GitHub Pages 部署必须
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# 防止并发部署冲突
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
   deploy:
+    # 数据更新任务即使失败（例如某天接口挂了）也要照常部署旧数据，保证站点可用
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'cancelled' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -30,14 +31,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './'
+          path: "./"
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
-        with:
-          enablement: true
