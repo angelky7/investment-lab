@@ -161,9 +161,12 @@ def main(argv: list[str] | None = None) -> int:
         series = None
         used_source = ""
 
-        chain = providers["by_source"].get(asset.source) or providers["by_type"].get(
-            asset.type.value, []
-        )
+        if asset.type.value == "fund":
+            chain = providers["by_type"]["fund"]
+        else:
+            chain = providers["by_source"].get(asset.source) or providers["by_type"].get(
+                asset.type.value, []
+            )
         for provider in chain:
             try:
                 series = provider.fetch(asset, until_year=until_year, since=since_date)

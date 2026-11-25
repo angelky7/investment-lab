@@ -54,9 +54,10 @@
       "name": "上证指数",
       "group": "宽基指数",
       "market": "CN",
-      "from": 2005,
+      "from": 1990,
       "source": "tencent",
-      "em_secid": "1.000001"
+      "em_secid": "1.000001",
+      "from_date": ""
     },
     {
       "symbol": "399001",
@@ -65,9 +66,10 @@
       "name": "深证成指",
       "group": "宽基指数",
       "market": "CN",
-      "from": 2005,
+      "from": 1991,
       "source": "tencent",
-      "em_secid": "0.399001"
+      "em_secid": "0.399001",
+      "from_date": ""
     },
     {
       "symbol": "399006",
@@ -87,9 +89,10 @@
       "name": "上证50",
       "group": "宽基指数",
       "market": "CN",
-      "from": 2005,
+      "from": 2004,
       "source": "tencent",
-      "em_secid": "1.000016"
+      "em_secid": "1.000016",
+      "from_date": ""
     },
     {
       "symbol": "000688",
@@ -172,9 +175,10 @@
       "name": "恒生指数",
       "group": "海外指数",
       "market": "HK",
-      "from": 2005,
+      "from": 1986,
       "source": "tencent",
-      "note": "港股交易日历与 A 股不同（佛诞、圣诞等休市），跨市场对比时会取日期交集。"
+      "note": "港股交易日历与 A 股不同（佛诞、圣诞等休市），跨市场对比时会取日期交集。",
+      "from_date": ""
     },
     {
       "symbol": "601318",
@@ -194,9 +198,10 @@
       "name": "招商银行",
       "group": "金融",
       "market": "CN",
-      "from": 2005,
+      "from": 2002,
       "source": "tencent",
-      "em_secid": "1.600036"
+      "em_secid": "1.600036",
+      "from_date": ""
     },
     {
       "symbol": "601398",
@@ -216,9 +221,10 @@
       "name": "中信证券",
       "group": "金融",
       "market": "CN",
-      "from": 2005,
+      "from": 2003,
       "source": "tencent",
-      "em_secid": "1.600030"
+      "em_secid": "1.600030",
+      "from_date": ""
     },
     {
       "symbol": "300059",
@@ -238,9 +244,10 @@
       "name": "平安银行",
       "group": "金融",
       "market": "CN",
-      "from": 2005,
+      "from": 1991,
       "source": "tencent",
-      "em_secid": "0.000001"
+      "em_secid": "0.000001",
+      "from_date": ""
     },
     {
       "symbol": "600519",
@@ -249,9 +256,10 @@
       "name": "贵州茅台",
       "group": "消费",
       "market": "CN",
-      "from": 2005,
+      "from": 2001,
       "source": "tencent",
-      "em_secid": "1.600519"
+      "em_secid": "1.600519",
+      "from_date": ""
     },
     {
       "symbol": "000858",
@@ -260,9 +268,10 @@
       "name": "五粮液",
       "group": "消费",
       "market": "CN",
-      "from": 2005,
+      "from": 1998,
       "source": "tencent",
-      "em_secid": "0.000858"
+      "em_secid": "0.000858",
+      "from_date": ""
     },
     {
       "symbol": "002714",
@@ -337,9 +346,10 @@
       "name": "京东方A",
       "group": "科技",
       "market": "CN",
-      "from": 2005,
+      "from": 2001,
       "source": "tencent",
-      "em_secid": "0.000725"
+      "em_secid": "0.000725",
+      "from_date": ""
     },
     {
       "symbol": "600031",
@@ -348,9 +358,10 @@
       "name": "三一重工",
       "group": "制造",
       "market": "CN",
-      "from": 2005,
+      "from": 2003,
       "source": "tencent",
-      "em_secid": "1.600031"
+      "em_secid": "1.600031",
+      "from_date": ""
     },
     {
       "symbol": "002594",
@@ -381,9 +392,10 @@
       "name": "海螺水泥",
       "group": "制造",
       "market": "CN",
-      "from": 2005,
+      "from": 2002,
       "source": "tencent",
-      "em_secid": "1.600585"
+      "em_secid": "1.600585",
+      "from_date": ""
     },
     {
       "symbol": "600276",
@@ -392,9 +404,10 @@
       "name": "恒瑞医药",
       "group": "医药",
       "market": "CN",
-      "from": 2005,
+      "from": 2000,
       "source": "tencent",
-      "em_secid": "1.600276"
+      "em_secid": "1.600276",
+      "from_date": ""
     },
     {
       "symbol": "300760",
@@ -414,9 +427,10 @@
       "name": "万科A",
       "group": "地产",
       "market": "CN",
-      "from": 2005,
+      "from": 1991,
       "source": "tencent",
-      "em_secid": "0.000002"
+      "em_secid": "0.000002",
+      "from_date": ""
     },
     {
       "symbol": "510300",
@@ -447,9 +461,10 @@
       "name": "上证50ETF（华夏）",
       "group": "宽基ETF",
       "market": "CN",
-      "from": 2005,
+      "from": 2004,
       "source": "tencent",
-      "em_secid": "1.510050"
+      "em_secid": "1.510050",
+      "from_date": ""
     },
     {
       "symbol": "159915",
@@ -659,9 +674,10 @@
       "name": "长江电力",
       "group": "公用事业",
       "market": "CN",
-      "from": 2005,
+      "from": 2003,
       "source": "tencent",
-      "note": "水电龙头，现金流稳定、分红比例高，常被用来对比“类债券”权益资产。"
+      "note": "水电龙头，现金流稳定、分红比例高，常被用来对比“类债券”权益资产。",
+      "from_date": ""
     },
     {
       "symbol": "us.AAPL.OQ",

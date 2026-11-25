@@ -21,7 +21,7 @@ import {
   histogram,
   sliceLastYears,
 } from "../core/series.js";
-import { analyze, compare as compareSeries } from "../core/stats.js";
+import { analyze, betaAlpha, compare as compareSeries, annualizedReturn } from "../core/stats.js";
 import { areaChart, histogramChart, lineChart } from "../core/charts.js";
 import { typeTabs, assetSelect, checklist, rangeTabs, yearsOf } from "../ui/picker.js";
 import { metricsHtml, tableHtml, notice } from "../ui/cards.js";
@@ -249,23 +249,39 @@ async function renderSingle() {
         ? sliceWindow(bench.dates, bench.prices, win.dates[0], win.dates[win.dates.length - 1])
         : null;
 
-    let aligned = null;
+    // 关键：资产的指标要在**它自己的完整窗口**上算。
+    // 基准（沪深300 只有 2005 起）不能反过来把上证指数（1990 起）的统计区间截短。
+    const result = analyze(win.prices, win.dates, { riskFreeRate: state.riskFree });
+
+    // 相对基准的指标单独算：betaAlpha 内部按日期交集对齐，所以只覆盖可比区间
+    let benchPrices = null;
+    let benchAlignedDates = null;
     if (benchWin && benchWin.prices.length > 30) {
-      aligned = alignByDate([
+      const relative = betaAlpha(
+        win.prices,
+        benchWin.prices,
+        state.riskFree,
+        win.dates,
+        benchWin.dates
+      );
+      result.beta = relative.beta;
+      result.alpha = relative.alpha;
+      result.correlation = relative.correlation;
+      result.benchmarkReturn = annualizedReturn(benchWin.prices, benchWin.dates);
+
+      const aligned = alignByDate([
         { key: "asset", dates: win.dates, prices: win.prices },
         { key: "bench", dates: benchWin.dates, prices: benchWin.prices },
       ]);
-      if (aligned.dates.length < 30) aligned = null;
+      if (aligned.dates.length >= 30) {
+        benchPrices = aligned.values.bench;
+        benchAlignedDates = aligned.dates;
+        result.relativeStart = aligned.dates[0];
+      }
     }
 
-    const useDates = aligned ? aligned.dates : win.dates;
-    const usePrices = aligned ? aligned.values.asset : win.prices;
-    const benchPrices = aligned ? aligned.values.bench : null;
-
-    const result = analyze(usePrices, useDates, {
-      riskFreeRate: state.riskFree,
-      benchmark: benchPrices ? { prices: benchPrices, dates: useDates } : null,
-    });
+    const useDates = win.dates;
+    const usePrices = win.prices;
 
     if (!result.ok) {
       metricsHost.innerHTML = notice(result.reason, "warn");
@@ -301,15 +317,16 @@ async function renderSingle() {
     });
 
     const cumSeries = [{ name: series.name, values: cumulative(usePrices), color: "var(--il-chart-1)" }];
-    if (benchPrices && !isFx) {
+    if (benchPrices && benchAlignedDates && !isFx) {
       cumSeries.push({
         name: benchInfo.name,
         values: cumulative(benchPrices),
         color: "var(--il-chart-3)",
       });
     }
+    const cumLabels = benchPrices && benchAlignedDates ? benchAlignedDates : useDates;
     lineChart(document.getElementById("chart-cum"), {
-      labels: useDates,
+      labels: cumLabels,
       series: cumSeries,
       formatter: (v) => pct(v, { digits: 0 }),
       tipFormatter: (v) => pct(v),
@@ -553,7 +570,11 @@ function metricsFor(result, series, benchName = "沪深300", isBenchmark = false
     {
       label: "Beta",
       value: isFx ? "—" : isBenchmark ? "1.00" : num(result.beta),
-      sub: isFx ? "汇率不适用相对基准指标" : isBenchmark ? "该资产本身即基准" : `相对${benchName}的敏感度`,
+      sub: isFx
+        ? "汇率不适用相对基准指标"
+        : isBenchmark
+          ? "该资产本身即基准"
+          : `相对${benchName}的敏感度${result.relativeStart ? `（${result.relativeStart.slice(0, 4)} 起可比）` : ""}`,
     },
     {
       label: "Alpha（年化）",
@@ -564,7 +585,11 @@ function metricsFor(result, series, benchName = "沪深300", isBenchmark = false
     {
       label: "与基准相关性",
       value: isFx ? "—" : isBenchmark ? "1.00" : num(result.correlation),
-      sub: isFx ? "汇率不适用相对基准指标" : isBenchmark ? "该资产本身即基准" : `与${benchName}的日收益相关系数`,
+      sub: isFx
+        ? "汇率不适用相对基准指标"
+        : isBenchmark
+          ? "该资产本身即基准"
+          : `与${benchName}的日收益相关系数${result.relativeStart ? `（${result.relativeStart.slice(0, 4)} 起可比）` : ""}`,
     },
     {
       label: "最新价格",
