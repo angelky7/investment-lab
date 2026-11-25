@@ -19,9 +19,13 @@
 |---|---|
 | ![资产分析](docs/screenshots/analysis.png) | ![历史时期](docs/screenshots/history.png) |
 
-![组合压力测试](docs/screenshots/portfolio-stress.png)
+| 组合压力测试 | 数据完整性（缺口逐条公开） |
+|---|---|
+| ![组合压力测试](docs/screenshots/portfolio-stress.png) | ![数据缺口](docs/screenshots/data-gaps.png) |
 
-<sub>压力测试用真实历史区间的资产跌幅回答「如果那段行情重演，我现在这个组合会怎样」。</sub>
+<img src="docs/screenshots/mobile-analysis.png" width="300" alt="竖屏资产分析页" />
+
+<sub>竖屏（390×844）：指标卡两列、图表自适应、表单控件独占一行；已适配 320–430px 宽度与横屏手机。</sub>
 
 ---
 
@@ -81,7 +85,8 @@ investment-lab/
 │   └── history/            {type}_{symbol}.json，列式存储
 ├── data_sources/           数据源实现（腾讯 / 东方财富）
 ├── scripts/                fetch / build / validate / repair / check_links / summary
-├── tests/                  Node 单元测试 + Python 管线测试 + 无头浏览器端到端
+├── tests/                  Node 单元测试 + Python 管线测试
+│   └── e2e/                无头浏览器端到端（逐页切换子页签）
 └── .github/workflows/      ci / update-data / deploy
 ```
 
