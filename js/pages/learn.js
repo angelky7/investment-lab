@@ -7,6 +7,7 @@
 
 import { initShell, toast } from "../core/shell.js";
 import { showError } from "../core/shell.js";
+import { LESSONS } from "../core/lessons.js";
 
 /* ------------------------------- 小工具 --------------------------------- */
 
@@ -224,6 +225,152 @@ function renderCase() {
 
 /* --------------------------------- 启动 --------------------------------- */
 
+
+/* --------------------------- 课程渲染（数据驱动） -------------------------- */
+
+const PROGRESS_KEY = "investment-lab:learn-progress";
+
+function loadProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveProgress(progress) {
+  try {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  } catch {
+    /* 隐私模式下写不了 localStorage，忽略即可，不影响使用 */
+  }
+}
+
+function lessonsOf(level) {
+  return LESSONS.filter((lesson) => lesson.level === level);
+}
+
+/** 每级的进度：展开了几节、自测答对几节 */
+function updateProgressLine(level) {
+  const host = document.querySelector(`[data-progress="${level}"]`);
+  if (!host) return;
+  const list = lessonsOf(level);
+  const progress = loadProgress();
+  const opened = list.filter((lesson) => progress[`${level}:${lesson.title}`]?.opened).length;
+  const correct = list.filter((lesson) => progress[`${level}:${lesson.title}`]?.correct).length;
+  const pctText = list.length ? `${Math.round((correct / list.length) * 100)}%` : "0%";
+
+  host.innerHTML = `
+    <span>本级 <strong>${list.length}</strong> 节 · 已展开 <strong>${opened}</strong> · 自测答对 <strong>${correct}</strong>（${pctText}）</span>
+    <span class="progress-bar"><i style="width:${pctText}"></i></span>`;
+}
+
+function lessonCard(level, lesson) {
+  const key = `${level}:${lesson.title}`;
+  const state = loadProgress()[key] || {};
+
+  const body = lesson.body.map((para) => `<p>${para}</p>`).join("");
+  const example = lesson.example
+    ? `<p class="lesson-example"><strong>本站实例：</strong><a href="${lesson.example[1]}">${lesson.example[0]}</a></p>`
+    : "";
+  const myth = lesson.myth
+    ? `<p class="lesson-myth"><strong>最常见误解：</strong>${lesson.myth}</p>`
+    : "";
+
+  const options = lesson.check
+    ? lesson.check.options
+        .map(
+          (opt, index) => `
+        <button class="check-opt" data-index="${index}" data-correct="${opt.correct ? "1" : "0"}"
+                data-explain="${(opt.explain || "").replace(/"/g, "&quot;")}">${opt.text}</button>`
+        )
+        .join("")
+    : "";
+
+  const check = lesson.check
+    ? `<div class="lesson-check">
+         <p class="check-q">自测 · ${lesson.check.q}</p>
+         <div class="check-opts">${options}</div>
+         <div class="check-feedback" hidden></div>
+       </div>`
+    : "";
+
+  return `
+    <details class="lesson lesson-card" data-key="${key}">
+      <summary>
+        <span class="lesson-title">${lesson.title}</span>
+        <span class="lesson-lead">${lesson.lead}</span>
+      </summary>
+      <div class="lesson-body">
+        ${body}
+        ${example}
+        ${myth}
+        ${check}
+      </div>
+    </details>`;
+}
+
+function renderLessons(level) {
+  const host = document.querySelector(`[data-lessons="${level}"]`);
+  if (!host || host.dataset.rendered === "1") {
+    if (host) updateProgressLine(level);
+    return;
+  }
+
+  host.innerHTML = lessonsOf(level).map((lesson) => lessonCard(level, lesson)).join("");
+  host.dataset.rendered = "1";
+
+  // 展开即算「已读」
+  host.querySelectorAll("details.lesson-card").forEach((card) => {
+    card.addEventListener("toggle", () => {
+      if (!card.open) return;
+      const progress = loadProgress();
+      const key = card.dataset.key;
+      progress[key] = { ...(progress[key] || {}), opened: true };
+      saveProgress(progress);
+      updateProgressLine(level);
+    });
+  });
+
+  // 自测：点一下立刻给对错与解释
+  host.querySelectorAll(".lesson-check").forEach((box) => {
+    const card = box.closest("details.lesson-card");
+    const key = card.dataset.key;
+    const feedback = box.querySelector(".check-feedback");
+
+    box.querySelectorAll(".check-opt").forEach((button) => {
+      button.addEventListener("click", () => {
+        const isCorrect = button.dataset.correct === "1";
+        box.querySelectorAll(".check-opt").forEach((b) => {
+          b.classList.remove("on", "right", "wrong");
+        });
+        button.classList.add("on", isCorrect ? "right" : "wrong");
+
+        feedback.hidden = false;
+        feedback.className = `check-feedback ${isCorrect ? "ok" : "hint"}`;
+        feedback.innerHTML = `
+          <strong>${isCorrect ? "答对了。" : "再想想。"}</strong>
+          ${button.dataset.explain || ""}
+          ${isCorrect ? "" : "<br />正确答案是标绿的那一项——点它也能看解释。"}`;
+
+        const progress = loadProgress();
+        const prev = progress[key] || {};
+        progress[key] = {
+          ...prev,
+          opened: true,
+          answered: true,
+          // 一旦答对就保持正确；答错不覆盖已有记录
+          correct: prev.correct || isCorrect,
+        };
+        saveProgress(progress);
+        updateProgressLine(level);
+      });
+    });
+  });
+
+  updateProgressLine(level);
+}
+
 /* ------------------------------ 互动实验室 ------------------------------ */
 
 /**
@@ -282,6 +429,7 @@ function bindLevelTabs() {
     panels.forEach((panel) => {
       panel.classList.toggle("hidden", panel.dataset.level !== value);
     });
+    renderLessons(value);
     mountLab(value);
     // 支持 learn.html#case 这样的深链直接落到决策训练
     if (value === "case") {

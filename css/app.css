@@ -1174,6 +1174,163 @@ code {
   outline-offset: 2px;
 }
 
+
+/* ------------------------------ 课程卡片 ------------------------------ */
+
+.progress-line {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+  font-size: 0.78rem;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.progress-line .progress-bar {
+  flex: 1 1 8rem;
+  height: 0.35rem;
+  border-radius: 100px;
+  background: rgb(var(--mdui-color-surface-container-high));
+  overflow: hidden;
+}
+
+.progress-line .progress-bar i {
+  display: block;
+  height: 100%;
+  background: rgb(var(--mdui-color-primary));
+  border-radius: 100px;
+  transition: width 240ms var(--mdui-motion-easing-standard);
+}
+
+details.lesson-card {
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--mdui-shape-corner-medium);
+  background: rgb(var(--mdui-color-surface-container-low));
+}
+
+details.lesson-card[open] {
+  background: rgb(var(--mdui-color-surface-container));
+}
+
+details.lesson-card summary {
+  cursor: pointer;
+  list-style: none;
+  display: grid;
+  gap: 0.25rem;
+}
+
+details.lesson-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.lesson-title {
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.lesson-lead {
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.lesson-body {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgb(var(--mdui-color-outline-variant) / 0.5);
+}
+
+.lesson-body p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.85;
+}
+
+.lesson-example strong,
+.lesson-myth strong {
+  color: rgb(var(--mdui-color-primary));
+}
+
+.lesson-myth strong {
+  color: var(--il-up);
+}
+
+.lesson-check {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.3rem;
+  padding: 0.7rem;
+  border-radius: var(--mdui-shape-corner-small);
+  background: rgb(var(--mdui-color-surface-container-high) / 0.6);
+}
+
+.check-q {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.check-opts {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.check-opt {
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  font: inherit;
+  font-size: 0.82rem;
+  border-radius: var(--mdui-shape-corner-extra-small);
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  background: rgb(var(--mdui-color-surface-container-low));
+  color: inherit;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+
+.check-opt:hover {
+  background: rgb(var(--mdui-color-surface-container));
+}
+
+.check-opt.right {
+  border-color: rgb(var(--mdui-color-primary));
+  background: rgba(var(--mdui-color-primary), 0.14);
+}
+
+.check-opt.wrong {
+  border-color: var(--il-up);
+  background: rgba(198, 40, 40, 0.1);
+}
+
+.check-feedback {
+  font-size: 0.8rem;
+  line-height: 1.75;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--mdui-shape-corner-extra-small);
+}
+
+.check-feedback.ok {
+  background: rgba(var(--mdui-color-primary), 0.1);
+}
+
+.check-feedback.hint {
+  background: rgba(198, 40, 40, 0.08);
+}
+
+.check-feedback[hidden] {
+  display: none;
+}
+
+@media (max-width: 599px) {
+  .lesson-body p {
+    font-size: 0.82rem;
+    line-height: 1.8;
+  }
+}
+
 /* ------------------------------ 工具类 ------------------------------ */
 
 .mono {

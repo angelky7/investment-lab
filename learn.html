@@ -24,12 +24,13 @@
     <mdui-layout-main>
       <main class="page">
         <header class="page-head">
-          <span class="eyebrow">Course</span>
+          <span class="eyebrow">Learn</span>
           <h1>投资课程</h1>
           <p class="lead">
-            四级共 58 节，外加四个可以动手的实验室。不要只读，每级末尾的测验要真的动笔算一遍——
-            「看懂」和「会算」之间隔着一整个投资的难度。遇到不认识的词，去
-            <a href="glossary.html">术语词典</a>查——每个词都带了本站的真实例子和最常被误解的地方。
+            五级共 <b>46 节</b>，每节有展开详解、<b>本站真实例子</b>、最常被误解的地方，
+            以及<b>一道自测题</b>（点一下立刻给对错与解释）。另有 5 个可以动手的实验室。
+            不要只读——自测题要真的点一遍，「看懂」和「会算」之间隔着一整个投资的难度。
+            遇到不认识的词，去 <a href="glossary.html">术语词典</a>查。
           </p>
         </header>
 
@@ -53,63 +54,8 @@
             </div>
           </section>
           <section class="section">
-            <div class="course-grid">
-              <div class="lesson">
-                <h3>什么是股票</h3>
-                <p>股票是公司所有权的一部分。买入股票意味着你成为股东，享有公司成长带来的收益，也承担经营失败的风险。它的回报来自两处：公司价值增长，以及分红。</p>
-              </div>
-              <div class="lesson">
-                <h3>什么是基金</h3>
-                <p>基金把众多投资者的钱集合起来，由管理人统一投资。它的价值在于把专业分工和分散投资的门槛降到很低，代价是管理费。</p>
-              </div>
-              <div class="lesson">
-                <h3>什么是 ETF</h3>
-                <p>ETF 是可以在交易所像股票一样买卖的指数基金。它跟踪一篮子资产，费率通常低于主动基金，持仓透明，是最适合普通人的入门工具之一。</p>
-              </div>
-              <div class="lesson">
-                <h3>什么是指数</h3>
-                <p>指数是用规则把一篮子资产的价格加权成一个数字，用来代表某个市场或板块。沪深300 代表 A 股大盘股，中证500 代表中盘股。</p>
-              </div>
-              <div class="lesson">
-                <h3>什么是债券</h3>
-                <p>债券是借钱给别人并约定还本付息的凭证。它的波动通常远小于股票，是组合里用来降低整体波动的重要部分——但「低波动」不等于「不会亏」。</p>
-              </div>
-              <div class="lesson">
-                <h3>什么是 QDII</h3>
-                <p>QDII 基金让境内投资者间接投资海外市场。它提供了地域上的分散，但同时引入了汇率风险和额度限制带来的溢价问题。</p>
-              </div>
-              <div class="lesson">
-                <h3>收益究竟来自哪里</h3>
-                <p>总收益 = 价格变化 + 分红再投资。只看价格会系统性低估长期回报，高分红资产的差距尤其大。本站的价格一律采用含分红再投资的口径。</p>
-              </div>
-              <div class="lesson">
-                <h3>什么是风险</h3>
-                <p>风险不是「会亏」，而是「结果不确定」。它至少有两种：波动（过程难受）与永久性损失（真的亏掉）。前者可以靠时间稀释，后者不能。</p>
-              </div>
-              <div class="lesson">
-                <h3>什么是回撤</h3>
-                <p>回撤是从历史高点下跌的幅度。它衡量的是持有过程中你账户上真实出现过的亏损，也是绝大多数人在最低点卖出的直接原因。</p>
-                <div class="why">
-                  为什么回撤比波动更重要？因为波动是统计概念，回撤是心理现实。一个资产可能长期上涨，但中途跌掉一半——如果那半年你正好需要用钱，长期收益和你无关。
-                </div>
-              </div>
-              <div class="lesson">
-                <h3>什么是复利</h3>
-                <p>复利是「收益再投资产生新收益」。它的关键是时间，不是收益率：年化 8% 大约 9 年翻倍，年化 12% 大约 6 年翻倍，但前者更容易长期维持。</p>
-              </div>
-              <div class="lesson">
-                <h3>什么是波动率</h3>
-                <p>波动率衡量价格上下起伏的幅度，通常用日收益的标准差年化得到。它不区分上涨还是下跌，所以高波动既可能是风险，也可能只是活跃。</p>
-              </div>
-              <div class="lesson">
-                <h3>为什么要分散</h3>
-                <p>分散不会提高期望收益，它降低的是「单一资产出事」带来的毁灭性后果。前提是这些资产的涨跌原因确实不同——买五只科技 ETF 不叫分散。</p>
-              </div>
-            </div>
-          </section>
-          <section class="section">
-            <h2 class="section-title">互动测验</h2>
-            <div class="quiz" data-quiz="beginner"></div>
+            <div class="progress-line" data-progress="beginner"></div>
+            <div class="course-grid" data-lessons="beginner"></div>
           </section>
           <section class="section">
             <div class="card">
@@ -121,75 +67,24 @@
               <div id="lab-compound"></div>
             </div>
           </section>
+          <section class="section">
+            <h2 class="section-title">本级综合测验</h2>
+            <div class="quiz" data-quiz="beginner"></div>
+          </section>
         </div>
 
         <div class="level-panel hidden" data-level="intermediate">
           <section class="section">
             <div class="notice" data-tone="accent">
               <span>
-                这一级解决的是：<strong>怎么判断贵还是便宜？</strong>
-                估值指标不是答案，它们是让你提问的工具。
+                这一级讲<strong>怎么判断贵不贵</strong>：估值、盈利质量、护城河，
+                以及「配置」这个比选股更重要的决定。
               </span>
             </div>
           </section>
           <section class="section">
-            <div class="course-grid">
-              <div class="lesson">
-                <h3>PE（市盈率）</h3>
-                <p>股价 ÷ 每股收益。它回答「市场愿意为公司每 1 元利润付多少钱」。高 PE 可能是高增长预期，也可能是估值过高，区别在于利润能不能跟上。</p>
-              </div>
-              <div class="lesson">
-                <h3>PB（市净率）</h3>
-                <p>股价 ÷ 每股净资产。对银行、保险这类资产驱动型行业更有意义。PB 小于 1 可能意味着便宜，也可能意味着市场认为这些资产会减值。</p>
-              </div>
-              <div class="lesson">
-                <h3>ROE（净资产收益率）</h3>
-                <p>净利润 ÷ 净资产，衡量用股东的钱创造利润的效率。长期高 ROE 往往意味着生意本身好，但要确认它不是靠高杠杆撑起来的。</p>
-              </div>
-              <div class="lesson">
-                <h3>毛利率与净利率</h3>
-                <p>毛利率反映产品本身的赚钱能力（定价权的代理指标），净利率反映扣掉全部费用后的最终水平。两者之差告诉你钱花在哪了。</p>
-              </div>
-              <div class="lesson">
-                <h3>自由现金流</h3>
-                <p>经营现金流减资本支出。利润可以靠会计手段调整，现金流更难造假。一家长期「有利润没现金」的公司值得警惕。</p>
-              </div>
-              <div class="lesson">
-                <h3>股息率与分红再投资</h3>
-                <p>股息率 = 每股分红 ÷ 股价。分红不是白拿的钱（除权后股价下调），但它是真实现金回报，长期再投资的复利效应非常可观。</p>
-              </div>
-              <div class="lesson">
-                <h3>三张财务报表</h3>
-                <p>资产负债表看家底与杠杆，利润表看赚钱能力，现金流量表看钱是否真的到账。三张表要连起来看，单看一张几乎一定被骗。</p>
-              </div>
-              <div class="lesson">
-                <h3>护城河</h3>
-                <p>护城河是让竞争对手难以复制的结构性优势：品牌、专利、网络效应、规模经济、转换成本。它决定高利润能维持多久。</p>
-              </div>
-              <div class="lesson">
-                <h3>估值</h3>
-                <p>估值不是算出一个精确价格，而是估计一个区间。任何 DCF 模型对假设都极度敏感，所以专业的做法是：给区间、讲假设、承认误差。</p>
-              </div>
-              <div class="lesson">
-                <h3>资产配置</h3>
-                <p>把资金分到不同资产类别的过程。学术研究普遍认为，组合长期波动的绝大部分由资产配置决定，而不是选股与择时。</p>
-              </div>
-              <div class="lesson">
-                <h3>相关性</h3>
-                <p>相关性衡量两项资产是否同涨同跌，取值范围 −1 到 1。分散的有效性完全取决于它：两个高度相关的资产放在一起，只是把同一个风险放大了两倍。</p>
-                <div class="why">
-                  为什么说「危机里相关性会趋同」？因为系统性恐慌时，投资者会同时卖出一切能卖的资产换取现金。这时股票、商品甚至部分债券会一起下跌——历史相关性只是常态下的估计。
-                </div>
-              </div>
-              <div class="lesson">
-                <h3>再平衡</h3>
-                <p>定期把组合权重调回目标值，等于机械地「卖强买弱」。它不保证更高收益，但把风险水平维持在设定值，避免某类资产上涨后悄悄占满整个组合。</p>
-              </div>
-            </div>
-          </section>
-          <section class="section">
-            <h2 class="section-title">互动测验</h2>
-            <div class="quiz" data-quiz="intermediate"></div>
+            <div class="progress-line" data-progress="intermediate"></div>
+            <div class="course-grid" data-lessons="intermediate"></div>
           </section>
           <section class="section">
             <div class="card">
@@ -201,83 +96,31 @@
               <div id="lab-diversify"></div>
             </div>
           </section>
+          <section class="section">
+            <h2 class="section-title">本级综合测验</h2>
+            <div class="quiz" data-quiz="intermediate"></div>
+          </section>
         </div>
 
         <div class="level-panel hidden" data-level="advanced">
           <section class="section">
             <div class="notice" data-tone="accent">
               <span>
-                这一级是：<strong>怎么判断一个「好结果」是不是运气？</strong>
-                所有指标都在描述过去，而投资发生在未来。
+                这一级讲<strong>怎么衡量</strong>：夏普、索提诺、卡玛、Beta、Alpha，
+                以及压力测试、情景分析与模拟——每个指标都有它的软肋。
               </span>
             </div>
           </section>
           <section class="section">
-            <div class="course-grid">
-              <div class="lesson">
-                <h3>夏普比率</h3>
-                <p>(年化收益 − 无风险利率) ÷ 年化波动。它衡量每承担一单位波动换来多少超额回报。数值越高越好，但它把上涨波动也当成风险。</p>
-                <div class="why">
-                  夏普比率的三个软肋：假设收益接近正态分布、不区分上行与下行波动、对样本区间极度敏感。同一个资产，取 2015–2026 和取 2020–2026，夏普可能天差地别。
-                </div>
-              </div>
-              <div class="lesson">
-                <h3>索提诺比率</h3>
-                <p>与夏普类似，但分母只算下行波动。对「不介意上涨波动」的投资者更合理，也更能反映实际的心理体验。</p>
-              </div>
-              <div class="lesson">
-                <h3>卡玛比率</h3>
-                <p>年化收益 ÷ 最大回撤。它直接回答「为了这份收益，最坏时要忍多深的坑」。对需要判断「能不能拿得住」的人特别有用。</p>
-              </div>
-              <div class="lesson">
-                <h3>Beta</h3>
-                <p>资产相对市场的敏感度。Beta = 1 与大盘同步，&gt; 1 波动更大，&lt; 1 更稳。它是历史回归系数，不是物理常数，市场风格切换时会变。</p>
-              </div>
-              <div class="lesson">
-                <h3>Alpha</h3>
-                <p>扣掉 Beta 解释的部分之后，剩下的超额收益。正的 Alpha 才算「真正的选股能力」——但小样本上的 Alpha 很容易被幸存者偏差和运气放大。</p>
-              </div>
-              <div class="lesson">
-                <h3>滚动收益</h3>
-                <p>用滑动窗口计算的历史收益序列。单一年化数字会把波动抹平，滚动收益能暴露「收益是不是依赖某一段特定行情」。</p>
-              </div>
-              <div class="lesson">
-                <h3>跟踪误差与费率</h3>
-                <p>ETF 的实际回报与指数回报之差。每年 1% 的费率，在 20 年、年化 8% 的假设下会吃掉总收益的一成以上——成本是确定的，收益是不确定的。</p>
-              </div>
-              <div class="lesson">
-                <h3>压力测试</h3>
-                <p>用历史极端窗口重放：如果 2008 再来一次，你的组合会怎样？它的价值不在于预测，而在于事先确认「这个结果我能不能接受」。</p>
-              </div>
-              <div class="lesson">
-                <h3>情景分析</h3>
-                <p>自定义假设条件（利率上升 2%、汇率贬值 10%、油价翻倍），观察资产的理论变化。它是思维实验，不是预测。</p>
-              </div>
-              <div class="lesson">
-                <h3>蒙特卡洛模拟</h3>
-                <p>用大量随机路径模拟未来可能的走向，得到的是结果的概率分布，而不是一个「目标价」。它回答的是「可能范围有多宽」。</p>
-              </div>
-              <div class="lesson">
-                <h3>行为偏差</h3>
-                <p>损失厌恶让人在底部割肉、在反弹时不敢上车；锚定效应让人死守「我的成本价」；近期偏好让人把最近一年当成常态。这些偏差造成的亏损往往超过选错资产。</p>
-              </div>
-              <div class="lesson">
-                <h3>再平衡的数学</h3>
-                <p>再平衡的收益来自波动率本身：两个资产波动越大、相关性越低，机械地「卖强买弱」积累的额外收益越多。它本质是用波动换取更稳定的风险暴露。</p>
-              </div>
-            </div>
-          </section>
-          <section class="section">
-            <h2 class="section-title">互动测验</h2>
-            <div class="quiz" data-quiz="advanced"></div>
+            <div class="progress-line" data-progress="advanced"></div>
+            <div class="course-grid" data-lessons="advanced"></div>
           </section>
           <section class="section">
             <div class="card">
               <h2 class="section-title">配比实验室</h2>
               <p class="section-desc">
                 四个滑块，全部用真实历史（沪深300全收益 / 上证国债 / 合成人民币金价 / 货币基金指数，
-                2005 年起）。你会很快发现：<strong>想要更低回撤，就得交出收益</strong>，
-                而且这份交换的比例并不总是划算。
+                2005 年起）。你会很快发现：<strong>想要更低回撤，就得交出收益</strong>。
               </p>
               <div id="lab-alloc"></div>
             </div>
@@ -292,6 +135,10 @@
               <div id="lab-montecarlo"></div>
             </div>
           </section>
+          <section class="section">
+            <h2 class="section-title">本级综合测验</h2>
+            <div class="quiz" data-quiz="advanced"></div>
+          </section>
         </div>
 
         <div class="level-panel hidden" data-level="strategy">
@@ -299,92 +146,14 @@
             <div class="notice" data-tone="accent">
               <span>
                 这一级讲<strong>组合是怎么被设计出来的</strong>：为什么是四等分、为什么要在最难受的时候不动手、
-                以及这些经典配置各自在什么情况下会失灵。读完你会明白——配置解决的是「你能不能拿住」，
-                不是「你能不能赚更多」。
+                以及这些经典配置各自在什么情况下会失灵。配置解决的是「你能不能拿住」，不是「你能不能赚更多」。
               </span>
             </div>
           </section>
-
           <section class="section">
-            <h2 class="section-title">哈利·布朗永久组合</h2>
-            <div class="course-grid">
-              <div class="lesson">
-                <h3>它是怎么来的</h3>
-                <p>1980 年代，美国分析师哈利·布朗提出一个反直觉的方案：不去预测经济，而是把资金平均分成四份，
-                分别押在「只有四种经济状态」各自最受益的资产上。四种状态轮流转，总有一份在工作。</p>
-              </div>
-              <div class="lesson">
-                <h3>四种经济状态与四类资产</h3>
-                <p>布朗把宏观环境简化为四种：繁荣、通胀、紧缩、衰退。对应四类资产：
-                <strong>股票</strong>（繁荣）、<strong>黄金</strong>（通胀）、<strong>长期国债</strong>（紧缩/衰退）、
-                <strong>现金</strong>（其余时间，也是弹药）。</p>
-                <div class="state-grid" style="margin-top:0.7rem">
-                  <div class="state-card"><h4>繁荣</h4><p>企业盈利上升 → <strong>股票</strong>表现最好。此时其他三档通常平淡。</p></div>
-                  <div class="state-card"><h4>通胀</h4><p>货币购买力下降 → <strong>黄金</strong>对冲。股票与债券同时难受。</p></div>
-                  <div class="state-card"><h4>紧缩 / 衰退</h4><p>利率下行 → <strong>长期国债</strong>上涨。这是它最被低估的一档。</p></div>
-                  <div class="state-card"><h4>其余时间</h4><p><strong>现金</strong>几乎不涨，但它让你在最恐慌的时候不用卖别的资产。</p></div>
-                </div>
-              </div>
-              <div class="lesson">
-                <h3>为什么是 4×25%</h3>
-                <p>不是因为它最优——它显然不是收益最优的配置。25% 的意义在于<strong>「不预测」</strong>：
-                既然不知道明年是哪种状态，就平均下注，让任何单一判断错误都不会致命。</p>
-              </div>
-              <div class="lesson">
-                <h3>阈值带：25% 只是起点</h3>
-                <p>布朗的原始规则不是「每年调回 25%」，而是<strong>阈值带</strong>：
-                任一份低于 15% 或高于 35% 时才动手。这让再平衡变成「等市场自己走到极端」，
-                而不是机械地按日历操作。</p>
-              </div>
-              <div class="lesson">
-                <h3>本站实测（2005-12 ~ 2026-11，4759 个交易日）</h3>
-                <p>年化 <strong>+7.26%</strong>、年化波动 8.36%、最大回撤 <strong>−27.40%</strong>、夏普 0.57，
-                期间只触发了 8 次再平衡。同区间 100% 沪深300 全收益：年化 +9.25%、回撤 −72.04%、夏普 0.26。</p>
-                <div class="why">
-                  年化少约 2 个百分点，回撤浅约 45 个百分点，夏普翻倍。
-                  这 21 年包含了 2008、2015、2018、2020、2022 五次真实的深度回撤——
-                  它在每一次都跑输了牛市，也在每一次都没让你亏掉一半。
-                </div>
-              </div>
-              <div class="lesson">
-                <h3>它什么时候会失灵</h3>
-                <p>单边大牛市里它一定跑输（四档里只有一档在涨）；高通胀 + 股债双杀时它也会难受（2022 年就是）；
-                黄金那一档的历史表现高度依赖时段（本站实测：近一年黄金 −16.6%，回撤 −38.8%）。
-                它降低的是「被迫在最低点卖出」的概率，不是「不会亏」。</p>
-              </div>
-            </div>
+            <div class="progress-line" data-progress="strategy"></div>
+            <div class="course-grid" data-lessons="strategy"></div>
           </section>
-
-          <section class="section">
-            <h2 class="section-title">另外三种经典配置</h2>
-            <div class="course-grid">
-              <div class="lesson">
-                <h3>60/40：最经典的简化版</h3>
-                <p>60% 股票 + 40% 债券，靠股债的低相关性压低波动。优点是简单、易执行、容量大；
-                缺点是它假设「股债总是负相关」——2022 年股债同跌时，这个假设就破了。</p>
-              </div>
-              <div class="lesson">
-                <h3>全天候 / 风险平价</h3>
-                <p>达里奥的全天候把资金按「经济增长 / 通胀 × 超预期 / 低于预期」四种情形分配，
-                但债券权重远高于股票（因为债券波动小）。
-                风险平价的思路更进一步：<strong>按风险贡献分配</strong>，而不是按资金分配，
-                通常需要杠杆才能把收益拉回来。</p>
-              </div>
-              <div class="lesson">
-                <h3>三分法（偏股 / 偏债 / 商品）</h3>
-                <p>把资产按「股票类 / 债券类 / 商品类」分成三桶，按风险测评结果调三桶比例。
-                它比四分法更容易解释，也更容易在境内用 ETF 落地；
-                但「商品」这一桶常常只有黄金，实际分散效果有限。</p>
-              </div>
-              <div class="lesson">
-                <h3>它们共同的前提</h3>
-                <p>所有经典配置都依赖同一件事：<strong>再平衡</strong>。没有再平衡，权重会自己漂走，
-                几年后你会发现自己持有一个完全没设计过的组合。
-                想看再平衡到底在做什么，去组合分析页看「权重漂移」那张折线图。</p>
-              </div>
-            </div>
-          </section>
-
           <section class="section">
             <div class="card">
               <h2 class="section-title">2008 体验馆</h2>
@@ -395,7 +164,6 @@
               <div id="lab-experience"></div>
             </div>
           </section>
-
           <section class="section">
             <div class="card">
               <h2 class="section-title">下一步</h2>
