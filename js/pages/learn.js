@@ -380,11 +380,16 @@ function renderLessons(level) {
 const LAB_MOUNTERS = {
   beginner: async () => {
     const { mountCompoundLab } = await import("../ui/labs.js");
+    const { mountGuessLab, mountRankLab } = await import("../ui/interactives.js");
     mountCompoundLab(document.getElementById("lab-compound"));
+    await mountGuessLab(document.getElementById("lab-guess"));
+    await mountRankLab(document.getElementById("lab-rank"));
   },
   intermediate: async () => {
     const { mountDiversifyLab } = await import("../ui/labs.js");
+    const { mountBuilderLab } = await import("../ui/interactives.js");
     await mountDiversifyLab(document.getElementById("lab-diversify"));
+    await mountBuilderLab(document.getElementById("lab-builder"));
   },
   advanced: async () => {
     const { mountAllocationLab, mountMonteCarloLab } = await import("../ui/labs.js");
@@ -393,7 +398,9 @@ const LAB_MOUNTERS = {
   },
   strategy: async () => {
     const { mountExperienceLab } = await import("../ui/labs.js");
+    const { mountJourneyLab } = await import("../ui/interactives.js");
     await mountExperienceLab(document.getElementById("lab-experience"));
+    await mountJourneyLab(document.getElementById("lab-journey"));
   },
 };
 
@@ -409,10 +416,10 @@ function mountLab(level) {
     .catch((err) => {
       labState[level] = "failed";
       const host = {
-        beginner: "lab-compound",
-        intermediate: "lab-diversify",
+        beginner: "lab-guess",
+        intermediate: "lab-builder",
         advanced: "lab-alloc",
-        strategy: "lab-experience",
+        strategy: "lab-journey",
       }[level];
       const el = document.getElementById(host);
       if (el) showError(el, err.message);
