@@ -456,7 +456,7 @@ export async function mountExperienceLab(host) {
           <p class="lab-note">
             ${
               choice === "exit"
-                ? `即使这只是一个跌了 ${pct(Math.abs(drawdown))} 的均衡组合，"躲一躲"也让你少赚了 ${money(Math.abs(gap))}。` +
+                ? `即使这只是一个跌了 ${pct(Math.abs(drawdown), { signed: false })} 的均衡组合，"躲一躲"也让你少赚了 ${money(Math.abs(gap))}。` +
                   `真正的风险不是波动，是<strong>波动发生时的那个决定</strong>。`
                 : choice === "half"
                   ? `卖掉一半就锁定了一半的亏损。看起来"做点什么"更安心，但数学上它只是把亏损兑现了一半。`
