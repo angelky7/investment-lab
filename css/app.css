@@ -1591,6 +1591,155 @@ details.lesson-card summary::-webkit-details-marker {
   }
 }
 
+
+/* ------------------------------- 刷题模式 ------------------------------- */
+
+.practice-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.practice-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.76rem;
+  color: rgb(var(--mdui-color-on-surface-variant));
+  margin-bottom: 0.6rem;
+}
+
+.practice-progress .progress-bar {
+  flex: 1;
+  height: 0.3rem;
+  border-radius: 100px;
+  background: rgb(var(--mdui-color-surface-container-high));
+  overflow: hidden;
+}
+
+.practice-progress .progress-bar i {
+  display: block;
+  height: 100%;
+  background: rgb(var(--mdui-color-primary));
+  transition: width 200ms;
+}
+
+.practice-q {
+  margin: 0 0 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+.practice-opts {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.practice-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  border-radius: var(--mdui-shape-corner-small);
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  background: rgb(var(--mdui-color-surface-container-low));
+  color: inherit;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+
+.practice-opt:hover:not(:disabled) {
+  background: rgb(var(--mdui-color-surface-container));
+}
+
+.practice-opt.right {
+  border-color: rgb(var(--mdui-color-primary));
+  background: rgba(var(--mdui-color-primary), 0.14);
+}
+
+.practice-opt.dim {
+  opacity: 0.55;
+}
+
+.practice-key {
+  flex: 0 0 auto;
+  width: 1.35rem;
+  height: 1.35rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(var(--mdui-color-surface-container-high));
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.practice-feedback {
+  margin-top: 0.7rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--mdui-shape-corner-small);
+  font-size: 0.82rem;
+  line-height: 1.8;
+}
+
+.practice-feedback.ok {
+  background: rgba(var(--mdui-color-primary), 0.1);
+}
+
+.practice-feedback.hint {
+  background: rgba(198, 40, 40, 0.08);
+}
+
+.practice-summary {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.practice-score {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.practice-score strong {
+  font-size: 1.4rem;
+  color: rgb(var(--mdui-color-primary));
+}
+
+.practice-new {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.7rem;
+  border-radius: 100px;
+  background: rgba(var(--mdui-color-primary), 0.16);
+  color: rgb(var(--mdui-color-primary));
+}
+
+.practice-review {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.practice-wrong {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--mdui-shape-corner-small);
+  background: rgb(var(--mdui-color-surface-container-low));
+  border-left: 3px solid var(--il-up);
+}
+
+.practice-right {
+  margin: 0.25rem 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgb(var(--mdui-color-primary));
+}
+
 /* ------------------------------ 工具类 ------------------------------ */
 
 .mono {

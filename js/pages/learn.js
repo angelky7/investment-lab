@@ -396,6 +396,10 @@ const LAB_MOUNTERS = {
     await mountAllocationLab(document.getElementById("lab-alloc"));
     await mountMonteCarloLab(document.getElementById("lab-montecarlo"));
   },
+  practice: async () => {
+    const { mountPractice } = await import("../ui/quiz-practice.js");
+    mountPractice(document.getElementById("lab-practice"));
+  },
   strategy: async () => {
     const { mountExperienceLab } = await import("../ui/labs.js");
     const { mountJourneyLab } = await import("../ui/interactives.js");
@@ -420,6 +424,7 @@ function mountLab(level) {
         intermediate: "lab-builder",
         advanced: "lab-alloc",
         strategy: "lab-journey",
+        practice: "lab-practice",
       }[level];
       const el = document.getElementById(host);
       if (el) showError(el, err.message);
@@ -449,6 +454,7 @@ function bindLevelTabs() {
   tabs.addEventListener("change", () => show(tabs.value));
   if (location.hash === "#case") tabs.value = "case";
   else if (location.hash === "#strategy") tabs.value = "strategy";
+  else if (location.hash === "#practice") tabs.value = "practice";
   show(tabs.value || "beginner");
 }
 
