@@ -25,6 +25,7 @@ HTML_FILES = [
     "calculator.html",
     "planner.html",
     "glossary.html",
+    "corrections.html",
     "data.html",
 ]
 

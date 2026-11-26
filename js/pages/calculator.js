@@ -8,9 +8,7 @@ import { initShell } from "../core/shell.js";
 import { annuity, compoundGrowth, drawdownRecovery, monthsToTarget, rebalancePlan } from "../core/calc.js";
 import { lineChart } from "../core/charts.js";
 import { metricsHtml, notice, tableHtml } from "../ui/cards.js";
-import { money, num, pct, tone } from "../core/format.js";
-
-const els = {};
+import { money, pct } from "../core/format.js";
 
 function numField(id, fallback = 0) {
   const el = document.getElementById(id);

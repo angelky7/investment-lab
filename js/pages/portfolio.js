@@ -454,7 +454,7 @@ async function renderDca() {
   host.innerHTML = loadingHtml("正在模拟每月定投…");
 
   try {
-    const [series, bench] = await Promise.all([loadSeries(asset), benchmark(state.assets)]);
+    const [series] = await Promise.all([loadSeries(asset), benchmark(state.assets)]);
     if (token !== tokens.dca) return;
 
     const years = yearsOf(state.dcaRange);
@@ -1226,6 +1226,11 @@ async function renderStrategy() {
             value: pct(mine.maxDrawdown),
             tone: "neg",
             sub: `同区间 100% 股票 ${pct(stocks.maxDrawdown)}`,
+          },
+          {
+            label: "扣费后 · 100% 股票",
+            value: pct(netStocks.annualized),
+            sub: `毛 ${pct(stocks.annualized)} · 对照用`,
           },
           {
             label: "夏普比率",

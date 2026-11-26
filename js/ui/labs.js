@@ -13,7 +13,7 @@
  */
 
 import { loadIndex, loadSeriesMany, findAsset, keyOf } from "../core/store.js";
-import { alignByDate, cumulative, sliceLastYears } from "../core/series.js";
+import { alignByDate } from "../core/series.js";
 import { analyze } from "../core/stats.js";
 import { rebalanceSimulation } from "../core/portfolio.js";
 import { bootstrap, monthlyReturns } from "../core/simulate.js";
@@ -28,14 +28,6 @@ const CLS = {
   gold: "index:GOLDCNY",
   cash: "index:H11025",
   usStock: "index:us.INX",
-};
-
-const LABELS = {
-  cnStock: "A 股（沪深300全收益）",
-  bond: "国债（上证国债指数）",
-  gold: "黄金（人民币，合成）",
-  cash: "现金（货币基金指数）",
-  usStock: "美股（标普500）",
 };
 
 async function loadMany(entries) {
@@ -515,7 +507,7 @@ export async function mountMonteCarloLab(host) {
     return;
   }
 
-  const { p5, p25, p50, p75, p95 } = result.percentiles;
+  const { p5, p50, p95 } = result.percentiles;
   const colors = ["var(--il-chart-4)", "var(--il-chart-2)", "var(--il-chart-1)", "var(--il-chart-2)", "var(--il-chart-4)"];
 
   host.innerHTML = `

@@ -6,7 +6,7 @@
  */
 
 import { initShell, showError, loadingHtml } from "../core/shell.js";
-import { loadIndex, loadSeries, loadSeriesMany, findAsset } from "../core/store.js";
+import { loadIndex, loadSeriesMany, findAsset } from "../core/store.js";
 import { alignByDate } from "../core/series.js";
 import {
   ASSET_CLASSES,
@@ -559,7 +559,7 @@ function readParams() {
 
 function main() {
   initShell({ active: "planner" });
-  const fromUrl = readParams();
+  readParams();
   renderClassPicker();
   renderQuestions();
   document.getElementById("btn-solve").addEventListener("click", runSolve);

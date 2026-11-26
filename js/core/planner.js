@@ -185,7 +185,6 @@ export function searchAllocation(input) {
     prices,
     years,
     budget,
-    targetLow,
     equityCap = 1,
     equityFlags,
     includeMask,

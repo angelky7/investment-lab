@@ -5,7 +5,7 @@
  * 计算题（要真的输入数字）、选择题（要判断）、决策训练（没有标准答案）。
  */
 
-import { initShell, toast } from "../core/shell.js";
+import { initShell } from "../core/shell.js";
 import { showError } from "../core/shell.js";
 import { LESSONS } from "../core/lessons.js";
 
@@ -185,44 +185,6 @@ function renderAdvancedQuiz() {
   });
 }
 
-/* ---------------------------- 决策训练（案例） --------------------------- */
-
-const CASE_EXPLAIN = {
-  a: `<strong>A. 作为核心配置</strong><br /><br />
-      你看重的是 12.5% 的年化收益和 0.45 的中等相关性，愿意用 38% 的回撤换取这份收益。
-      注意一个前提：核心配置意味着它要占组合的大头，那么「38% 的回撤」会直接变成「整个组合的回撤」。
-      如果你的投资期限足够长、且能承受账户缩水近四成，这个选择是理性的；如果不是，它就是风险错配。`,
-  b: `<strong>B. 少量加入，控制比例</strong><br /><br />
-      这是最常见的专业做法：认可收益潜力，用仓位而不是「用信心」来控制风险。
-      10% 的仓位遇到 38% 回撤，对组合的冲击约 3.8%，完全在可承受范围；
-      如果它表现好，你也不会完全错过。仓位是你唯一能精确控制的变量。`,
-  c: `<strong>C. 不加入</strong><br /><br />
-      38% 的回撤意味着你有可能在账户上看到接近四成的浮亏。
-      如果你无法承受这种心理压力、或者资金在三年内要用，那么不加入是完全合理的选择。
-      「不亏钱」本身就是一种收益，尤其当你的风险承受力不允许时。`,
-  d: `<strong>D. 再观察一段时间</strong><br /><br />
-      等待更多数据、观察估值变化、等一个更清楚的环境。
-      但要注意「再观察」的两个陷阱：一是它可能变成永远的拖延；二是市场不会等你观察完。
-      更好的做法是把「观察什么」写下来（例如：PE 回到多少、季度利润增速如何），设定触发条件。`,
-};
-
-function renderCase() {
-  const options = document.getElementById("case-options");
-  const fb = document.getElementById("case-feedback");
-  if (!options || !fb) return;
-
-  options.querySelectorAll("[data-choice]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const choice = btn.dataset.choice;
-      options.querySelectorAll("[data-choice]").forEach((b) => {
-        b.setAttribute("variant", b === btn ? "filled" : "tonal");
-      });
-      feedback(fb, "hint", CASE_EXPLAIN[choice]);
-      toast("每个选择都对应一种风险偏好，没有唯一正确答案。");
-    });
-  });
-}
-
 /* --------------------------------- 启动 --------------------------------- */
 
 
@@ -267,7 +229,6 @@ function updateProgressLine(level) {
 
 function lessonCard(level, lesson) {
   const key = `${level}:${lesson.title}`;
-  const state = loadProgress()[key] || {};
 
   const body = lesson.body.map((para) => `<p>${para}</p>`).join("");
   const example = lesson.example
@@ -396,6 +357,10 @@ const LAB_MOUNTERS = {
     await mountAllocationLab(document.getElementById("lab-alloc"));
     await mountMonteCarloLab(document.getElementById("lab-montecarlo"));
   },
+  case: async () => {
+    const { mountDecisionLab } = await import("../ui/decision-lab.js");
+    mountDecisionLab(document.getElementById("lab-decision"));
+  },
   practice: async () => {
     const { mountPractice } = await import("../ui/quiz-practice.js");
     mountPractice(document.getElementById("lab-practice"));
@@ -425,6 +390,7 @@ function mountLab(level) {
         advanced: "lab-alloc",
         strategy: "lab-journey",
         practice: "lab-practice",
+        case: "lab-decision",
       }[level];
       const el = document.getElementById(host);
       if (el) showError(el, err.message);
@@ -463,7 +429,6 @@ function main() {
   renderBeginnerQuiz();
   renderIntermediateQuiz();
   renderAdvancedQuiz();
-  renderCase();
   bindLevelTabs();
 }
 

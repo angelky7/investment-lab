@@ -14,7 +14,6 @@
 
 import { chromium } from "playwright-core";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
 const BASE = (process.argv[2] || "http://127.0.0.1:8080").replace(/\/$/, "");
@@ -66,6 +65,7 @@ const CASES = [
   { path: "calculator.html", tabs: "#calc-tabs", values: ["compound", "dca", "drawdown", "rebalance"] },
   { path: "planner.html", tabs: null },
   { path: "glossary.html", tabs: null },
+  { path: "corrections.html", tabs: null },
   { path: "data.html", tabs: null },
 ];
 

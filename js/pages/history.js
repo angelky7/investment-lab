@@ -11,8 +11,8 @@ import { dateRangeIndices, sliceLastYears } from "../core/series.js";
 import { analyze } from "../core/stats.js";
 import { barChart } from "../core/charts.js";
 import { assetSelect, typeTabs } from "../ui/picker.js";
-import { metricsHtml, notice, tableHtml } from "../ui/cards.js";
-import { count, dateLabel, monthLabel, num, pct, rangeLabel, tone } from "../core/format.js";
+import { metricsHtml, tableHtml } from "../ui/cards.js";
+import { count, dateLabel, pct, rangeLabel, tone } from "../core/format.js";
 
 const state = {
   assets: [],

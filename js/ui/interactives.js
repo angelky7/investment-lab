@@ -56,22 +56,6 @@ function statOf(series) {
   };
 }
 
-/** 让一个元素既可拖拽、也可「点选后点目标」 */
-function makeDraggable(element, payload, onDropTarget) {
-  element.draggable = true;
-  element.dataset.payload = payload;
-  element.addEventListener("dragstart", (event) => {
-    event.dataTransfer.setData("text/plain", payload);
-    event.dataTransfer.effectAllowed = "move";
-    element.classList.add("dragging");
-  });
-  element.addEventListener("dragend", () => element.classList.remove("dragging"));
-  element.addEventListener("click", () => {
-    element.classList.toggle("picked");
-    onDropTarget?.(element);
-  });
-}
-
 /* --------------------------- 1. 猜测揭晓 -------------------------------- */
 
 /**
@@ -202,12 +186,15 @@ export async function mountGuessLab(host) {
         <p class="guess-explain">${item.explain}</p>`;
       button.disabled = true;
 
-      const done = revealed.size;
-      const hits = [...revealed.values()].filter(
-        (v) => Number.isFinite(v.guess) && Math.abs(v.guess - v.truth) <= (QUESTIONS[[...revealed.keys()].find((k) => revealed.get(k) === v)]?.loose ?? 1.5)
-      ).length;
+      // 统计「猜得准」的题数：误差落在容差内才算
+      let hits = 0;
+      for (const [index, entry] of revealed.entries()) {
+        const tolerance = QUESTIONS[index].loose ?? Math.max(1.5, Math.abs(QUESTIONS[index].truth) * 0.18);
+        if (Number.isFinite(entry.guess) && Math.abs(entry.guess - entry.truth) <= tolerance) hits += 1;
+      }
       host.querySelector("#guess-score").innerHTML = `
-        <span>已揭晓 <strong>${done}/${QUESTIONS.length}</strong></span>`;
+        <span>已揭晓 <strong>${revealed.size}/${QUESTIONS.length}</strong>
+        · 猜得准 <strong>${hits}</strong> 题（误差在容差内）</span>`;
     });
   });
 }

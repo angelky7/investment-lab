@@ -1,6 +1,6 @@
 {
   "name": "investment-lab",
-  "version": "4.4.0",
+  "version": "5.0.0",
   "private": true,
   "type": "module",
   "description": "开源投资实验室：用 20 年真实行情讲解收益、风险、分散与再平衡，零构建、零框架依赖，界面基于 MDUI 2。",
@@ -24,7 +24,7 @@
   "scripts": {
     "test": "node --test",
     "test:py": "python -m unittest discover -s tests -p \"test_*.py\"",
-    "test:all": "node --test && python -m unittest discover -s tests -p \"test_*.py\"",
+    "test:all": "eslint js tests && node --test && py -m unittest discover -s tests -p test_*.py",
     "serve": "python -m http.server 8080",
     "data:fetch": "python scripts/fetch.py",
     "data:fetch:incremental": "python scripts/fetch.py --mode incremental",
@@ -35,9 +35,11 @@
     "test:all:with-e2e": "npm run test:all && npm run test:e2e",
     "data:repair": "python scripts/repair.py",
     "data:fill": "py scripts/fill_gaps.py",
-    "release": "py scripts/release.py"
+    "release": "py scripts/release.py",
+    "lint": "eslint js tests"
   },
   "devDependencies": {
-    "playwright-core": "^1.49.1"
+    "playwright-core": "^1.49.1",
+    "eslint": "^9.0.0"
   }
 }

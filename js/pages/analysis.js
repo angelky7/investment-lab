@@ -95,11 +95,6 @@ function chartCard(id, title, hint = "") {
     </div>`;
 }
 
-function placeholderChart(hostId, message) {
-  const host = document.getElementById(hostId);
-  if (host) host.innerHTML = `<div class="chart-empty">${message}</div>`;
-}
-
 /* --------------------------------- 初始化 -------------------------------- */
 
 function readParams() {

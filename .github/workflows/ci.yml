@@ -36,6 +36,14 @@ jobs:
           done
           exit $found
 
+      - name: 安装 ESLint
+        run: npm install --no-save --no-audit --no-fund eslint@9
+
+      # 只跑「防静默出错」的规则（no-undef / no-unused-vars 等），不跑格式。
+      # 之前 banner 函数写了却忘了调用、变量名改了没跟着改，都是这一关能抓到的。
+      - name: 静态检查（未定义变量 / 死代码）
+        run: npx eslint js tests
+
       - name: 单元测试
         run: node --test
 

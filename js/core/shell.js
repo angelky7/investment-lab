@@ -21,6 +21,7 @@ export const NAV = [
   { id: "history", href: "history.html", label: "历史时期", icon: "clock", desc: "关键市场窗口复盘" },
   { id: "calculator", href: "calculator.html", label: "投资计算器", icon: "calculator", desc: "复利/定投/回撤/再平衡" },
   { id: "glossary", href: "glossary.html", label: "术语词典", icon: "book", desc: "一词一句，附本站实例" },
+  { id: "corrections", href: "corrections.html", label: "更正记录", icon: "warn", desc: "我们说错过的地方" },
   { id: "planner", href: "planner.html", label: "配置求解器", icon: "spark", desc: "按回撤预算筛配比" },
   { id: "data", href: "data.html", label: "数据状态", icon: "database", desc: "数据来源与质量" },
 ];
@@ -134,6 +135,9 @@ export function initShell(options = {}) {
   const { active = "" } = options;
 
   ensureMdui();
+  // 数据过期横幅：别的页面不该在数据落后几周时还照常展示漂亮曲线。
+  // 注意这个是 async 的，故意不 await —— 它是附加信息，不该拖慢首屏。
+  mountStaleBanner();
   applyTheme(currentTheme());
 
   const navHost = document.getElementById("site-nav");
@@ -227,7 +231,6 @@ export function toast(message, options = {}) {
       /* 落到下面的兜底 */
     }
   }
-  // eslint-disable-next-line no-console
   console.info(`[investment-lab] ${message}`);
 }
 
