@@ -35,12 +35,17 @@ TOKEN_CANDIDATES = [
 REPO = "angelky7/investment-lab"
 
 
+def redact(text: str) -> str:
+    """日志里绝不能出现 token —— 之前 push 的命令行把 ghp_ 开头的密钥整个打印了出来。"""
+    return re.sub(r"(x-access-token:)[^@\s]+", r"\1***", text)
+
+
 def run(cmd: list[str], check: bool = True) -> tuple[int, str]:
-    print(f"$ {' '.join(cmd)}", flush=True)
+    print(redact(f"$ {' '.join(cmd)}"), flush=True)
     proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
     out = (proc.stdout or "") + (proc.stderr or "")
     if out.strip():
-        print(out.strip()[-2000:], flush=True)
+        print(redact(out.strip()[-2000:]), flush=True)
     if check and proc.returncode != 0:
         raise SystemExit(f"命令失败（exit {proc.returncode}）：{' '.join(cmd)}")
     return proc.returncode, out
