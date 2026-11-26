@@ -374,6 +374,7 @@ class TestRegistry(unittest.TestCase):
                 "csindex",
                 "derived",
                 "sina_fut",
+                "em_macro",
             )
             if needs_secid:
                 self.assertTrue(asset.em_secid, f"{asset.symbol} 缺少 em_secid")

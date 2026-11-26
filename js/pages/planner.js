@@ -94,6 +94,7 @@ function renderClassPicker() {
       label.classList.toggle("on", !isOn);
       label.querySelector("input").checked = !isOn;
       update();
+      writeParams();
       window.setTimeout(runSolve, 60);
     });
   });
@@ -143,6 +144,7 @@ function renderQuestions() {
       wrapper.querySelectorAll(".choice").forEach((el) => el.classList.remove("on"));
       label.classList.add("on");
       // 选项一变就重算（这是探索工具，不该逼用户反复点按钮）
+      writeParams();
       window.setTimeout(runSolve, 60);
     });
   });
@@ -511,18 +513,63 @@ async function runSolve() {
   }
 }
 
+/* ------------------------------ URL 参数同步 ----------------------------- */
+
+/**
+ * 把问答与目标写进 URL，这样「调好的一组参数」可以被复制、被回看。
+ * 之前刷新一次就全丢了，也没法发给别人看。
+ */
+function writeParams() {
+  const params = new URLSearchParams();
+  params.set("o", state.objective);
+  for (const question of QUESTIONS) {
+    const index = question.options.findIndex((opt) => {
+      const value = state.answers[question.id];
+      return Array.isArray(value) ? opt.value[0] === value[0] : opt.value === value;
+    });
+    if (index >= 0) params.set(question.id, String(index));
+  }
+  const excluded = ASSET_CLASSES.filter((c) => !state.included.includes(c.id)).map((c) => c.id);
+  if (excluded.length) params.set("x", excluded.join(","));
+  history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
+}
+
+function readParams() {
+  const params = new URLSearchParams(location.search);
+  const objective = params.get("o");
+  if (["return", "sharpe", "drawdown"].includes(objective)) state.objective = objective;
+
+  for (const question of QUESTIONS) {
+    const raw = params.get(question.id);
+    if (raw === null) continue;
+    const index = Number(raw);
+    const option = question.options[index];
+    if (!option) continue;
+    state.answers[question.id] = Array.isArray(option.value) ? option.value.slice() : option.value;
+  }
+
+  const excluded = (params.get("x") || "").split(",").filter(Boolean);
+  if (excluded.length && excluded.length < ASSET_CLASSES.length) {
+    state.included = ASSET_CLASSES.map((c) => c.id).filter((id) => !excluded.includes(id));
+  }
+  return params.toString() !== "";
+}
+
 /* --------------------------------- 启动 --------------------------------- */
 
 function main() {
   initShell({ active: "planner" });
+  const fromUrl = readParams();
   renderClassPicker();
   renderQuestions();
   document.getElementById("btn-solve").addEventListener("click", runSolve);
 
   const group = document.getElementById("objective-group");
   if (group) {
+    group.value = state.objective;
     group.addEventListener("change", () => {
       state.objective = group.value;
+      writeParams();
       runSolve();
     });
   }

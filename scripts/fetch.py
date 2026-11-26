@@ -34,6 +34,7 @@ from data_sources.eastmoney import EastmoneyFundSource, EastmoneyKlineSource  # 
 from data_sources.csindex import CsindexSource  # noqa: E402
 from data_sources.sina import SinaForexSource  # noqa: E402
 from data_sources.sina_fut import SinaGlobalFuturesSource  # noqa: E402
+from data_sources.eastmoney_macro import EastmoneyMacroSource  # noqa: E402
 from data_sources.tencent import TencentSource, fetch_quote_prices  # noqa: E402
 from scripts.registry import (  # noqa: E402
     DATA_DIR,
@@ -61,6 +62,7 @@ def build_providers() -> dict:
     sina_fx = SinaForexSource()
     csindex = CsindexSource()
     sina_fut = SinaGlobalFuturesSource()
+    em_macro = EastmoneyMacroSource()
     return {
         "by_type": {
             # 腾讯 newfqkline 当前最稳（一次窗口即可拿到完整历史），东方财富作为兜底
@@ -75,6 +77,7 @@ def build_providers() -> dict:
             "csindex": [csindex],
             "sina": [sina_fx],
             "sina_fut": [sina_fut],
+            "em_macro": [em_macro],
             "tencent": [tencent, east_kline],
             "eastmoney": [east_kline, east_fund],
         },
@@ -138,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
     for asset in assets:
         if asset.type.value == "fund":
             quote_codes.append(f"jj{asset.code}")
-        elif asset.type.value == "fx" or asset.source in ("csindex", "sina_fut"):
+        elif asset.type.value == "fx" or asset.source in ("csindex", "sina_fut", "em_macro"):
             continue  # 汇率与中证指数序列自带最新价，不需要快照
         elif asset.em_secid and asset.code.startswith(("sh", "sz")):
             quote_codes.append(asset.code)

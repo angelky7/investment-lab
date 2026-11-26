@@ -240,8 +240,9 @@ const LAB_MOUNTERS = {
     await mountDiversifyLab(document.getElementById("lab-diversify"));
   },
   advanced: async () => {
-    const { mountAllocationLab } = await import("../ui/labs.js");
+    const { mountAllocationLab, mountMonteCarloLab } = await import("../ui/labs.js");
     await mountAllocationLab(document.getElementById("lab-alloc"));
+    await mountMonteCarloLab(document.getElementById("lab-montecarlo"));
   },
   strategy: async () => {
     const { mountExperienceLab } = await import("../ui/labs.js");

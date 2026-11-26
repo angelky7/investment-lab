@@ -16,6 +16,7 @@ import { loadIndex, loadSeriesMany, findAsset, keyOf } from "../core/store.js";
 import { alignByDate, cumulative, sliceLastYears } from "../core/series.js";
 import { analyze } from "../core/stats.js";
 import { rebalanceSimulation } from "../core/portfolio.js";
+import { bootstrap, monthlyReturns } from "../core/simulate.js";
 import { lineChart } from "../core/charts.js";
 import { money, num, pct, tone } from "../core/format.js";
 
@@ -473,5 +474,86 @@ export async function mountExperienceLab(host) {
           </p>
         </div>`;
     });
+  });
+}
+
+/* --------------------------- 5. 蒙特卡洛实验室 --------------------------- */
+
+/**
+ * 课程里写着「蒙特卡洛模拟」，这个实验把它兑现：
+ * 拿永久组合的历史月度收益当袋子，有放回地抽 20 年，重复 1000 次。
+ *
+ * 它回答的不是「未来会怎样」，而是「如果未来只是历史的随机抽样，运气能有多差」。
+ */
+export async function mountMonteCarloLab(host) {
+  if (!host) return;
+  host.innerHTML = `<div class="loading-inline">正在准备模拟（读取永久组合的历史月度收益）…</div>`;
+
+  const { out } = await loadMany(ALLOC_ROLES.map(([role]) => [role, CLS[role]]));
+  if (ALLOC_ROLES.some(([role]) => !out[role])) {
+    host.innerHTML = `<div class="notice" data-tone="warn"><span>数据不足，无法运行模拟。</span></div>`;
+    return;
+  }
+
+  const aligned = alignByDate(
+    ALLOC_ROLES.map(([role]) => ({ key: role, dates: out[role].dates, prices: out[role].prices }))
+  );
+  const values = {};
+  for (const [role] of ALLOC_ROLES) values[role] = aligned.values[role];
+
+  const sim = simulate({ dates: aligned.dates, values }, [0.25, 0.25, 0.25, 0.25], 10000);
+  if (!sim) {
+    host.innerHTML = `<div class="notice" data-tone="warn"><span>模拟失败。</span></div>`;
+    return;
+  }
+
+  const monthly = monthlyReturns(aligned.dates, sim.result.valueSeries);
+  const YEARS = 20;
+  const result = bootstrap(monthly, { years: YEARS, paths: 1000, initial: 10000, seed: 20261126 });
+  if (!result.percentiles) {
+    host.innerHTML = `<div class="notice" data-tone="warn"><span>月度样本不足，无法模拟。</span></div>`;
+    return;
+  }
+
+  const { p5, p25, p50, p75, p95 } = result.percentiles;
+  const colors = ["var(--il-chart-4)", "var(--il-chart-2)", "var(--il-chart-1)", "var(--il-chart-2)", "var(--il-chart-4)"];
+
+  host.innerHTML = `
+    <div class="lab">
+      <div class="lab-out">
+        ${metricTile("中位结局", money(p50), `${YEARS} 年后`)}
+        ${metricTile("最好 5%", money(p95), "运气很好的一端")}
+        ${metricTile("最差 5%", money(p5), "运气很差的一端", "neg")}
+        ${metricTile("亏损概率", pct(result.lossProbability, { signed: false, digits: 0 }), `终值低于 ${money(10000)}`, "neg")}
+        ${metricTile("历史月度样本", `${monthly.length} 个`, "有放回抽样")}
+        ${metricTile("路径数", "1,000 条", "固定随机种子，可复现")}
+      </div>
+      <div class="chart tall" id="chart-mc" style="margin-top:0.9rem"></div>
+      <p class="lab-note">
+        这是 <strong>自助重抽样（bootstrap）</strong>：把永久组合过去 ${monthly.length} 个月的收益放进一个袋子，
+        有放回地抽 ${YEARS}×12 次组成一条路径，重复 1000 次。它不做正态假设，也不预测收益率——
+        它只回答一个问题：<strong>如果未来只是历史的随机抽样，最差的情况能有多差。</strong>
+        最差 5% 那条线对应的结局是 ${money(p5)}，比中位数少了 ${money(p50 - p5)}。
+      </p>
+      <p class="lab-note">
+        注意它的局限（和历史上的教训）：抽样假设「未来与过去同分布」。真实世界里，
+        危机时相关性会一起升高、长期收益率可能整体下移——所以这类模拟给出的是<strong>下限参考</strong>，
+        不是「最坏也就这样」的保证。
+      </p>
+    </div>`;
+
+  const labels = Array.from({ length: YEARS }, (_, i) => `第 ${i + 1} 年`);
+  lineChart(host.querySelector("#chart-mc"), {
+    labels,
+    series: [
+      { name: "5% 分位", values: result.bands.p5, color: colors[0], fill: false, width: 1.2 },
+      { name: "25% 分位", values: result.bands.p25, color: colors[1], fill: false, width: 1.4 },
+      { name: "中位数", values: result.bands.p50, color: colors[2], width: 2 },
+      { name: "75% 分位", values: result.bands.p75, color: colors[3], fill: false, width: 1.4 },
+      { name: "95% 分位", values: result.bands.p95, color: colors[4], fill: false, width: 1.2 },
+    ],
+    formatter: (v) => `¥${Math.round(v / 10000)}万`,
+    tipFormatter: (v) => money(v),
+    tipDateFormatter: (d) => d,
   });
 }

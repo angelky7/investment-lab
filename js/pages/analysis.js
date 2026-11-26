@@ -5,7 +5,7 @@
  * 本文件只负责取数、排版和画图。
  */
 
-import { initShell, showError, loadingHtml } from "../core/shell.js";
+import { initShell, showError, loadingHtml, toast } from "../core/shell.js";
 import {
   loadIndex,
   loadMeta,
@@ -29,6 +29,9 @@ import {
   compare as compareSeries,
 } from "../core/stats.js";
 import { areaChart, histogramChart, lineChart } from "../core/charts.js";
+import { deflate } from "../core/inflation.js";
+import { exportSeriesCsv, fingerprint } from "../core/export.js";
+import { gapAwareReturns } from "../core/series.js";
 import { typeTabs, assetSelect, checklist, rangeTabs, yearsOf } from "../ui/picker.js";
 import { metricsHtml, tableHtml, notice } from "../ui/cards.js";
 import {
@@ -52,6 +55,8 @@ const state = {
   range: "5",
   riskFree: 0.025,
   compareKeys: [],
+  // 收益口径：nominal 名义 / real 实际（扣 CPI）
+  basis: "nominal",
 };
 
 let seq = 0; // 防止并发渲染交错
@@ -128,6 +133,37 @@ function defaultKeyFor(type) {
   return asset ? `${asset.type}:${asset.symbol}` : "";
 }
 
+/**
+ * 名义 / 实际 口径切换。
+ *
+ * 实际口径只在 CPI 覆盖的区间内可用（中国 CPI 自 2008-01 起），
+ * 页面会显示 CPI 的可得区间与区间累计通胀，并把无法折算的早期交易日截掉。
+ */
+function renderBasisToggle() {
+  const host = document.getElementById("single-basis");
+  if (!host) return;
+
+  host.innerHTML = `
+    <div class="row" style="gap:.4rem;align-items:center;margin-top:.5rem">
+      <span class="small muted">收益口径</span>
+      <mdui-segmented-button-group id="basis-group" value="${state.basis}" selects="single">
+        <mdui-segmented-button value="nominal">名义</mdui-segmented-button>
+        <mdui-segmented-button value="real">实际（扣 CPI）</mdui-segmented-button>
+      </mdui-segmented-button-group>
+      <span class="small muted">${
+        state.basis === "real" ? "按中国 CPI 折算，2008-01 起可得" : "未扣通胀"
+      }</span>
+    </div>`;
+
+  const group = host.querySelector("#basis-group");
+  if (group) {
+    group.addEventListener("change", () => {
+      state.basis = group.value;
+      renderSingle();
+    });
+  }
+}
+
 function buildControls() {
   const singleHost = document.getElementById("single-type-tabs");
   typeTabs(singleHost, {
@@ -140,6 +176,8 @@ function buildControls() {
       renderSingle();
     },
   });
+
+  renderBasisToggle();
 
   rangeTabs(document.getElementById("single-range"), {
     value: state.range,
@@ -250,24 +288,72 @@ async function renderSingle() {
       return;
     }
 
-    const benchWin =
+    let benchWin =
       !isFx && bench && bench.dates.length
         ? sliceWindow(bench.dates, bench.prices, win.dates[0], win.dates[win.dates.length - 1])
         : null;
 
     // 关键：资产的指标要在**它自己的完整窗口**上算。
     // 基准（沪深300 只有 2005 起）不能反过来把上证指数（1990 起）的统计区间截短。
-    const result = analyze(win.prices, win.dates, { riskFreeRate: state.riskFree });
+    // 实际口径：把价格序列除以「当日 CPI / 期初 CPI」。
+    // CPI 是月度的，已按月向前填充；无覆盖的早期区间会被截掉，并在页面上说明。
+    let basisInfo = null;
+    let basisPrices = win.prices;
+    let basisDates = win.dates;
+    if (state.basis === "real") {
+      const cpiAsset = findAsset(state.assets, "index:CPI");
+      if (!cpiAsset) {
+        basisInfo = {
+          fallback: true,
+          reason: "数据索引里没有 CPI 序列（可能未构建）。已退回名义口径。",
+        };
+      }
+      if (cpiAsset) {
+        const cpiSeries = await loadSeries(cpiAsset);
+        const cpi = { dates: cpiSeries.dates, prices: cpiSeries.prices };
+        const real = deflate(win.dates, win.prices, cpi);
+        if (real.prices.length <= 30) {
+          basisInfo = {
+            fallback: true,
+            reason: `CPI 覆盖不足（该区间只有 ${real.prices.length} 个可折算点），已退回名义口径。`,
+          };
+        }
+        if (real.prices.length > 30) {
+          basisPrices = real.prices;
+          basisDates = win.dates.slice(real.startIndex);
+          basisInfo = {
+            ...real,
+            cpiStart: cpiSeries.dates[0],
+            cpiEnd: cpiSeries.dates[cpiSeries.dates.length - 1],
+          };
+          // 基准也必须同步折算，否则就成了「实际资产 vs 名义基准」
+          if (benchWin) {
+            const realBench = deflate(benchWin.dates, benchWin.prices, cpi);
+            if (realBench.prices.length > 30) {
+              benchWin = {
+                dates: benchWin.dates.slice(realBench.startIndex),
+                prices: realBench.prices,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    const useDates = basisDates;
+    const usePrices = basisPrices;
+
+    const result = analyze(usePrices, useDates, { riskFreeRate: state.riskFree });
 
     // 相对基准的指标单独算：betaAlpha 内部按日期交集对齐，所以只覆盖可比区间
     let benchPrices = null;
     let benchAlignedDates = null;
     if (benchWin && benchWin.prices.length > 30) {
       const relative = betaAlpha(
-        win.prices,
+        usePrices,
         benchWin.prices,
         state.riskFree,
-        win.dates,
+        useDates,
         benchWin.dates
       );
       result.beta = relative.beta;
@@ -276,7 +362,7 @@ async function renderSingle() {
       result.benchmarkReturn = annualizedReturn(benchWin.prices, benchWin.dates);
 
       const aligned = alignByDate([
-        { key: "asset", dates: win.dates, prices: win.prices },
+        { key: "asset", dates: useDates, prices: usePrices },
         { key: "bench", dates: benchWin.dates, prices: benchWin.prices },
       ]);
       if (aligned.dates.length >= 30) {
@@ -286,21 +372,44 @@ async function renderSingle() {
       }
     }
 
-    const useDates = win.dates;
-    const usePrices = win.prices;
-
     if (!result.ok) {
       metricsHost.innerHTML = notice(result.reason, "warn");
       return;
     }
 
     const isBenchmark = state.key === benchInfo.key;
-    metricsHost.innerHTML = metricsHtml(
-      metricsFor(result, series, benchInfo.name, isBenchmark, isFx)
-    );
+    metricsHost.innerHTML =
+      (basisInfo
+        ? basisInfo.fallback
+          ? `<div class="notice" data-tone="warn"><span>${basisInfo.reason}</span></div>`
+          : `<div class="notice" data-tone="info"><span>
+              当前是 <strong>实际口径</strong>：已用中国 CPI 折算（${basisInfo.cpiStart} ~ ${basisInfo.cpiEnd} 可得），
+              区间内 CPI 累计 <strong>${pct(basisInfo.totalInflation)}</strong>。
+              ${basisInfo.startIndex > 0 ? `CPI 覆盖之前的 ${basisInfo.startIndex} 个交易日无法折算，已从图上截掉。` : ""}
+             </span></div>`
+        : "") +
+      metricsHtml(metricsFor(result, series, benchInfo.name, isBenchmark, isFx)) +
+      `<div class="card" style="margin-top:0.8rem">
+        <div class="chart-head">
+          <h3>把这条序列拿走自己算</h3>
+          <span class="hint">指纹一致 = 我们给你的数据和页面上的完全一样</span>
+        </div>
+        <div class="row" style="align-items:center;gap:.6rem;flex-wrap:wrap">
+          <mdui-button variant="tonal" id="btn-export-csv" icon="download">下载 CSV</mdui-button>
+          <span class="small muted" id="series-fingerprint">正在计算序列指纹…</span>
+        </div>
+        <p class="caption" style="margin-top:.5rem">
+          指纹是对「日期:价格」逐行做 SHA-256 的前 12 位。别人拿到同一份数据算出的指纹必须一致——
+          不一致，就说明有一方被改过。
+        </p>
+      </div>`;
 
     chartsHost.innerHTML = [
-      chartCard("chart-price", "价格走势", `${series.name} · ${rangeLabel(win.dates[0], win.dates[win.dates.length - 1])}`),
+      chartCard(
+        "chart-price",
+        state.basis === "real" ? "实际价格走势（扣 CPI）" : "价格走势",
+        `${series.name} · ${rangeLabel(useDates[0], useDates[useDates.length - 1])}`
+      ),
       chartCard(
         "chart-cum",
         isFx ? "汇率走势（累计变化）" : "累计收益对比",
@@ -323,6 +432,33 @@ async function renderSingle() {
     ].join("");
 
     const labelFormatter = years <= 3 ? (d) => monthLabel(d) : (d) => d.slice(0, 4);
+
+    // 序列指纹与 CSV 导出：让「你自己验证」变成可执行的动作，而不是一句口号
+    const exportSeries = {
+      symbol: `${series.type}:${series.symbol}`,
+      name: series.name,
+      dates: useDates,
+      prices: usePrices,
+      realPrices: state.basis === "real" && basisInfo && !basisInfo.fallback ? usePrices : null,
+      realStart: state.basis === "real" && basisInfo && !basisInfo.fallback ? basisInfo.startIndex : 0,
+    };
+    const skippedInfo = gapAwareReturns(useDates, usePrices);
+    const fpHost = document.getElementById("series-fingerprint");
+    fingerprint(useDates, usePrices).then((fp) => {
+      if (!fpHost) return;
+      fpHost.innerHTML =
+        `指纹 <strong>${fp.value}</strong>（${fp.algorithm === "sha256" ? "SHA-256" : "FNV-1a 弱校验"} · ` +
+        `${fp.length.toLocaleString("zh-CN")} 个交易日）` +
+        (skippedInfo.skipped > 0
+          ? `；收益计算跳过了 <strong>${skippedInfo.skipped}</strong> 个跨缺口样本（占 ${
+              ((skippedInfo.skipped / (skippedInfo.returns.length + skippedInfo.skipped)) * 100).toFixed(1)
+            }%）`
+          : "");
+    });
+    document.getElementById("btn-export-csv")?.addEventListener("click", () => {
+      const { rows } = exportSeriesCsv(exportSeries);
+      toast(`已导出 ${rows.toLocaleString("zh-CN")} 行 CSV`);
+    });
 
     lineChart(document.getElementById("chart-price"), {
       labels: win.dates,

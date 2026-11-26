@@ -138,6 +138,9 @@ def main() -> int:
 
     # 第一轮：读取 + 结构校验
     for asset in assets:
+        # 月频宏观序列不按交易日历检查，它天然没有「每个交易日都有数据」
+        if asset.source == "em_macro":
+            continue
         path = os.path.join(HISTORY_DIR, history_filename(asset))
         payload = load_history(path) if os.path.exists(path) else None
         info: dict = {

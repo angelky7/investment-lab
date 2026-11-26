@@ -186,6 +186,37 @@ export function initShell(options = {}) {
 /**
  * 轻提示。优先用 MDUI snackbar，不可用时退回控制台 + 页面内 toast。
  */
+/**
+ * 数据过期横幅。
+ *
+ * 之前 `stale_days` 只在「数据状态」页显示——如果抓取失败、数据落后几周，
+ * 资产分析页照常展示漂亮的曲线，一句提醒都没有。对所有页面统一提示才算诚实。
+ */
+async function mountStaleBanner() {
+  try {
+    const meta = await loadMeta();
+    const stale = Number(meta?.stale_days);
+    if (!Number.isFinite(stale) || stale <= 3) return;
+
+    const main = document.querySelector("mdui-layout-main");
+    if (!main || document.getElementById("stale-banner")) return;
+
+    const banner = document.createElement("div");
+    banner.id = "stale-banner";
+    banner.className = "notice";
+    banner.dataset.tone = "warn";
+    banner.style.margin = "0.75rem 1rem 0";
+    banner.innerHTML = `<span>
+      <strong>数据已 ${stale} 天未更新</strong>（最新 ${meta?.data_date ?? "未知"}）。
+      下面所有数字都基于这份数据，可能不是最新的。
+      <a href="data.html">查看数据状态</a>
+    </span>`;
+    main.insertBefore(banner, main.firstChild);
+  } catch {
+    /* 元信息读不到就算了，不要因此让页面失败 */
+  }
+}
+
 export function toast(message, options = {}) {
   const api = md();
   if (api?.snackbar) {
