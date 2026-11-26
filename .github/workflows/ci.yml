@@ -85,3 +85,9 @@ jobs:
 
       - name: 检查页面引用的静态资源是否存在
         run: python scripts/check_links.py
+
+      # 结构守卫：标签页与面板必须一一对应、lab 宿主必须存在、id 不能重复。
+      # 之前用脚本改 learn.html 时把「刷题」面板整段删掉还留下重复的 case 面板，
+      # 页面不报错、测试全绿，只有真去点那个标签才发现——所以需要这一关。
+      - name: 检查页面结构契约
+        run: python scripts/check_structure.py

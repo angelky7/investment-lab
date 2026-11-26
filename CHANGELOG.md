@@ -3,6 +3,55 @@
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)，版本号写在 `package.json`，
 每次发布在 GitHub Releases 里附对应说明。
 
+## [5.0.1] — 2026-11-26
+
+### 修复：「刷题」标签点了没反应
+
+用户反馈「刷题进不去」。查下来是上一版（5.0.0）替换「决策训练」面板时，
+我用脚本切片把**「刷题」面板整段删掉了**，还留下两个重复的 `data-level="case"`。
+标签还在、点击也生效，但没有任何面板可显示，所以看起来就是「进不去」。
+
+这个 bug 能一路漏到线上，是因为它不触发任何既有检查：
+
+| 检查 | 为什么没抓到 |
+|------|-------------|
+| `node --check` | JS 语法完全正确 |
+| ESLint | 问题在 HTML，不在 JS |
+| Node / Python 单测 | 测的是计算引擎，不读 HTML |
+| `check_links.py` | 只查静态资源与 import 路径，不查页面结构 |
+| e2e smoke | 只验证页面能加载，没有逐个点标签 |
+
+### 新增结构守卫 `scripts/check_structure.py`
+
+检查的是**结构契约**，不是语法：
+
+1. 每个 `data-level` 面板必须齐全且唯一（`learn.html` 固定六个）；
+2. **标签页的 `value` 必须都能找到对应面板**——这条直接对应这次的 bug；
+3. 每个面板里声明的 lab 宿主必须真实存在；
+4. 不允许出现重复 id；
+5. 不允许出现未登记的面板。
+
+用坏版本回滚验证过，它精确报出四个症状：
+
+```
+learn.html: 面板 data-level="case" 重复 2 次
+learn.html: 缺少面板 data-level="practice"
+learn.html: 标签 value="practice" 没有对应的面板（点了会没反应）
+learn.html: 缺少 lab 宿主 #lab-practice
+```
+
+### 守卫自己也有测试
+
+新增 `tests/test_structure.py`（9 项）：好页面通过、缺面板、重复面板、缺 lab 宿主、
+重复 id、未登记面板、缺必需容器、文件不存在，以及**真实页面必须满足契约**。
+守卫写错了等于没有守卫，所以它自己也要被测。
+
+已接入 CI（`python scripts/check_structure.py`）与 `npm run test:all`。
+
+### 顺带
+
+删掉了 5.0.0 残留的旧决策训练面板（29 行死 HTML，含 `#case-options` / `#case-feedback`）。
+
 ## [5.0.0] — 2026-11-26
 
 ### 1. 决策训练：从 1 道单选题变成 3 个多步分支场景
