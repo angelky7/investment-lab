@@ -43,7 +43,7 @@ class PriceBasis(str, Enum):
     INDEX_CLOSE = "指数收盘点位"
     INDEX_TOTAL_RETURN = "全收益指数（分红再投资）"
     SPOT_CLOSE = "现货收盘价"
-    CPI_INDEX = "CPI 定基指数（环比复利）"
+    CPI_INDEX = "CPI 定基指数（累计还原）"
     FUND_ACC_NAV = "基金累计净值"
     FUND_NAV = "基金单位净值"
     FX_CLOSE = "汇率日收盘"

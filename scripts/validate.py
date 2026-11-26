@@ -137,10 +137,10 @@ def main() -> int:
     latest_end = ""
 
     # 第一轮：读取 + 结构校验
+    # 月频宏观序列（如 CPI）也要进报告，但它们天然没有「每个交易日都有数据」，
+    # 因此只做结构校验，不做交易日历缺口分析。
+    MONTHLY_SOURCES = {"em_macro"}
     for asset in assets:
-        # 月频宏观序列不按交易日历检查，它天然没有「每个交易日都有数据」
-        if asset.source == "em_macro":
-            continue
         path = os.path.join(HISTORY_DIR, history_filename(asset))
         payload = load_history(path) if os.path.exists(path) else None
         info: dict = {
@@ -254,7 +254,11 @@ def main() -> int:
             if a.symbol == info["symbol"] and a.type.value == info["type"]
         )
         payload = payloads[(info["type"], info["symbol"])]
-        gaps = missing_analysis(payload["dates"], calendars.get(asset.market.value, set()))
+        # 月频序列（CPI）与交易日历没有可比性：直接标记为「不适用」，而不是算成缺口
+        if asset.source in MONTHLY_SOURCES:
+            gaps = {"missing": 0, "missing_ratio": 0.0, "max_run": 0, "runs": []}
+        else:
+            gaps = missing_analysis(payload["dates"], calendars.get(asset.market.value, set()))
         info.update(
             {
                 "missing_trading_days": gaps["missing"],

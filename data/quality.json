@@ -1,6 +1,6 @@
 {
   "schema": 3,
-  "generated_at": "2026-11-26T12:43:03+08:00",
+  "generated_at": "2026-11-26T12:54:29+08:00",
   "data_date": "2026-11-26",
   "stale_days": 0,
   "calendars": {
@@ -21,19 +21,20 @@
     }
   },
   "summary": {
-    "total": 83,
-    "files_ok": 83,
+    "total": 84,
+    "files_ok": 84,
     "missing": 0,
     "error_count": 0,
-    "warning_count": 18,
-    "total_points": 352307,
+    "warning_count": 19,
+    "total_points": 352533,
     "assets_with_gaps": 1,
     "assets_with_suspension_gaps": 17,
     "assets_with_source_gaps": 1,
-    "assets_complete": 58
+    "assets_complete": 59
   },
   "errors": [],
   "warnings": [
+    "CPI: 仅 226 条数据（建议 ≥ 250）",
     "中国平安（stock 601318）: 连续缺 47 个交易日（2010-06-29 ~ 2010-09-01），多为停牌或数据源空洞",
     "招商银行（stock 600036）: 连续缺 25 个交易日（2006-01-12 ~ 2006-02-24），多为停牌或数据源空洞",
     "中信证券（stock 600030）: 连续缺 12 个交易日（2005-06-20 ~ 2005-07-05），多为停牌或数据源空洞",
@@ -2309,6 +2310,22 @@
           "days": 4
         }
       ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "CPI",
+      "name": "中国 CPI 定基指数",
+      "type": "index",
+      "group": "宏观",
+      "market": "CN",
+      "status": "ok",
+      "count": 226,
+      "start": "2008-01-01",
+      "end": "2026-10-01",
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
       "completeness": "complete"
     }
   ]
