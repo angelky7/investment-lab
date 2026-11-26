@@ -1137,6 +1137,43 @@ code {
   color: rgb(var(--mdui-color-primary));
 }
 
+
+/* ------------------------------- 术语词典 ------------------------------- */
+
+.glossary-group {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 1.4rem;
+}
+
+.glossary-item h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.glossary-item h3 a:hover {
+  text-decoration: underline;
+}
+
+.glossary-where,
+.glossary-myth {
+  font-size: 0.78rem !important;
+  line-height: 1.7;
+}
+
+.glossary-where strong {
+  color: rgb(var(--mdui-color-primary));
+}
+
+.glossary-myth strong {
+  color: var(--il-up);
+}
+
+.glossary-item.on {
+  outline: 2px solid rgb(var(--mdui-color-primary));
+  outline-offset: 2px;
+}
+
 /* ------------------------------ 工具类 ------------------------------ */
 
 .mono {

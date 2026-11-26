@@ -58,7 +58,18 @@
               前两题决定数学约束，后两题决定「你能不能拿住」——后者往往比前者更重要。
             </p>
             <div id="questions"></div>
-            <div class="row" style="margin-top:1rem;align-items:center">
+            <div class="row" style="margin-top:1rem;align-items:center;gap:.5rem">
+              <span class="small muted">优化目标</span>
+              <mdui-segmented-button-group id="objective-group" value="return" selects="single">
+                <mdui-segmented-button value="return">收益最高</mdui-segmented-button>
+                <mdui-segmented-button value="sharpe">性价比最高</mdui-segmented-button>
+                <mdui-segmented-button value="drawdown">回撤最小</mdui-segmented-button>
+              </mdui-segmented-button-group>
+            </div>
+            <p class="question-hint" style="margin:.4rem 0 0">
+              同一批候选配比，换一个目标就换一个答案——「最优」取决于你要什么，算法本身不替你选。
+            </p>
+            <div class="row" style="margin-top:.9rem;align-items:center">
               <mdui-button variant="filled" id="btn-solve">计算可行配置</mdui-button>
               <span class="small muted" id="solve-status"></span>
             </div>

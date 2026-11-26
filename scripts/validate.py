@@ -36,7 +36,11 @@ STALE_DAYS = 6
 CST = timezone(timedelta(hours=8))
 
 # 各市场交易日历的参照资产：优先用流动性最好的指数，避免个别停牌污染日历
-CALENDAR_ANCHORS = {"CN": "000300", "HK": "hkHSI", "US": "us.INX"}
+# 各市场用来代表交易日历的参照资产。
+# CN 用两个锚的**并集**：000001（上证指数，1990-12 起）覆盖早期，
+# 000300（沪深300，2005 起）覆盖此后的统一交易日历。
+# 之前只用 000300，导致 1990–2004 这 15 年的完整性根本没被检查过。
+CALENDAR_ANCHORS = {"CN": ["000001", "000300"], "HK": ["hkHSI"], "US": ["us.INX"]}
 # 缺失率分档
 COMPLETE_RATIO = 0.005
 MINOR_RATIO = 0.03
@@ -170,10 +174,14 @@ def main() -> int:
 
     # 第二轮：每个市场建一个交易日历（参照指数优先）
     calendars: dict[str, set[str]] = {}
-    for market, anchor in CALENDAR_ANCHORS.items():
-        payload = payloads.get(("index", anchor))
-        if payload:
-            calendars[market] = set(payload["dates"])
+    for market, anchors in CALENDAR_ANCHORS.items():
+        dates: set[str] = set()
+        for anchor in (anchors if isinstance(anchors, (list, tuple)) else [anchors]):
+            payload = payloads.get(("index", anchor))
+            if payload:
+                dates.update(payload["dates"])
+        if dates:
+            calendars[market] = dates
     # 参照资产缺失时，退化为该市场所有资产的日期并集
     by_market: dict[str, set[str]] = {}
     for asset in assets:
@@ -183,6 +191,53 @@ def main() -> int:
         by_market.setdefault(asset.market.value, set()).update(payload["dates"])
     for market, day_union in by_market.items():
         calendars.setdefault(market, day_union)
+
+    # 支撑数过滤：把「只有一两个资产有数据」的日期从日历里剔除。
+    # 典型来源是跨市场序列（例如由 GLD 派生的人民币金价）带着美股节假日，
+    # 或某个数据源在休市日仍返回一行。没有这一步，节假日会被误报成「缺数据」。
+    support: dict[str, dict[str, int]] = {}
+    spans: dict[str, tuple[str, str]] = {}
+    for market in calendars:
+        support[market] = {}
+        spans[market] = ("9999-12-31", "0000-01-01")
+    for asset in assets:
+        payload = payloads.get((asset.type.value, asset.symbol))
+        if not payload or not payload.get("dates"):
+            continue
+        market = asset.market.value
+        if market not in calendars:
+            continue
+        ds = payload["dates"]
+        spans[market] = (
+            min(spans[market][0], ds[0]),
+            max(spans[market][1], ds[-1]),
+        )
+        for day in ds:
+            support[market][day] = support[market].get(day, 0) + 1
+
+    # 每天「覆盖该日期的资产数」（只看区间覆盖，不看是否有数据），
+    # 用来决定这一天的支撑阈值：1990 年只有上证指数一个资产，
+    # 阈值必须降到 1，否则会把上证最早那 3 个月从日历里删掉。
+    covering: dict[str, dict[str, int]] = {market: {} for market in calendars}
+    for asset in assets:
+        payload = payloads.get((asset.type.value, asset.symbol))
+        if not payload or not payload.get("dates"):
+            continue
+        market = asset.market.value
+        if market not in calendars:
+            continue
+        ds = payload["dates"]
+        for day in calendars[market]:
+            if ds[0] <= day <= ds[-1]:
+                covering[market][day] = covering[market].get(day, 0) + 1
+
+    for market, days in calendars.items():
+        kept: set[str] = set()
+        for day in days:
+            need = min(3, max(1, covering[market].get(day, 0)))
+            if support[market].get(day, 0) >= need:
+                kept.add(day)
+        calendars[market] = kept
 
     gap_assets = 0
     source_gap_assets = 0

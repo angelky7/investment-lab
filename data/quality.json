@@ -1,12 +1,12 @@
 {
   "schema": 3,
-  "generated_at": "2026-11-26T09:29:14+08:00",
+  "generated_at": "2026-11-26T12:03:25+08:00",
   "data_date": "2026-11-26",
   "stale_days": 0,
   "calendars": {
     "CN": {
-      "days": 5317,
-      "start": "2005-01-04",
+      "days": 8734,
+      "start": "1990-12-19",
       "end": "2026-11-25"
     },
     "HK": {
@@ -25,17 +25,15 @@
     "files_ok": 83,
     "missing": 0,
     "error_count": 0,
-    "warning_count": 21,
-    "total_points": 352142,
-    "assets_with_gaps": 3,
+    "warning_count": 18,
+    "total_points": 352307,
+    "assets_with_gaps": 1,
     "assets_with_suspension_gaps": 17,
-    "assets_with_source_gaps": 4,
-    "assets_complete": 56
+    "assets_with_source_gaps": 1,
+    "assets_complete": 58
   },
   "errors": [],
   "warnings": [
-    "纳斯达克100指数（index us.NDX）: 连续缺 10 个交易日（2021-05-10 ~ 2021-05-21），指数/ETF 不会停牌，疑似数据源空洞",
-    "道琼斯工业平均指数（index us.DJI）: 连续缺 19 个交易日（2009-07-02 ~ 2009-07-29），指数/ETF 不会停牌，疑似数据源空洞",
     "中国平安（stock 601318）: 连续缺 47 个交易日（2010-06-29 ~ 2010-09-01），多为停牌或数据源空洞",
     "招商银行（stock 600036）: 连续缺 25 个交易日（2006-01-12 ~ 2006-02-24），多为停牌或数据源空洞",
     "中信证券（stock 600030）: 连续缺 12 个交易日（2005-06-20 ~ 2005-07-05），多为停牌或数据源空洞",
@@ -53,8 +51,7 @@
     "恒瑞医药（stock 600276）: 连续缺 17 个交易日（2006-05-26 ~ 2006-06-19），多为停牌或数据源空洞",
     "万科A（stock 000002）: 连续缺 130 个交易日（2015-12-21 ~ 2016-07-01），多为停牌或数据源空洞",
     "长江电力（stock 600900）: 连续缺 251 个交易日（2008-05-08 ~ 2009-05-15），多为停牌或数据源空洞",
-    "特斯拉（stock us.TSLA.OQ）: 连续缺 27 个交易日（2011-02-15 ~ 2011-03-24），多为停牌或数据源空洞",
-    "中证货币基金指数（index H11025）: 连续缺 136 个交易日（2016-08-31 ~ 2017-03-27），指数/ETF 不会停牌，疑似数据源空洞"
+    "特斯拉（stock us.TSLA.OQ）: 连续缺 27 个交易日（2011-02-15 ~ 2011-03-24），多为停牌或数据源空洞"
   ],
   "assets": [
     {
@@ -214,21 +211,14 @@
       "group": "海外指数",
       "market": "US",
       "status": "ok",
-      "count": 5499,
+      "count": 5509,
       "start": "2005-01-03",
       "end": "2026-11-24",
-      "missing_trading_days": 10,
-      "missing_ratio": 0.00182,
-      "max_missing_run": 10,
-      "missing_runs": [
-        {
-          "from": "2021-05-10",
-          "to": "2021-05-21",
-          "days": 10
-        }
-      ],
-      "completeness": "complete",
-      "gap_cause": "source"
+      "missing_trading_days": 0,
+      "missing_ratio": 0.0,
+      "max_missing_run": 0,
+      "missing_runs": [],
+      "completeness": "complete"
     },
     {
       "symbol": "us.INX",
@@ -253,18 +243,13 @@
       "group": "海外指数",
       "market": "US",
       "status": "ok",
-      "count": 4389,
+      "count": 4408,
       "start": "2009-05-11",
       "end": "2026-11-24",
-      "missing_trading_days": 26,
-      "missing_ratio": 0.00589,
-      "max_missing_run": 19,
+      "missing_trading_days": 7,
+      "missing_ratio": 0.00159,
+      "max_missing_run": 3,
       "missing_runs": [
-        {
-          "from": "2009-07-02",
-          "to": "2009-07-29",
-          "days": 19
-        },
         {
           "from": "2009-06-22",
           "to": "2009-06-24",
@@ -284,10 +269,14 @@
           "from": "2012-06-29",
           "to": "2012-06-29",
           "days": 1
+        },
+        {
+          "from": "2014-07-16",
+          "to": "2014-07-16",
+          "days": 1
         }
       ],
-      "completeness": "minor",
-      "gap_cause": "source"
+      "completeness": "complete"
     },
     {
       "symbol": "000510",
@@ -374,8 +363,8 @@
       "count": 5907,
       "start": "2002-04-09",
       "end": "2026-11-25",
-      "missing_trading_days": 69,
-      "missing_ratio": 0.01298,
+      "missing_trading_days": 74,
+      "missing_ratio": 0.01237,
       "max_missing_run": 25,
       "missing_runs": [
         {
@@ -459,8 +448,8 @@
       "count": 5701,
       "start": "2003-01-06",
       "end": "2026-11-25",
-      "missing_trading_days": 94,
-      "missing_ratio": 0.01768,
+      "missing_trading_days": 98,
+      "missing_ratio": 0.0169,
       "max_missing_run": 12,
       "missing_runs": [
         {
@@ -545,8 +534,8 @@
       "count": 8536,
       "start": "1991-04-03",
       "end": "2026-11-25",
-      "missing_trading_days": 148,
-      "missing_ratio": 0.02784,
+      "missing_trading_days": 193,
+      "missing_ratio": 0.02227,
       "max_missing_run": 46,
       "missing_runs": [
         {
@@ -565,14 +554,14 @@
           "days": 12
         },
         {
-          "from": "2006-05-29",
-          "to": "2006-06-09",
+          "from": "1991-08-05",
+          "to": "1991-08-16",
           "days": 10
         },
         {
-          "from": "2007-05-14",
-          "to": "2007-05-24",
-          "days": 9
+          "from": "2006-05-29",
+          "to": "2006-06-09",
+          "days": 10
         }
       ],
       "completeness": "minor",
@@ -588,8 +577,8 @@
       "count": 6050,
       "start": "2001-08-27",
       "end": "2026-11-25",
-      "missing_trading_days": 68,
-      "missing_ratio": 0.01279,
+      "missing_trading_days": 74,
+      "missing_ratio": 0.01208,
       "max_missing_run": 36,
       "missing_runs": [
         {
@@ -613,8 +602,8 @@
           "days": 2
         },
         {
-          "from": "2005-06-29",
-          "to": "2005-06-29",
+          "from": "2002-02-25",
+          "to": "2002-02-25",
           "days": 1
         }
       ],
@@ -631,8 +620,8 @@
       "count": 6794,
       "start": "1998-04-27",
       "end": "2026-11-25",
-      "missing_trading_days": 125,
-      "missing_ratio": 0.02351,
+      "missing_trading_days": 138,
+      "missing_ratio": 0.01991,
       "max_missing_run": 60,
       "missing_runs": [
         {
@@ -869,8 +858,8 @@
       "count": 6144,
       "start": "2001-01-12",
       "end": "2026-11-25",
-      "missing_trading_days": 109,
-      "missing_ratio": 0.0205,
+      "missing_trading_days": 126,
+      "missing_ratio": 0.0201,
       "max_missing_run": 14,
       "missing_runs": [
         {
@@ -912,8 +901,8 @@
       "count": 5634,
       "start": "2003-07-03",
       "end": "2026-11-25",
-      "missing_trading_days": 47,
-      "missing_ratio": 0.00884,
+      "missing_trading_days": 51,
+      "missing_ratio": 0.00897,
       "max_missing_run": 8,
       "missing_runs": [
         {
@@ -1034,8 +1023,8 @@
       "count": 5958,
       "start": "2002-02-07",
       "end": "2026-11-25",
-      "missing_trading_days": 52,
-      "missing_ratio": 0.00978,
+      "missing_trading_days": 56,
+      "missing_ratio": 0.00931,
       "max_missing_run": 14,
       "missing_runs": [
         {
@@ -1077,8 +1066,8 @@
       "count": 6285,
       "start": "2000-10-18",
       "end": "2026-11-25",
-      "missing_trading_days": 39,
-      "missing_ratio": 0.00733,
+      "missing_trading_days": 46,
+      "missing_ratio": 0.00727,
       "max_missing_run": 17,
       "missing_runs": [
         {
@@ -1097,13 +1086,13 @@
           "days": 2
         },
         {
-          "from": "2005-02-28",
-          "to": "2005-02-28",
+          "from": "2001-04-18",
+          "to": "2001-04-18",
           "days": 1
         },
         {
-          "from": "2006-08-16",
-          "to": "2006-08-16",
+          "from": "2001-07-18",
+          "to": "2001-07-18",
           "days": 1
         }
       ],
@@ -1136,8 +1125,8 @@
       "count": 8546,
       "start": "1991-01-31",
       "end": "2026-11-25",
-      "missing_trading_days": 200,
-      "missing_ratio": 0.03762,
+      "missing_trading_days": 233,
+      "missing_ratio": 0.02677,
       "max_missing_run": 130,
       "missing_runs": [
         {
@@ -1161,12 +1150,12 @@
           "days": 8
         },
         {
-          "from": "2007-08-24",
-          "to": "2007-08-28",
-          "days": 3
+          "from": "1991-05-28",
+          "to": "1991-06-07",
+          "days": 7
         }
       ],
-      "completeness": "gaps",
+      "completeness": "minor",
       "gap_cause": "suspension"
     },
     {
@@ -1631,8 +1620,8 @@
       "count": 5167,
       "start": "2003-11-18",
       "end": "2026-11-25",
-      "missing_trading_days": 423,
-      "missing_ratio": 0.07956,
+      "missing_trading_days": 425,
+      "missing_ratio": 0.076,
       "max_missing_run": 251,
       "missing_runs": [
         {
@@ -2082,34 +2071,34 @@
       "count": 8063,
       "start": "1994-08-30",
       "end": "2026-11-25",
-      "missing_trading_days": 29,
-      "missing_ratio": 0.00545,
-      "max_missing_run": 5,
+      "missing_trading_days": 113,
+      "missing_ratio": 0.01445,
+      "max_missing_run": 8,
       "missing_runs": [
+        {
+          "from": "2001-05-10",
+          "to": "2001-05-21",
+          "days": 8
+        },
+        {
+          "from": "2004-12-27",
+          "to": "2005-01-06",
+          "days": 8
+        },
+        {
+          "from": "2002-05-27",
+          "to": "2002-05-31",
+          "days": 5
+        },
         {
           "from": "2006-01-11",
           "to": "2006-01-17",
           "days": 5
         },
         {
-          "from": "2005-01-04",
-          "to": "2005-01-06",
-          "days": 3
-        },
-        {
-          "from": "2006-01-19",
-          "to": "2006-01-20",
-          "days": 2
-        },
-        {
-          "from": "2017-03-02",
-          "to": "2017-03-03",
-          "days": 2
-        },
-        {
-          "from": "2017-03-07",
-          "to": "2017-03-08",
-          "days": 2
+          "from": "2001-02-06",
+          "to": "2001-02-09",
+          "days": 4
         }
       ],
       "completeness": "minor"
@@ -2185,18 +2174,13 @@
       "group": "大类资产",
       "market": "CN",
       "status": "ok",
-      "count": 4936,
+      "count": 5072,
       "start": "2005-12-30",
       "end": "2026-11-24",
-      "missing_trading_days": 139,
-      "missing_ratio": 0.02739,
-      "max_missing_run": 136,
+      "missing_trading_days": 3,
+      "missing_ratio": 0.00059,
+      "max_missing_run": 1,
       "missing_runs": [
-        {
-          "from": "2016-08-31",
-          "to": "2017-03-27",
-          "days": 136
-        },
         {
           "from": "2022-12-26",
           "to": "2022-12-26",
@@ -2213,50 +2197,49 @@
           "days": 1
         }
       ],
-      "completeness": "minor",
-      "gap_cause": "source"
+      "completeness": "complete"
     },
     {
       "symbol": "GOLDCNY",
       "name": "黄金（人民币计价，合成）",
       "type": "index",
       "group": "大类资产",
-      "market": "CN",
+      "market": "US",
       "status": "ok",
       "count": 5376,
       "start": "2004-11-18",
       "end": "2026-11-24",
-      "missing_trading_days": 203,
-      "missing_ratio": 0.03819,
-      "max_missing_run": 5,
+      "missing_trading_days": 152,
+      "missing_ratio": 0.02759,
+      "max_missing_run": 6,
       "missing_runs": [
         {
-          "from": "2006-01-11",
-          "to": "2006-01-17",
+          "from": "2020-10-01",
+          "to": "2020-10-08",
+          "days": 6
+        },
+        {
+          "from": "2005-02-09",
+          "to": "2005-02-15",
           "days": 5
         },
         {
-          "from": "2005-01-04",
-          "to": "2005-01-06",
-          "days": 3
+          "from": "2005-05-02",
+          "to": "2005-05-06",
+          "days": 5
         },
         {
-          "from": "2006-01-19",
-          "to": "2006-01-20",
-          "days": 2
+          "from": "2005-10-03",
+          "to": "2005-10-07",
+          "days": 5
         },
         {
-          "from": "2012-10-29",
-          "to": "2012-10-30",
-          "days": 2
-        },
-        {
-          "from": "2017-03-02",
-          "to": "2017-03-03",
-          "days": 2
+          "from": "2006-05-01",
+          "to": "2006-05-05",
+          "days": 5
         }
       ],
-      "completeness": "gaps"
+      "completeness": "minor"
     },
     {
       "symbol": "H20955",

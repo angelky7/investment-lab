@@ -21,7 +21,13 @@ import {
   histogram,
   sliceLastYears,
 } from "../core/series.js";
-import { analyze, betaAlpha, compare as compareSeries, annualizedReturn } from "../core/stats.js";
+import {
+  analyze,
+  annualReturns,
+  annualizedReturn,
+  betaAlpha,
+  compare as compareSeries,
+} from "../core/stats.js";
 import { areaChart, histogramChart, lineChart } from "../core/charts.js";
 import { typeTabs, assetSelect, checklist, rangeTabs, yearsOf } from "../ui/picker.js";
 import { metricsHtml, tableHtml, notice } from "../ui/cards.js";
@@ -303,6 +309,17 @@ async function renderSingle() {
       chartCard("chart-dd", "回撤曲线", "每个点相对此前最高点"),
       chartCard("chart-roll", "滚动一年年化收益", "看收益的时间稳定性，而不是只有一个数字"),
       chartCard("chart-dist", "日收益分布", "直方图 · 越集中说明日常波动越小"),
+      `<div class="card">
+        <div class="chart-head">
+          <h3>年度收益</h3>
+          <span class="hint">按自然年切分；每年取「上年末收盘 → 本年末收盘」</span>
+        </div>
+        ${annualTableHtml(
+          annualReturns(useDates, usePrices),
+          benchPrices ? annualReturns(benchAlignedDates || useDates, benchPrices) : null,
+          benchInfo.name
+        )}
+      </div>`,
     ].join("");
 
     const labelFormatter = years <= 3 ? (d) => monthLabel(d) : (d) => d.slice(0, 4);
@@ -525,6 +542,44 @@ async function main() {
   } catch (err) {
     showError(document.getElementById("single-metrics"), `初始化失败：${err.message}`);
   }
+}
+
+/**
+ * 年度收益表：一年一行。
+ * 一条 20 年的曲线看不出「哪一年最难受」，这张表能。
+ */
+function annualTableHtml(rows, benchRows, benchName) {
+  if (!rows || !rows.length) return notice("数据不足，无法按年切分。", "warn");
+  const benchByYear = new Map((benchRows || []).map((r) => [r.year, r]));
+
+  const body = rows
+    .slice()
+    .reverse()
+    .map((row) => {
+      const bench = benchByYear.get(row.year);
+      const diff = bench && bench.ret !== null && row.ret !== null ? row.ret - bench.ret : null;
+      return [
+        { html: `<strong>${row.year}</strong>${row.partial ? ' <span class="muted small">部分</span>' : ""}` },
+        { html: row.ret === null ? "—" : pct(row.ret), cls: row.ret === null ? "muted" : tone(row.ret) },
+        { html: pct(row.maxDrawdown), cls: "neg" },
+        { html: bench && bench.ret !== null ? pct(bench.ret) : "—", cls: bench && bench.ret !== null ? tone(bench.ret) : "muted" },
+        { html: diff === null ? "—" : pct(diff), cls: diff === null ? "muted" : tone(diff) },
+      ];
+    });
+
+  return tableHtml({
+    columns: [
+      { label: "年份", align: "left" },
+      { label: "本年收益" },
+      { label: "年内最大回撤" },
+      { label: benchName || "基准" },
+      { label: "相对基准" },
+    ],
+    rows: body.map((cells) => ({ cells })),
+    caption:
+      "「年内最大回撤」是指这一年之内从高点到低点的跌幅——它比年度收益更能说明持有体验：" +
+      "有些年份最终是涨的，但中途跌掉了三成。",
+  });
 }
 
 function metricsFor(result, series, benchName = "沪深300", isBenchmark = false, isFx = false) {

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>术语词典 · 投资实验室</title>
+  <meta name="description" content="投资术语的一页速查：每个词一句话定义、本站哪里能看到实例、以及最常见的误解。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2300695c'/%3E%3Cpath d='M8 22l5-6 4 3.5L24 10' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="vendor/mdui/mdui.css" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script defer src="vendor/mdui/mdui.global.js"></script>
+</head>
+<body>
+  <mdui-layout>
+    <mdui-top-app-bar>
+      <mdui-button-icon id="nav-open" aria-label="打开导航菜单">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3.5 6h17M3.5 12h17M3.5 18h17"/></svg>
+      </mdui-button-icon>
+      <mdui-top-app-bar-title>术语词典</mdui-top-app-bar-title>
+      <div style="flex:1"></div>
+      <mdui-button-icon id="theme-toggle" class="btn-theme" aria-label="切换深色/浅色主题"><svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg><svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.6A4.4 4.4 0 1 0 12 16.4a4.4 4.4 0 0 0 0-8.8zM12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4"/></svg></mdui-button-icon>
+    </mdui-top-app-bar>
+
+    <mdui-layout-main>
+      <main class="page">
+        <header class="page-head">
+          <span class="eyebrow">Glossary</span>
+          <h1>术语词典</h1>
+          <p class="lead">
+            每个词三件事：<b>一句话定义</b>、<b>本站哪里能看到真实例子</b>、<b>最常见的误解</b>。
+            输入关键词可以过滤；点标题能拿到直达链接。
+          </p>
+        </header>
+
+        <section class="section">
+          <mdui-text-field id="glossary-filter" label="搜索术语（例如：回撤、夏普、再平衡）" variant="outlined" clearable></mdui-text-field>
+          <p class="small muted" id="glossary-count" style="margin:0.5rem 0 0"></p>
+        </section>
+
+        <section class="section" id="glossary-root"></section>
+
+        <section class="section">
+          <div class="notice" data-tone="info">
+            <span>
+              这些定义都刻意写成「能算出来」的样子：本站在
+              <a href="analysis.html">资产分析</a>、<a href="portfolio.html">组合分析</a>、
+              <a href="data.html">数据状态</a> 里用的是同一套口径，术语和数字对得上。
+            </span>
+          </div>
+        </section>
+      </main>
+    </mdui-layout-main>
+  </mdui-layout>
+
+  <div id="site-nav"></div>
+  <script type="module" src="js/pages/glossary.js"></script>
+</body>
+</html>

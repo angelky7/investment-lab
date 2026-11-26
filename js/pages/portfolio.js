@@ -15,8 +15,9 @@ import {
   loadSeriesMany,
   benchmarkFor,
 } from "../core/store.js";
-import { alignByDate, sliceLastYears } from "../core/series.js";
+import { alignByDate, drawdowns, sliceLastYears } from "../core/series.js";
 import {
+  netOfFees,
   bandRebalance,
   correlationMatrix,
   dcaBacktest,
@@ -33,7 +34,7 @@ import {
   buildDefensiveCheck,
 } from "../core/market-check.js";
 import { STRATEGIES, findStrategy } from "../core/strategies.js";
-import { lineChart } from "../core/charts.js";
+import { areaChart, lineChart } from "../core/charts.js";
 import {
   assetSelect,
   checklist,
@@ -892,6 +893,19 @@ async function renderRebalance() {
 
       <div class="card">
         <div class="chart-head">
+          <h3>回撤曲线对比</h3>
+          <span class="hint">再平衡真正的价值在这里：把深的坑变浅，而不是把终值变高</span>
+        </div>
+        <div class="chart" id="chart-rebalance-dd"></div>
+        <p class="caption">
+          刚才那张净值图只说了「谁赚得多」，这张才说「谁跌得狠」。
+          再平衡通常会让终值少一点，换来的是<strong>回撤更浅、修复更快</strong>——
+          这正是「配置」与「押注」的分界线。
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="chart-head">
           <h3>各资产权重漂移</h3>
           <span class="hint">虚线是目标权重；每次调仓后权重会被拉回虚线，然后再次走开</span>
         </div>
@@ -937,6 +951,29 @@ async function renderRebalance() {
       markers: result.events.map((event) => ({ index: event.index })),
       formatter: (v) => `¥${Math.round(v / 10000)}万`,
       tipFormatter: (v) => money(v),
+      labelFormatter: years <= 3 ? (d) => d.slice(2, 7) : (d) => d.slice(0, 4),
+      tipDateFormatter: dateLabel,
+    });
+
+    // 回撤曲线对比：把「风险」这一面也画出来
+    areaChart(document.getElementById("chart-rebalance-dd"), {
+      labels: aligned.dates,
+      series: [
+        {
+          name: "定期再平衡",
+          values: drawdowns(result.valueSeries),
+          color: "var(--il-chart-1)",
+        },
+        {
+          name: "买入后不动",
+          values: drawdowns(result.noRebalanceSeries),
+          color: "var(--il-chart-3)",
+          fill: false,
+          width: 1.5,
+        },
+      ],
+      formatter: (v) => `${(v * 100).toFixed(0)}%`,
+      tipFormatter: (v) => pct(v),
       labelFormatter: years <= 3 ? (d) => d.slice(2, 7) : (d) => d.slice(0, 4),
       tipDateFormatter: dateLabel,
     });
@@ -1128,6 +1165,13 @@ async function renderStrategy() {
     const mine = stats(result.valueSeries);
     const stocks = stats(stockSeries);
 
+    // 扣费对照：回测是零成本的，而真实持有每年都要交管理/托管费。
+    // 默认 0.6%/年（股票ETF 0.5%+托管 0.1%），债券档更低，这里取一个不偏袒的中间值。
+    const FEE = 0.006;
+    const netSeries = netOfFees(result.valueSeries, FEE);
+    const net = stats(netSeries);
+    const netStocks = stats(netOfFees(stockSeries, FEE));
+
     const sleeveRows = strategy.sleeves.map((sleeve, i) => {
       const series = byKey.get(sleeve.key);
       const finalValue = result.sleeveFinal?.[sleeve.key];
@@ -1143,6 +1187,17 @@ async function renderStrategy() {
     });
 
     host.innerHTML = `
+      <div class="notice" data-tone="warn">
+        <span>
+          回测不收费、不交税。<strong>扣掉每年 ${(FEE * 100).toFixed(1)}% 的管理与托管费后，
+          年化是 ${pct(net.annualized)}（毛 ${pct(mine.annualized)}）</strong>，
+          期末从 ${money(result.valueSeries[result.valueSeries.length - 1])} 变成 ${money(
+            netSeries[netSeries.length - 1]
+          )}。真实成本还包括调仓摩擦与红利税（持股不满 1 年按 20% 征），
+          所以实际到手会比这个数字再低一点。
+        </span>
+      </div>
+
       <div class="card">
         <div class="chart-head">
           <h3>${strategy.name} · 净值曲线</h3>
@@ -1159,6 +1214,12 @@ async function renderStrategy() {
             label: "年化波动",
             value: pct(mine.volatility, { signed: false }),
             sub: `同区间 100% 股票 ${pct(stocks.volatility, { signed: false })}`,
+          },
+          {
+            label: `扣费后年化（${(FEE * 100).toFixed(1)}%/年）`,
+            value: pct(net.annualized),
+            tone: tone(net.annualized),
+            sub: `毛 ${pct(mine.annualized)} · 每年少 ${((mine.annualized ?? 0) - (net.annualized ?? 0) > 0 ? ((mine.annualized - net.annualized) * 100).toFixed(2) : "0.00")} 个点`,
           },
           {
             label: "最大回撤",

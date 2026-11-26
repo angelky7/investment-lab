@@ -14,6 +14,7 @@ import {
   buildNarrative,
   constraintsFromAnswers,
   evaluateAllocation,
+  minDrawdownFor,
   searchAllocation,
   windowNote,
 } from "../core/planner.js";
@@ -25,6 +26,8 @@ const state = {
   assets: [],
   // 用户勾选的资产类别（至少保留 2 类）。黄金、海外股票这些不想要就可以不配。
   included: ASSET_CLASSES.map((c) => c.id),
+  // 优化目标：收益最高 / 性价比最高（夏普）/ 回撤最小
+  objective: "return",
   answers: {
     drawdown: 0.2,
     target: [0.05, 0.07],
@@ -216,6 +219,7 @@ async function runSolve() {
       equityFlags: classes.map((c) => c.equity),
       includeMask,
       step: 0.1,
+      objective: state.objective,
     });
     const elapsed = Math.round(performance.now() - started);
 
@@ -223,6 +227,28 @@ async function runSolve() {
 
     const chosen = search.chosen;
     const narrative = buildNarrative(constraints, search, chosen);
+
+    // 反推：把「你想要的收益」当输入，看历史上最少要承受多少回撤
+    const reached = minDrawdownFor(search, constraints.targetLow);
+    if (reached) {
+      const reachedWeights = classes
+        .map((c, i) => (reached.weights[i] > 0 ? `${c.label} ${Math.round(reached.weights[i] * 100)}%` : ""))
+        .filter(Boolean)
+        .join(" · ");
+      narrative.bullets.push(
+        `反过来问：要达到你期望的 ${(constraints.targetLow * 100).toFixed(0)}% 年化，` +
+          `历史上最少要承受 <strong>${pct(Math.abs(reached.maxDrawdown), { signed: false })}</strong> 的回撤（实际年化 ${pct(
+            reached.annualized
+          )}）。` +
+          `对应的配比是 ${reachedWeights}；和你当前的预算 ` +
+          `${(constraints.drawdownBudget * 100).toFixed(0)}% 对比一下，就知道这个收益目标离你有多远。`
+      );
+    } else {
+      narrative.warnings.push(
+        `你期望的 ${(constraints.targetLow * 100).toFixed(0)}% 年化，在历史数据里没有任何一组候选配置做到过。` +
+          "这不是算法保守，是这段历史里不存在——继续坚持这个目标，等于假设未来会比过去好。"
+      );
+    }
     status.textContent = `已回测 ${search.candidates.length} 组合法配比，用时 ${elapsed} ms`;
 
     if (!chosen) {
@@ -492,6 +518,14 @@ function main() {
   renderClassPicker();
   renderQuestions();
   document.getElementById("btn-solve").addEventListener("click", runSolve);
+
+  const group = document.getElementById("objective-group");
+  if (group) {
+    group.addEventListener("change", () => {
+      state.objective = group.value;
+      runSolve();
+    });
+  }
   runSolve();
 }
 

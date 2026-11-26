@@ -124,6 +124,13 @@ class CanvasChart {
     this.host = host;
     host.classList.add("chart");
     this.canvas = document.createElement("canvas");
+    // 无障碍：canvas 对读屏软件是不可见文本，至少给出角色与一句说明
+    this.canvas.setAttribute("role", "img");
+    this.canvas.setAttribute(
+      "aria-label",
+      "数据图表（可用鼠标悬停或用键盘方向键查看具体数值）"
+    );
+
     this.tip = document.createElement("div");
     this.tip.className = "chart-tip";
     host.append(this.canvas, this.tip);
@@ -161,6 +168,9 @@ class CanvasChart {
 
   setState(state) {
     this.state = state;
+    // 有名字的图表就把名字写进 aria-label，读屏软件才知道这是什么图
+    const label = state?.ariaLabel || state?.name || state?.title;
+    if (label) this.canvas.setAttribute("aria-label", `${label}（数据图表）`);
     this.draw();
   }
 

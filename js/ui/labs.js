@@ -149,7 +149,8 @@ function sliderRow(id, label, min, max, step, value, unit) {
         <span>${label}</span>
         <strong id="out-${id}"></strong>
       </div>
-      <input type="range" id="in-${id}" min="${min}" max="${max}" step="${step}" value="${value}" />
+      <input type="range" id="in-${id}" min="${min}" max="${max}" step="${step}" value="${value}"
+             aria-label="${label}" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${value}" />
     </div>`;
 }
 

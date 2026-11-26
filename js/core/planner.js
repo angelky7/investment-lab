@@ -193,6 +193,8 @@ export function searchAllocation(input) {
     riskFreeRate = 0.025,
     minWeight = 0.1,
     maxWeight,
+    // 优化目标：'return' 最大化年化（默认）| 'sharpe' 最大化夏普 | 'drawdown' 最小化回撤
+    objective = "return",
   } = input;
 
   const n = prices.length;
@@ -265,11 +267,28 @@ export function searchAllocation(input) {
 
   walk(0, steps);
 
-  feasible.sort((a, b) => {
-    const diff = (b.annualized ?? -1) - (a.annualized ?? -1);
-    if (Math.abs(diff) > 1e-6) return diff;
-    return (a.volatility ?? 0) - (b.volatility ?? 0);
-  });
+  // 不同目标 = 不同的价值判断，不是不同算法：
+  //   return   愿意承受更大波动换更高收益
+  //   sharpe   每单位风险拿到的超额收益最高（最接近「性价比」）
+  //   drawdown 先把回撤压到最小，收益排第二
+  const sorters = {
+    return: (a, b) => {
+      const diff = (b.annualized ?? -1) - (a.annualized ?? -1);
+      if (Math.abs(diff) > 1e-6) return diff;
+      return (a.volatility ?? 0) - (b.volatility ?? 0);
+    },
+    sharpe: (a, b) => {
+      const diff = (b.sharpe ?? -99) - (a.sharpe ?? -99);
+      if (Math.abs(diff) > 1e-9) return diff;
+      return (b.annualized ?? -1) - (a.annualized ?? -1);
+    },
+    drawdown: (a, b) => {
+      const diff = Math.abs(a.maxDrawdown ?? 9) - Math.abs(b.maxDrawdown ?? 9);
+      if (Math.abs(diff) > 1e-9) return diff;
+      return (b.annualized ?? -1) - (a.annualized ?? -1);
+    },
+  };
+  feasible.sort(sorters[objective] || sorters.return);
 
   const chosen = feasible[0] || null;
   const bestDrawdown = all.length
@@ -282,9 +301,29 @@ export function searchAllocation(input) {
     chosen,
     bestDrawdown,
     includedIdx,
+    objective,
     bounds: { minWeight, maxWeight: effectiveMax, step, included },
     reason: "",
   };
+}
+
+/**
+ * 反推：想拿到 target 年化，历史上最少要承受多少回撤？
+ *
+ * 这是把「收益目标」当输入、把「风险代价」当输出的问法——
+ * 比「我能亏多少」更接近大多数人真实的思考方式，也更容易让人放弃不切实际的目标。
+ *
+ * @param {{candidates: {annualized:number|null, maxDrawdown:number, weights:number[]}[]}} search
+ * @param {number} target 目标年化（小数，例如 0.08）
+ */
+export function minDrawdownFor(search, target) {
+  const pool = (search?.candidates || []).filter(
+    (p) => Number.isFinite(p.annualized) && p.annualized >= target
+  );
+  if (!pool.length) return null;
+  return pool.reduce((best, p) =>
+    Math.abs(p.maxDrawdown) < Math.abs(best.maxDrawdown) ? p : best
+  );
 }
 
 /** 把结果翻译成人话（不夸大、不推荐） */

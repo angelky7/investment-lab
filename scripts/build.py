@@ -57,6 +57,7 @@ DERIVED_SERIES = [
         "name": "黄金（人民币计价，合成）",
         "group": "大类资产",
         "currency": "CNY",
+        "market": "US",  # 交易日历跟随 GLD（美股），否则会把美股节假日带进 A 股日历
         "source": "derived",
         "price_basis": "GLD × 美元兑人民币（合成）",
         "inputs": ["etf_us.GLD.AM.json", "fx_USDCNY.json"],
@@ -93,7 +94,7 @@ def build_derived_series() -> list[str]:
             "symbol": spec["symbol"],
             "name": spec["name"],
             "type": spec["type"],
-            "market": "CN",
+            "market": spec.get("market", "CN"),
             "group": spec["group"],
             "currency": spec["currency"],
             "source": spec["source"],

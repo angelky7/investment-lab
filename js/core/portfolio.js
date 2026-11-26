@@ -570,3 +570,31 @@ export function estimateBeta(assetDates, assetPrices, benchDates, benchPrices) {
 }
 
 export { TRADING_DAYS };
+
+/**
+ * 按年费率逐日扣减，返回**扣费后**的净值序列。
+ *
+ * 回测里最容易被忽略、也最容易被吹掉的正是这一项：
+ * 0.6%/年 的 ETF 管理费，在 20 年里会吃掉 10% 以上的终值；
+ * 再加上调仓摩擦与红利税，「毛收益」和「到手收益」是两个数字。
+ *
+ * 这里只做管理/托管费这种**连续**成本（逐日按比例扣），
+ * 交易摩擦与税是离散事件，用 feeRate 之外的参数单独说明，不在这里假装精确。
+ *
+ * @param {number[]} values 净值序列
+ * @param {number} annualFee 年费率，例如 0.006 表示每年 0.6%
+ * @param {number} periodsPerYear 每年交易日数，默认 252
+ */
+export function netOfFees(values, annualFee, periodsPerYear = 252) {
+  if (!Array.isArray(values) || !values.length) return [];
+  if (!Number.isFinite(annualFee) || annualFee <= 0) return values.slice();
+
+  const daily = Math.pow(1 - annualFee, 1 / periodsPerYear);
+  const out = new Array(values.length);
+  let factor = 1;
+  for (let i = 0; i < values.length; i += 1) {
+    out[i] = values[i] * factor;
+    factor *= daily;
+  }
+  return out;
+}

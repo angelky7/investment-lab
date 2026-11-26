@@ -329,3 +329,66 @@ export function compare(list, options = {}) {
 }
 
 export { mean, stdev };
+
+/**
+ * 按自然年切分，返回每年的收益与该年内的最大回撤。
+ *
+ * 为什么需要它：一条 20 年的净值曲线看不出「哪一年最难受」。
+ * 年度表把 20 年压缩成 20 行，谁都能一眼找到自己做不过去的那一年。
+ *
+ * @param {string[]} dates
+ * @param {number[]} prices
+ * @returns {{year:number, ret:number|null, maxDrawdown:number, days:number, partial:boolean}[]}
+ */
+export function annualReturns(dates, prices) {
+  if (!Array.isArray(dates) || !Array.isArray(prices) || dates.length < 2) return [];
+
+  const byYear = new Map();
+  for (let i = 0; i < dates.length; i += 1) {
+    const year = Number(dates[i].slice(0, 4));
+    if (!Number.isFinite(year)) continue;
+    if (!byYear.has(year)) byYear.set(year, []);
+    byYear.get(year).push({ date: dates[i], price: prices[i] });
+  }
+
+  const years = [...byYear.keys()].sort((a, b) => a - b);
+  const firstYear = years[0];
+  const lastYear = years[years.length - 1];
+  const out = [];
+
+  for (let i = 0; i < years.length; i += 1) {
+    const year = years[i];
+    const rows = byYear.get(year);
+    if (rows.length < 2) {
+      out.push({ year, ret: null, maxDrawdown: 0, days: rows.length, partial: true });
+      continue;
+    }
+
+    // 年初的基准价：用上一年最后一个收盘价（这样跨年收益是连续的）
+    let base = rows[0].price;
+    if (i > 0) {
+      const prevRows = byYear.get(years[i - 1]);
+      if (prevRows && prevRows.length) base = prevRows[prevRows.length - 1].price;
+    }
+
+    const last = rows[rows.length - 1].price;
+    let peak = base;
+    let worst = 0;
+    for (const row of rows) {
+      if (row.price > peak) peak = row.price;
+      const dd = peak > 0 ? row.price / peak - 1 : 0;
+      if (dd < worst) worst = dd;
+    }
+
+    const partial = year === lastYear && rows[rows.length - 1].date < `${year}-12-31`;
+    out.push({
+      year,
+      ret: base > 0 ? last / base - 1 : null,
+      maxDrawdown: worst,
+      days: rows.length,
+      partial: partial || year === firstYear,
+    });
+  }
+
+  return out;
+}

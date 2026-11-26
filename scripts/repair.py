@@ -37,7 +37,9 @@ from scripts.registry import (  # noqa: E402
 
 ensure_import_path()
 
-CALENDAR_ANCHORS = {"CN": "000300", "HK": "hkHSI", "US": "us.INX"}
+# 日历的唯一真源是 data/quality.json（validate.py 产出，含支撑数过滤）。
+# repair 不再自己重建日历——之前两处各建一份，导致节假日被当成缺口。
+CALENDAR_ANCHORS = {"CN": ["000300"], "HK": ["hkHSI"], "US": ["us.INX"]}
 MIN_RUN_TO_REPAIR = 3  # 连续缺 3 个交易日以上才值得再请求一次
 MAX_RUNS_PER_ASSET = 8  # 单个资产最多修 8 段，避免对接口造成无谓压力
 
