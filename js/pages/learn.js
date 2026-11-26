@@ -6,6 +6,7 @@
  */
 
 import { initShell, toast } from "../core/shell.js";
+import { showError } from "../core/shell.js";
 
 /* ------------------------------- 小工具 --------------------------------- */
 
@@ -223,6 +224,53 @@ function renderCase() {
 
 /* --------------------------------- 启动 --------------------------------- */
 
+/* ------------------------------ 互动实验室 ------------------------------ */
+
+/**
+ * 实验室按需加载：进入某一级时才去取那一级需要的历史数据，
+ * 避免首屏为了一个还没点开的滑块下载五条序列。
+ */
+const LAB_MOUNTERS = {
+  beginner: async () => {
+    const { mountCompoundLab } = await import("../ui/labs.js");
+    mountCompoundLab(document.getElementById("lab-compound"));
+  },
+  intermediate: async () => {
+    const { mountDiversifyLab } = await import("../ui/labs.js");
+    await mountDiversifyLab(document.getElementById("lab-diversify"));
+  },
+  advanced: async () => {
+    const { mountAllocationLab } = await import("../ui/labs.js");
+    await mountAllocationLab(document.getElementById("lab-alloc"));
+  },
+  strategy: async () => {
+    const { mountExperienceLab } = await import("../ui/labs.js");
+    await mountExperienceLab(document.getElementById("lab-experience"));
+  },
+};
+
+const labState = {};
+
+function mountLab(level) {
+  if (!LAB_MOUNTERS[level] || labState[level]) return;
+  labState[level] = "loading";
+  LAB_MOUNTERS[level]()
+    .then(() => {
+      labState[level] = "done";
+    })
+    .catch((err) => {
+      labState[level] = "failed";
+      const host = {
+        beginner: "lab-compound",
+        intermediate: "lab-diversify",
+        advanced: "lab-alloc",
+        strategy: "lab-experience",
+      }[level];
+      const el = document.getElementById(host);
+      if (el) showError(el, err.message);
+    });
+}
+
 /** 级别切换：只切换自定义面板，不依赖 mdui-tab-panel 的布局 */
 function bindLevelTabs() {
   const tabs = document.getElementById("learn-tabs");
@@ -233,6 +281,7 @@ function bindLevelTabs() {
     panels.forEach((panel) => {
       panel.classList.toggle("hidden", panel.dataset.level !== value);
     });
+    mountLab(value);
     // 支持 learn.html#case 这样的深链直接落到决策训练
     if (value === "case") {
       history.replaceState(null, "", "#case");
@@ -243,6 +292,7 @@ function bindLevelTabs() {
 
   tabs.addEventListener("change", () => show(tabs.value));
   if (location.hash === "#case") tabs.value = "case";
+  else if (location.hash === "#strategy") tabs.value = "strategy";
   show(tabs.value || "beginner");
 }
 

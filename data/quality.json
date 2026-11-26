@@ -1,7 +1,7 @@
 {
   "schema": 3,
-  "generated_at": "2026-11-25T22:56:33+08:00",
-  "data_date": "2026-11-25",
+  "generated_at": "2026-11-26T09:29:14+08:00",
+  "data_date": "2026-11-26",
   "stale_days": 0,
   "calendars": {
     "CN": {
@@ -21,16 +21,16 @@
     }
   },
   "summary": {
-    "total": 81,
-    "files_ok": 81,
+    "total": 83,
+    "files_ok": 83,
     "missing": 0,
     "error_count": 0,
     "warning_count": 21,
-    "total_points": 341769,
+    "total_points": 352142,
     "assets_with_gaps": 3,
     "assets_with_suspension_gaps": 17,
     "assets_with_source_gaps": 4,
-    "assets_complete": 54
+    "assets_complete": 56
   },
   "errors": [],
   "warnings": [
@@ -2272,6 +2272,60 @@
       "missing_ratio": 0.0,
       "max_missing_run": 0,
       "missing_runs": [],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "XAU",
+      "name": "伦敦金现（美元/盎司）",
+      "type": "index",
+      "group": "大类资产",
+      "market": "US",
+      "status": "ok",
+      "count": 5186,
+      "start": "2006-11-27",
+      "end": "2026-11-26",
+      "missing_trading_days": 11,
+      "missing_ratio": 0.00219,
+      "max_missing_run": 7,
+      "missing_runs": [
+        {
+          "from": "2009-09-10",
+          "to": "2009-09-18",
+          "days": 7
+        },
+        {
+          "from": "2009-09-22",
+          "to": "2009-09-25",
+          "days": 4
+        }
+      ],
+      "completeness": "complete"
+    },
+    {
+      "symbol": "XAG",
+      "name": "伦敦银现（美元/盎司）",
+      "type": "index",
+      "group": "大类资产",
+      "market": "US",
+      "status": "ok",
+      "count": 5187,
+      "start": "2006-11-27",
+      "end": "2026-11-26",
+      "missing_trading_days": 11,
+      "missing_ratio": 0.00219,
+      "max_missing_run": 7,
+      "missing_runs": [
+        {
+          "from": "2009-09-10",
+          "to": "2009-09-18",
+          "days": 7
+        },
+        {
+          "from": "2009-09-22",
+          "to": "2009-09-25",
+          "days": 4
+        }
+      ],
       "completeness": "complete"
     }
   ]

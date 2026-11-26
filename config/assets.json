@@ -949,6 +949,32 @@
       "source": "csindex",
       "note": "红利低波动100 的全收益版本（含分红再投资），2005-12 起。",
       "price_basis": "全收益指数（分红再投资）"
+    },
+    {
+      "symbol": "XAU",
+      "type": "index",
+      "code": "XAU",
+      "em_secid": "",
+      "name": "伦敦金现（美元/盎司）",
+      "group": "大类资产",
+      "market": "US",
+      "from": 2006,
+      "source": "sina_fut",
+      "price_basis": "现货收盘价",
+      "note": "伦敦金现货收盘价（新浪全球期货），2006-11 起，美元计价、非交易标的。美元金价的最长历史仍来自 GLD（2004-11）；伦敦金是同资产更纯的口径但更短。"
+    },
+    {
+      "symbol": "XAG",
+      "type": "index",
+      "code": "XAG",
+      "em_secid": "",
+      "name": "伦敦银现（美元/盎司）",
+      "group": "大类资产",
+      "market": "US",
+      "from": 2006,
+      "source": "sina_fut",
+      "price_basis": "现货收盘价",
+      "note": "伦敦银现货收盘价（新浪全球期货），2006-11 起。白银的波动约为黄金的 1.5–2 倍。"
     }
   ]
 }

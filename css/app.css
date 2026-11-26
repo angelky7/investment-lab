@@ -977,6 +977,166 @@ code {
   }
 }
 
+
+/* ------------------------------ 互动实验室 ------------------------------ */
+
+.lab {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.lab-controls {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lab-slider-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.84rem;
+  margin-bottom: 0.15rem;
+}
+
+.lab-slider-head strong {
+  font-size: 0.95rem;
+  color: rgb(var(--mdui-color-primary));
+}
+
+.lab-slider input[type="range"] {
+  width: 100%;
+  height: 1.6rem;
+  accent-color: rgb(var(--mdui-color-primary));
+  cursor: pointer;
+}
+
+.lab-out {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.lab-metric {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--mdui-shape-corner-small);
+  background: rgb(var(--mdui-color-surface-container-low));
+}
+
+.lab-metric-label {
+  font-size: 0.72rem;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.lab-metric-value {
+  font-size: 1.05rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-metric-sub {
+  font-size: 0.68rem;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.lab-metric.pos .lab-metric-value {
+  color: var(--il-up);
+}
+
+.lab-metric.neg .lab-metric-value {
+  color: var(--il-down);
+}
+
+.lab-note,
+.lab-prompt {
+  font-size: 0.8rem;
+  line-height: 1.75;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.lab-prompt strong {
+  color: rgb(var(--mdui-color-on-surface));
+}
+
+.lab-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.5rem;
+}
+
+.lab-choice {
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--mdui-shape-corner-small);
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  background: rgb(var(--mdui-color-surface-container-low));
+  color: inherit;
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+
+.lab-choice:hover {
+  background: rgb(var(--mdui-color-surface-container));
+}
+
+.lab-choice.on {
+  border-color: rgb(var(--mdui-color-primary));
+  background: rgba(var(--mdui-color-primary), 0.12);
+  font-weight: 600;
+}
+
+.lab-reveal {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+  padding: 0.9rem;
+  border-radius: var(--mdui-shape-corner-medium);
+  background: rgb(var(--mdui-color-surface-container-low));
+}
+
+.lab-reveal p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.8;
+}
+
+.loading-inline {
+  font-size: 0.82rem;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+/* 策略级课程里的「四种经济状态」表 */
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.6rem;
+}
+
+.state-card {
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--mdui-shape-corner-small);
+  background: rgb(var(--mdui-color-surface-container-low));
+  border-left: 3px solid rgb(var(--mdui-color-primary));
+}
+
+.state-card h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.9rem;
+}
+
+.state-card p {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.state-card strong {
+  color: rgb(var(--mdui-color-primary));
+}
+
 /* ------------------------------ 工具类 ------------------------------ */
 
 .mono {

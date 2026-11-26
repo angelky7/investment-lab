@@ -369,9 +369,11 @@ class TestRegistry(unittest.TestCase):
             # 恒生指数自 1986 年起（腾讯接口给到 1989-01），所以下限放到 1980
             self.assertGreaterEqual(asset.from_year, 1980, f"{asset.symbol} 起始年份异常")
             # 基金、汇率、中证指数与派生序列都不走东方财富的 secid
+            # 走自有接口的数据源（中证官网 / 新浪全球期货 / 派生）都不需要东财的 secid
             needs_secid = asset.type.value not in ("fund", "fx") and asset.source not in (
                 "csindex",
                 "derived",
+                "sina_fut",
             )
             if needs_secid:
                 self.assertTrue(asset.em_secid, f"{asset.symbol} 缺少 em_secid")

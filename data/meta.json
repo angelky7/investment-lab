@@ -1,10 +1,10 @@
 {
   "schema": 2,
-  "generated_at": "2026-11-25T22:56:33+08:00",
-  "data_date": "2026-11-25",
+  "generated_at": "2026-11-26T09:20:18+08:00",
+  "data_date": "2026-11-26",
   "benchmark": "000300",
-  "total_assets": 81,
-  "available_assets": 81,
+  "total_assets": 83,
+  "available_assets": 83,
   "insufficient_assets": 0,
   "unavailable_assets": 0,
   "groups": [
@@ -41,6 +41,7 @@
     "derived",
     "eastmoney",
     "sina",
+    "sina_fut",
     "tencent"
   ],
   "min_ok_points": 250,

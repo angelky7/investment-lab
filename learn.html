@@ -27,7 +27,7 @@
           <span class="eyebrow">Course</span>
           <h1>投资课程</h1>
           <p class="lead">
-            三级共 36 节。不要只读，每级末尾的测验要真的动笔算一遍——
+            四级共 58 节，外加四个可以动手的实验室。不要只读，每级末尾的测验要真的动笔算一遍——
             「看懂」和「会算」之间隔着一整个投资的难度。
           </p>
         </header>
@@ -37,6 +37,7 @@
             <mdui-tab value="beginner">小白</mdui-tab>
             <mdui-tab value="intermediate">进阶</mdui-tab>
             <mdui-tab value="advanced">高级</mdui-tab>
+            <mdui-tab value="strategy">策略</mdui-tab>
             <mdui-tab value="case">决策训练</mdui-tab>
           </mdui-tabs>
         </section>
@@ -109,6 +110,16 @@
             <h2 class="section-title">互动测验</h2>
             <div class="quiz" data-quiz="beginner"></div>
           </section>
+          <section class="section">
+            <div class="card">
+              <h2 class="section-title">复利实验室</h2>
+              <p class="section-desc">
+                拖动三个滑块，看本金和年限谁更重要。这条曲线前十年几乎是平的——
+                复利的陡峭感只出现在后半段，这也是为什么「早点开始」比「找到高收益」重要得多。
+              </p>
+              <div id="lab-compound"></div>
+            </div>
+          </section>
         </div>
 
         <div class="level-panel hidden" data-level="intermediate">
@@ -179,6 +190,16 @@
             <h2 class="section-title">互动测验</h2>
             <div class="quiz" data-quiz="intermediate"></div>
           </section>
+          <section class="section">
+            <div class="card">
+              <h2 class="section-title">分散实验室</h2>
+              <p class="section-desc">
+                拖动股票权重，观察「组合实际波动」与「加权平均波动」之间的缝隙。
+                这条缝隙就是分散白送的部分；滑块拖到两端，缝隙就消失了。
+              </p>
+              <div id="lab-diversify"></div>
+            </div>
+          </section>
         </div>
 
         <div class="level-panel hidden" data-level="advanced">
@@ -248,6 +269,132 @@
           <section class="section">
             <h2 class="section-title">互动测验</h2>
             <div class="quiz" data-quiz="advanced"></div>
+          </section>
+          <section class="section">
+            <div class="card">
+              <h2 class="section-title">配比实验室</h2>
+              <p class="section-desc">
+                四个滑块，全部用真实历史（沪深300全收益 / 上证国债 / 合成人民币金价 / 货币基金指数，
+                2005 年起）。你会很快发现：<strong>想要更低回撤，就得交出收益</strong>，
+                而且这份交换的比例并不总是划算。
+              </p>
+              <div id="lab-alloc"></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="level-panel hidden" data-level="strategy">
+          <section class="section">
+            <div class="notice" data-tone="accent">
+              <span>
+                这一级讲<strong>组合是怎么被设计出来的</strong>：为什么是四等分、为什么要在最难受的时候不动手、
+                以及这些经典配置各自在什么情况下会失灵。读完你会明白——配置解决的是「你能不能拿住」，
+                不是「你能不能赚更多」。
+              </span>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">哈利·布朗永久组合</h2>
+            <div class="course-grid">
+              <div class="lesson">
+                <h3>它是怎么来的</h3>
+                <p>1980 年代，美国分析师哈利·布朗提出一个反直觉的方案：不去预测经济，而是把资金平均分成四份，
+                分别押在「只有四种经济状态」各自最受益的资产上。四种状态轮流转，总有一份在工作。</p>
+              </div>
+              <div class="lesson">
+                <h3>四种经济状态与四类资产</h3>
+                <p>布朗把宏观环境简化为四种：繁荣、通胀、紧缩、衰退。对应四类资产：
+                <strong>股票</strong>（繁荣）、<strong>黄金</strong>（通胀）、<strong>长期国债</strong>（紧缩/衰退）、
+                <strong>现金</strong>（其余时间，也是弹药）。</p>
+                <div class="state-grid" style="margin-top:0.7rem">
+                  <div class="state-card"><h4>繁荣</h4><p>企业盈利上升 → <strong>股票</strong>表现最好。此时其他三档通常平淡。</p></div>
+                  <div class="state-card"><h4>通胀</h4><p>货币购买力下降 → <strong>黄金</strong>对冲。股票与债券同时难受。</p></div>
+                  <div class="state-card"><h4>紧缩 / 衰退</h4><p>利率下行 → <strong>长期国债</strong>上涨。这是它最被低估的一档。</p></div>
+                  <div class="state-card"><h4>其余时间</h4><p><strong>现金</strong>几乎不涨，但它让你在最恐慌的时候不用卖别的资产。</p></div>
+                </div>
+              </div>
+              <div class="lesson">
+                <h3>为什么是 4×25%</h3>
+                <p>不是因为它最优——它显然不是收益最优的配置。25% 的意义在于<strong>「不预测」</strong>：
+                既然不知道明年是哪种状态，就平均下注，让任何单一判断错误都不会致命。</p>
+              </div>
+              <div class="lesson">
+                <h3>阈值带：25% 只是起点</h3>
+                <p>布朗的原始规则不是「每年调回 25%」，而是<strong>阈值带</strong>：
+                任一份低于 15% 或高于 35% 时才动手。这让再平衡变成「等市场自己走到极端」，
+                而不是机械地按日历操作。</p>
+              </div>
+              <div class="lesson">
+                <h3>本站实测（2005-12 ~ 2026-11，4759 个交易日）</h3>
+                <p>年化 <strong>+7.26%</strong>、年化波动 8.36%、最大回撤 <strong>−27.40%</strong>、夏普 0.57，
+                期间只触发了 8 次再平衡。同区间 100% 沪深300 全收益：年化 +9.25%、回撤 −72.04%、夏普 0.26。</p>
+                <div class="why">
+                  年化少约 2 个百分点，回撤浅约 45 个百分点，夏普翻倍。
+                  这 21 年包含了 2008、2015、2018、2020、2022 五次真实的深度回撤——
+                  它在每一次都跑输了牛市，也在每一次都没让你亏掉一半。
+                </div>
+              </div>
+              <div class="lesson">
+                <h3>它什么时候会失灵</h3>
+                <p>单边大牛市里它一定跑输（四档里只有一档在涨）；高通胀 + 股债双杀时它也会难受（2022 年就是）；
+                黄金那一档的历史表现高度依赖时段（本站实测：近一年黄金 −16.6%，回撤 −38.8%）。
+                它降低的是「被迫在最低点卖出」的概率，不是「不会亏」。</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">另外三种经典配置</h2>
+            <div class="course-grid">
+              <div class="lesson">
+                <h3>60/40：最经典的简化版</h3>
+                <p>60% 股票 + 40% 债券，靠股债的低相关性压低波动。优点是简单、易执行、容量大；
+                缺点是它假设「股债总是负相关」——2022 年股债同跌时，这个假设就破了。</p>
+              </div>
+              <div class="lesson">
+                <h3>全天候 / 风险平价</h3>
+                <p>达里奥的全天候把资金按「经济增长 / 通胀 × 超预期 / 低于预期」四种情形分配，
+                但债券权重远高于股票（因为债券波动小）。
+                风险平价的思路更进一步：<strong>按风险贡献分配</strong>，而不是按资金分配，
+                通常需要杠杆才能把收益拉回来。</p>
+              </div>
+              <div class="lesson">
+                <h3>三分法（偏股 / 偏债 / 商品）</h3>
+                <p>把资产按「股票类 / 债券类 / 商品类」分成三桶，按风险测评结果调三桶比例。
+                它比四分法更容易解释，也更容易在境内用 ETF 落地；
+                但「商品」这一桶常常只有黄金，实际分散效果有限。</p>
+              </div>
+              <div class="lesson">
+                <h3>它们共同的前提</h3>
+                <p>所有经典配置都依赖同一件事：<strong>再平衡</strong>。没有再平衡，权重会自己漂走，
+                几年后你会发现自己持有一个完全没设计过的组合。
+                想看再平衡到底在做什么，去组合分析页看「权重漂移」那张折线图。</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="card">
+              <h2 class="section-title">2008 体验馆</h2>
+              <p class="section-desc">
+                这一节没有标准答案。先看曲线，做一个真实决定，再看后果——
+                这是理解「配置为什么会存在」最快的方式。
+              </p>
+              <div id="lab-experience"></div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="card">
+              <h2 class="section-title">下一步</h2>
+              <p class="section-desc">
+                理论到这里就够了，剩下的要靠手：
+                <a href="portfolio.html#strategy">组合分析 → 策略组合</a> 可以把永久组合、60/40、满仓股票
+                放在同一段时间里回测；<a href="planner.html">配置求解器</a> 会按你的回撤预算反过来算配比；
+                <a href="portfolio.html">相关性页签</a> 还有一张「黄金真的是避险资产吗」的数据检验。
+              </p>
+            </div>
           </section>
         </div>
 
