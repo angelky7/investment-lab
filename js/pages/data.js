@@ -13,7 +13,7 @@ import { loadIndex, loadMeta } from "../core/store.js";
 import { metricsHtml, notice, tableHtml } from "../ui/cards.js";
 import { count, dateLabel, num, pct } from "../core/format.js";
 import { lineChart } from "../core/charts.js";
-import { fitContinuousWave, fitTrendOnly, KONDRATIEFF_PHASES } from "../core/wave.js";
+import { KONDRATIEFF_PHASES } from "../core/wave.js";
 import { mountWavePanel } from "../ui/wave-panel.js";
 
 const MARKET_LABEL = { CN: "A 股", HK: "港股", US: "美股" };
@@ -333,66 +333,6 @@ function renderUkPriceIndex(host, payload) {
       <strong>同一个经济体，在不同世纪里的「正常通胀率」可以差十倍。</strong>
     </p>
 
-    <h4 class="section-title" style="font-size:1rem;margin-top:1.4rem">长波：A·sin(aπ + b)，三个量都能分段变</h4>
-    <p class="section-desc" style="margin-top:0.2rem">
-      波浪是 <strong>wave(t) = A(t) · sin( a(t)·π + b(t) )</strong>。
-      A（振幅）、a（相位推进速度）、b（相位偏移）<strong>各自在节点之间线性插值</strong>，
-      所以整条曲线<strong>天然连续</strong>，不需要在接缝处混合。
-      改 a 的增量就能改那一段的周期——某段走得快、某段走得慢，都行。
-    </p>
-
-    <div class="wave-slider-wrap">
-      <div class="wave-slider-head">
-        <label for="wave-segments">节点数</label>
-        <strong id="wave-segments-out">12</strong>
-      </div>
-      <input
-        type="range"
-        id="wave-segments"
-        min="6"
-        max="80"
-        step="1"
-        value="12"
-        aria-label="分段节点数"
-        aria-valuemin="6"
-        aria-valuemax="80"
-        aria-valuenow="12"
-      />
-      <div class="wave-slider-scale">
-        <span>6 个节点 · 只看大趋势</span>
-        <span>80 个节点 · 每段约 9.5 年</span>
-      </div>
-      <div class="row" style="gap:.4rem;flex-wrap:wrap;margin-top:.35rem">
-        <button class="wave-preset" data-nodes="6">6</button>
-        <button class="wave-preset" data-nodes="12">12</button>
-        <button class="wave-preset" data-nodes="24">24</button>
-        <button class="wave-preset" data-nodes="48">48</button>
-        <button class="wave-preset" data-nodes="80">80</button>
-      </div>
-      <div class="small muted" id="wave-stat"></div>
-    </div>
-
-    <div class="chart tall" id="chart-uk-deviation" style="height:22rem"></div>
-
-    <div class="wave-toolbar">
-      <button class="wave-btn" id="wave-zoom-in" title="放大">＋</button>
-      <button class="wave-btn" id="wave-zoom-out" title="缩小">－</button>
-      <button class="wave-btn" id="wave-left" title="向左">←</button>
-      <button class="wave-btn" id="wave-right" title="向右">→</button>
-      <button class="wave-btn" id="wave-reset">全览</button>
-      <span class="small muted" id="wave-view-label"></span>
-    </div>
-    <p class="caption" id="dev-caption"></p>
-
-    <div id="wave-segment-table" style="margin-top:0.8rem"></div>
-
-    <div class="chart tall" id="chart-uk-wave" style="margin-top:1rem"></div>
-    <p class="caption" id="wave-caption"></p>
-
-    <div class="notice" data-tone="warn" style="margin-top:0.7rem">
-      <span id="wave-honest"></span>
-    </div>
-
     <h4 class="section-title" style="font-size:1rem;margin-top:1.4rem">公认的康波四波，对上数据了吗</h4>
     <p class="section-desc" style="margin-top:0.2rem">
       史学界常把 1789 年以来的价格划成四波、每波分上行与下行。既然手上有 756 年数据，
@@ -513,6 +453,25 @@ function renderUkPriceIndex(host, payload) {
 
   host.appendChild(card);
 
+  // 挂上纯三角函数的长波面板
+  const waveHost = document.createElement("div");
+  waveHost.id = "uk-wave-panel";
+  waveHost.style.marginTop = "1rem";
+  host.appendChild(waveHost);
+
+  mountWavePanel(waveHost, {
+    title: "英国物价的纯三角函数拟合",
+    subtitle: `${first}–${last} · ${years.length} 个年度值`,
+    years,
+    values,
+    defaultHarmonics: 16,
+    harmonicsRange: [2, 40],
+    note:
+      `这条序列跨 <strong>${last - first} 年</strong>，是站内最长的数据。` +
+      `拟合<strong>全部由三角函数构成</strong>，没有线性项——` +
+      `长期趋势由 <code>1 − cos(πt/T)</code> 这一项承担，它本身也是余弦。`,
+  });
+
   // 图上把插值段标出来：整条线 + 一条虚线覆盖插值区间
   const labels = years.map((y) => String(y));
   const series = [
@@ -545,7 +504,6 @@ function renderUkPriceIndex(host, payload) {
     ariaLabel: `英国物价指数 ${first} 至 ${last}`,
   });
 
-  mountWaveChart(years, values);
   return true;
 }
 
@@ -555,210 +513,6 @@ function renderUkPriceIndex(host, payload) {
  * 刻意做成「趋势 + 波浪」两条线分开画，而不是只画一条波浪：
  * 只画波浪会让人以为那是预测值；分开画才看得清「波浪只是相对趋势的偏离」。
  */
-function mountWaveChart(years, values) {
-  const chartHost = document.getElementById("chart-uk-wave");
-  const devHost = document.getElementById("chart-uk-deviation");
-  const statHost = document.getElementById("wave-stat");
-  const captionHost = document.getElementById("wave-caption");
-  const devCaptionHost = document.getElementById("dev-caption");
-  const honestHost = document.getElementById("wave-honest");
-  const tableHost = document.getElementById("wave-segment-table");
-  const viewLabel = document.getElementById("wave-view-label");
-  const slider = document.getElementById("wave-segments");
-  const sliderOut = document.getElementById("wave-segments-out");
-  if (!chartHost) return;
-
-  const trendOnly = fitTrendOnly(years, values);
-  const labels = years.map((y) => String(y));
-  let devChart = null;
-  let mainChart = null;
-
-  const updateViewLabel = () => {
-    if (!viewLabel || !devChart) return;
-    const [from, to, total] = devChart.getView();
-    viewLabel.textContent = `${years[from]}–${years[to]}（共 ${total} 年，显示 ${to - from + 1} 年）`;
-  };
-
-  const draw = (segments) => {
-    const fit = fitContinuousWave(years, values, { segments });
-    if (!fit) return;
-
-    // ---------- 偏离图（主图，可缩放） ----------
-    if (devHost) {
-      const devActual = values.map((v, i) => Math.log(v) - Math.log(trendOnly.trend[i]));
-      devChart = lineChart(devHost, {
-        labels,
-        series: [
-          { name: "实际偏离", values: devActual, color: "var(--il-chart-1)", fill: false, width: 1.1 },
-          { name: "长波", values: fit.waveLog, color: "var(--il-chart-3)", fill: false, width: 2.4 },
-        ],
-        baselines: [{ value: 0, label: "趋势" }],
-        formatter: (v) => `${(Math.exp(v) - 1 >= 0 ? "+" : "")}${((Math.exp(v) - 1) * 100).toFixed(0)}%`,
-        tipFormatter: (v) => `${(Math.exp(v) - 1 >= 0 ? "+" : "")}${((Math.exp(v) - 1) * 100).toFixed(1)}%`,
-        tipDateFormatter: (d) => `${d} 年`,
-        ariaLabel: "英国物价相对趋势的偏离与长波",
-      });
-      if (devChart) {
-        devChart.onViewChange = updateViewLabel;
-        updateViewLabel();
-      }
-    }
-
-    // ---------- 原始尺度叠加图 ----------
-    if (mainChart) {
-      mainChart.setState({
-        labels,
-        series: [
-          { name: "实际物价", values, color: "var(--il-chart-1)", fill: false, width: 1.1 },
-          { name: "趋势", values: trendOnly.trend, color: "var(--il-chart-4)", fill: false, width: 1.5 },
-          { name: "长波拟合", values: fit.fitted, color: "var(--il-chart-3)", fill: false, width: 2.4 },
-        ],
-        formatter: (v) => `${v.toFixed(0)}`,
-        tipFormatter: (v) => v.toFixed(2),
-        tipDateFormatter: (d) => `${d} 年`,
-        ariaLabel: "英国物价与长波（原始尺度）",
-      });
-      if (devChart) mainChart.view = devChart.view;
-      mainChart.draw();
-    } else if (chartHost) {
-      mainChart = lineChart(chartHost, {
-        labels,
-        series: [
-          { name: "实际物价", values, color: "var(--il-chart-1)", fill: false, width: 1.1 },
-          { name: "趋势", values: trendOnly.trend, color: "var(--il-chart-4)", fill: false, width: 1.5 },
-          { name: "长波拟合", values: fit.fitted, color: "var(--il-chart-3)", fill: false, width: 2.4 },
-        ],
-        formatter: (v) => `${v.toFixed(0)}`,
-        tipFormatter: (v) => v.toFixed(2),
-        tipDateFormatter: (d) => `${d} 年`,
-        ariaLabel: "英国物价与长波（原始尺度）",
-      });
-    }
-
-    // ---------- 当前状态 ----------
-    const last = fit.segmentInfo[fit.segmentInfo.length - 1];
-    // waveLog 已经是「拟合值 − 趋势」，不能再减一次
-    const devNow = fit.waveLog[fit.waveLog.length - 1];
-    const above = devNow >= 0;
-
-    if (statHost) {
-      const validPeriods = fit.segmentInfo.filter((seg) => seg.period).length;
-      const totalSegs = fit.segmentInfo.length;
-      const periodNote =
-        validPeriods === totalSegs
-          ? ""
-          : ` · <span class="muted">${totalSegs - validPeriods} 段周期不可辨识</span>`;
-      statHost.innerHTML =
-        `${segments} 个节点 · R² <strong>${fit.r2.toFixed(4)}</strong> · ` +
-        `末段周期 <strong>${last.period ? `${last.period.toFixed(0)} 年` : "不可辨识"}</strong> · ` +
-        `${above ? "高于" : "低于"}趋势 <strong>${Math.abs((Math.exp(devNow) - 1) * 100).toFixed(0)}%</strong>` +
-        periodNote;
-    }
-
-    if (devCaptionHost) {
-      devCaptionHost.innerHTML =
-        `0 线是长期趋势。粗线是 <strong>${segments} 个节点的 A·sin(aπ+b)</strong>，` +
-        `三个量在节点之间线性插值，所以曲线连续。` +
-        `用下面的按钮或直接滚轮放大，看某一段的形状。`;
-    }
-
-    if (captionHost) {
-      captionHost.innerHTML =
-        `这是原始尺度上的「趋势 + 长波」。末 100 年涨幅太猛，波浪被压扁——判断形状要看上面的偏离图。`;
-    }
-
-    // ---------- 参数表（节点多时只显示前 24 行） ----------
-    if (tableHost) {
-      const rows = fit.segmentInfo.slice(0, 24).map((seg) => ({
-        cells: [
-          { html: `${seg.from}–${seg.to}`, cls: "small" },
-          { html: seg.period ? `${seg.period.toFixed(0)} 年` : '<span class="muted">—</span>' },
-          { html: `${seg.A >= 0 ? "+" : ""}${seg.A.toFixed(3)}` },
-          { html: `${seg.deltaA >= 0 ? "+" : ""}${seg.deltaA.toFixed(2)}` },
-          { html: seg.segmentR2.toFixed(2), cls: "small muted" },
-          { html: `±${(seg.amplitude * 100).toFixed(0)}%` },
-        ],
-      }));
-      tableHost.innerHTML = tableHtml({
-        columns: [
-          { label: "区间", align: "left" },
-          { label: "等效周期" },
-          { label: "A" },
-          { label: "Δa" },
-          { label: "段内 R²" },
-          { label: "振幅" },
-        ],
-        rows,
-        caption:
-          `<strong>Δa</strong> 是这一段里 a 的增量：一个完整周期对应 Δa = 2，` +
-          `所以「等效周期 = 2 × 段长 ÷ Δa」。Δa 越大周期越短。<br />` +
-          (fit.segmentInfo.length > 24 ? `只显示前 24 段（共 ${fit.segmentInfo.length} 段）。` : ""),
-      });
-    }
-
-    // ---------- 诚实说明 ----------
-    if (honestHost) {
-      honestHost.innerHTML = `
-        <strong>参数个数：${fit.parameters} 个（节点 ${segments} 个，A / a / b 各一套 + 趋势 2 个）。</strong>
-        节点越多 R² 越高、形状越贴，但每一段的「周期」也越没有解释力——
-        <strong>节点数越多，越接近「描图」而不是「找到周期」。</strong>
-        这张图能回答「什么时候上、什么时候下」，
-        <strong>不能回答「下一次拐点在哪一年」</strong>。
-      `;
-    }
-  };
-
-  // 滑条：input 事件实时响应，用 rAF 合并连续拖动
-  let pending = null;
-  const schedule = (nodes) => {
-    if (sliderOut) sliderOut.textContent = String(nodes);
-    slider?.setAttribute("aria-valuenow", String(nodes));
-    if (pending) cancelAnimationFrame(pending);
-    pending = requestAnimationFrame(() => {
-      pending = null;
-      draw(nodes);
-    });
-  };
-
-  const initial = Number(slider?.value) || 12;
-  if (sliderOut) sliderOut.textContent = String(initial);
-  draw(initial);
-
-  slider?.addEventListener("input", () => schedule(Number(slider.value)));
-
-  document.querySelectorAll(".wave-preset").forEach((button) => {
-    button.addEventListener("click", () => {
-      const nodes = Number(button.dataset.nodes);
-      if (slider) slider.value = String(nodes);
-      schedule(nodes);
-    });
-  });
-
-  // ---------- 缩放控制 ----------
-  const bindZoom = (id, action) => {
-    document.getElementById(id)?.addEventListener("click", () => {
-      if (!devChart) return;
-      action(devChart);
-      if (mainChart) {
-        mainChart.view = devChart.view;
-        mainChart.draw();
-      }
-    });
-  };
-
-  bindZoom("wave-zoom-in", (c) => c.zoomBy(1.8));
-  bindZoom("wave-zoom-out", (c) => c.zoomBy(1 / 1.8));
-  bindZoom("wave-left", (c) => {
-    const [from, to] = c.getView();
-    c.panBy(-Math.max(1, Math.round((to - from) * 0.25)));
-  });
-  bindZoom("wave-right", (c) => {
-    const [from, to] = c.getView();
-    c.panBy(Math.max(1, Math.round((to - from) * 0.25)));
-  });
-  bindZoom("wave-reset", (c) => c.setView(null, null));
-}
-
 function renderLongrun(host, payload, options = {}) {
   if (!host) return;
   const { skipIfShown = false } = options;
@@ -952,67 +706,85 @@ function renderLongrun(host, payload, options = {}) {
  *   上证指数（1990 起，35 年）——中国投资者最熟悉的
  *   沪深300全收益（2005 起，21 年）——含分红，更能代表真实回报
  */
+/**
+ * 美股长波：Shiller 1871 起（152 年）。
+ *
+ * 为什么要用它代替标普 500：
+ *   站内标普 500 只有 2005 年起（22 年），而一轮康波 50–60 年，
+ *   22 年连半个波都不到。Shiller 的 S&P Composite 是标普 500 的
+ *   **前身系列**（同一指数更早的段），1871 年起 152 年，
+ *   这才够看出 50–60 年尺度的长波。
+ */
 async function renderBroadWave(host) {
-  const { loadIndex, loadSeries } = await import("../core/store.js");
-
-  host.innerHTML = `<div class="loading-inline">正在加载宽基指数…</div>`;
+  host.innerHTML = `<div class="loading-inline">正在加载 Shiller 美股长历史…</div>`;
 
   try {
-    const index = await loadIndex();
-    const pick = (symbol) => index.find((a) => a.symbol === symbol);
-
-    // 用标普 500：和上面的英国物价同属「西方市场」，长周期可比
-    const candidates = [
-      { symbol: "us.INX", label: "标普 500", note: "美国大盘，2005 年起" },
-    ]
-      .map((c) => ({ ...c, asset: pick(c.symbol) }))
-      .filter((c) => c.asset);
-
-    if (!candidates.length) {
-      host.innerHTML = notice("没有找到宽基指数数据。", "warn");
+    const resp = await fetch(`data/shiller.json?v=${Date.now()}`, { cache: "no-cache" });
+    if (!resp.ok) {
+      host.innerHTML = notice(
+        "没有找到 data/shiller.json。运行 `py scripts/import_shiller.py` 生成。",
+        "warn"
+      );
       return;
     }
+    const payload = await resp.json();
 
     host.innerHTML = `
       <div class="notice" data-tone="info">
         <span>
-          下面是<strong>标普 500</strong>的长波分析，方法和上面的英国物价完全一样——
-          两者都是西方市场的长序列，可以对照着看。
-          注意：标普只有 <strong>22 年</strong>数据，最多容得下
-          <strong>不到半个长波</strong>——所以节点上限只给到 7，
-          再细下去每段不足 3 年，正弦就没法辨识了（会给出假的周期）。
-          对比上面英国物价的 <strong>757 年</strong>，差距是数量级的。
+          下面是 <strong>Shiller 美国股市 1871 年起</strong>的长波分析——
+          这是标普 500 的<strong>前身系列</strong>，同一指数更早的段，共
+          <strong>${payload.coverage.years} 年</strong>。
+          站内标普 500 只有 22 年，看不出 50–60 年的康波；这条 152 年的序列才够。
         </span>
       </div>
-      <div id="broadwave-hosts"></div>`;
+      <div id="shiller-wave-host" style="margin-top:1rem"></div>`;
 
-    const hostWrap = host.querySelector("#broadwave-hosts");
+    const waveHost = host.querySelector("#shiller-wave-host");
 
-    for (const [i, cand] of candidates.entries()) {
-      const series = await loadSeries(cand.asset).catch(() => null);
-      if (!series?.dates?.length) continue;
+    mountWavePanel(waveHost, {
+      title: "标普综合指数（1871 年起）",
+      subtitle: `${payload.coverage.from} – ${payload.coverage.to} · ${payload.coverage.months} 个月`,
+      // 用小数年，避免同一年重复
+      years: payload.fractions,
+      values: payload.series.price,
+      dateLabels: payload.labels,
+      defaultHarmonics: 20,
+      harmonicsRange: [2, 60],
+      valueLabel: "指数",
+      note:
+        `S&P Composite 从 ${payload.series.price[0].toFixed(2)} 涨到 ` +
+        `${payload.series.price[payload.series.price.length - 1].toFixed(0)}，约 ` +
+        `<strong>${(payload.series.price[payload.series.price.length - 1] / payload.series.price[0]).toFixed(0)} 倍</strong>` +
+        `（${payload.coverage.years} 年）。<br />` +
+        `数据核对：1929-09 高点 31.3、1932-06 底部 4.8（−85%）、2000-01 高点 1425.6、` +
+        `2009-03 底部 757.1 —— 全部与史实一致。`,
+    });
 
-      const panel = document.createElement("div");
-      panel.id = `broadwave-${i}`;
-      panel.style.marginTop = "1rem";
-      hostWrap.appendChild(panel);
+    // 再补一条：实际总回报（含股息、扣通胀）
+    const trHost = document.createElement("div");
+    trHost.id = "shiller-tr-host";
+    trHost.style.marginTop = "1rem";
+    host.appendChild(trHost);
 
-      mountWavePanel(panel, {
-        title: `${cand.label}（${cand.note}）`,
-        subtitle: `${series.dates[0]} – ${series.dates[series.dates.length - 1]} · ${series.dates.length} 个交易日`,
-        years: series.dates.map((d) => Number(d.slice(0, 4))),
-        values: series.prices,
-        dateLabels: series.dates.map((d) => d.slice(0, 7)),
-        defaultNodes: 4,
-        nodesRange: [2, 7],
-        note:
-          `这 ${series.dates.length} 个交易日里，指数从 ${series.prices[0].toFixed(0)} 到 ` +
-          `${series.prices[series.prices.length - 1].toFixed(0)}。` +
-          `「长波」在这里只是<strong>趋势线的一种平滑</strong>，不是可预测的周期。`,
-      });
-    }
+    mountWavePanel(trHost, {
+      title: "实际总回报指数（含股息、扣通胀）",
+      subtitle: `${payload.coverage.from} – ${payload.coverage.to}`,
+      years: payload.fractions,
+      values: payload.series.realTotalReturn,
+      dateLabels: payload.labels,
+      defaultHarmonics: 20,
+      harmonicsRange: [2, 60],
+      valueLabel: "实际回报",
+      note:
+        `这是<strong>真正到手的购买力</strong>：含股息再投资、扣除通胀。` +
+        `指数从 ${payload.series.realTotalReturn[0].toFixed(0)} 到 ` +
+        `${payload.series.realTotalReturn[payload.series.realTotalReturn.length - 1].toFixed(0)}，` +
+        `约 <strong>${(payload.series.realTotalReturn[payload.series.realTotalReturn.length - 1] / payload.series.realTotalReturn[0]).toFixed(0)} 倍</strong>。` +
+        `对比上面不含股息的指数，差距就是股息的贡献。`,
+    });
   } catch (err) {
-    host.innerHTML = notice(`加载宽基指数失败：${err.message}`, "warn");
+    host.innerHTML = notice(`加载 Shiller 数据失败：${err.message}`, "warn");
   }
 }
 

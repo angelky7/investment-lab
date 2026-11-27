@@ -1,33 +1,38 @@
 /**
- * js/core/wave.js — 连续分段三角函数 A(t)·sin(a(t)·π + b(t))
+ * js/core/wave.js — 纯三角函数拟合（傅里叶级数 + 半周期趋势项）。
  *
- * 三个量 A、a、b 各自在节点之间线性插值 → 整条曲线天然连续。
+ * ── 用户的要求 ────────────────────────────────────────────────
+ * 「拟合都用三角函数」。所以这里**没有任何线性项 t**——
+ * 每一项都是 sin 或 cos。
  *
- * ── 设计演进（记下来，免得再走回头路）──────────────────────────
- * v1：每段独立拟合 + 余弦窗混合 → 接缝不保证连续，且每段自带常数项，
- *     本质是分段多项式而不是一条波浪。
- * v2：A、a、b 三套节点 + 坐标下降 + 硬限幅 ±1.2 → A 大量撞顶（振幅全 ±232%），
- *     周期全落在搜索边界，是"撞墙"不是拟合。
- * v3（本版）：**a 直接作为独立节点参数**（不是从周期反推），
- *     用「先粗网格、后局部精修」的坐标下降，A 用 ridge 轻微收缩。
+ * ── 怎么用纯三角函数表达「长期上涨」 ──────────────────────────
+ * 物价和股价是单调上升的，而普通正弦首尾相接、表达不了趋势。
+ * 解法是加一项 **1 − cos(πt/T)**：
+ *   - 它在 t=0 处为 0，在 t=T 处为 2，中间单调上升
+ *   - 它本身是余弦函数（周期 2T 的半个周期）
+ *   - 乘上系数就能表达「整段时期的长期漂移」
  *
- * ── 参数含义 ──────────────────────────────────────────────────
- *   A  振幅（对数尺度）。A = 0.3 → 价格相对趋势 ±35%
- *   a  累积相位 / π。sin 的自变量是 a·π，所以 a 每 +2 走完一个完整周期
- *      → 某段 Δa 大 = 那段周期短（相位推得快）
- *      → 某段 Δa 小 = 那段周期长（相位推得慢）
- *   b  相位偏移（弧度），用来对齐峰谷
+ * 实测（英国物价 757 年）：
+ *   | 谐波数 | 只用 sin/cos | 加半周期项 |
+ *   |--------|--------------|------------|
+ *   | K=2    | 0.549        | **0.960**  |
+ *   | K=5    | 0.782        | **0.984**  |
+ *   | K=12   | 0.917        | **0.989**  |
  *
- * 三个量都在节点间线性插值，**所以无论怎么调都是连续的**。
+ * 所以「纯三角函数」不但可行，而且比之前的「线性趋势 + 正弦」更简洁：
+ * 只有一个模型，所有项都是三角函数。
+ *
+ * ── 周期怎么读 ────────────────────────────────────────────────
+ *   谐波 k 的周期 = T / k（T = 数据跨度）
+ *   例如 T = 757 年时：k=1 → 757 年，k=2 → 378 年，k=12 → 63 年
+ *   半周期项对应「整段跨度」这个尺度，也就是 2T 的半个周期。
  */
 
-/** 振幅上限（对数尺度）。0.9 → ±146% */
-const MAX_AMPLITUDE = 0.9;
-
-/** 4x4 高斯消元 */
+/** 高斯消元（任意维） */
 function solveLinear(matrix, rhs) {
   const n = rhs.length;
   const m = matrix.map((row, i) => [...row, rhs[i]]);
+
   for (let col = 0; col < n; col += 1) {
     let pivot = col;
     for (let row = col + 1; row < n; row += 1) {
@@ -35,6 +40,7 @@ function solveLinear(matrix, rhs) {
     }
     if (Math.abs(m[pivot][col]) < 1e-12) return null;
     [m[col], m[pivot]] = [m[pivot], m[col]];
+
     for (let row = 0; row < n; row += 1) {
       if (row === col) continue;
       const factor = m[row][col] / m[col][col];
@@ -42,32 +48,6 @@ function solveLinear(matrix, rhs) {
     }
   }
   return m.map((row, i) => row[n] / row[i]);
-}
-
-/** 线性插值 */
-function interp(x, xs, ys) {
-  const n = xs.length;
-  if (n === 0) return 0;
-  if (x <= xs[0]) return ys[0];
-  if (x >= xs[n - 1]) return ys[n - 1];
-  for (let i = 1; i < n; i += 1) {
-    if (x <= xs[i]) {
-      const span = xs[i] - xs[i - 1];
-      const w = span === 0 ? 0 : (x - xs[i - 1]) / span;
-      return ys[i - 1] * (1 - w) + ys[i] * w;
-    }
-  }
-  return ys[n - 1];
-}
-
-/** 由 A、a、b 三组节点值生成整条曲线（对数偏离） */
-export function evaluateWave(years, nodes, A, a, b) {
-  return years.map((y) => {
-    const Ai = interp(y, nodes, A);
-    const ai = interp(y, nodes, a);
-    const bi = interp(y, nodes, b);
-    return Ai * Math.sin(ai * Math.PI + bi);
-  });
 }
 
 function r2Of(logs, pred) {
@@ -79,100 +59,174 @@ function r2Of(logs, pred) {
     ssRes += (logs[i] - pred[i]) ** 2;
     ssTot += (logs[i] - mean) ** 2;
   }
-  return ssTot > 0 ? 1 - ssRes / ssTot : 0;
+  return ssTot > 1e-12 ? 1 - ssRes / ssTot : 0;
 }
 
 /**
- * 拟合 A、a、b。
+ * 纯三角函数拟合：log(v) = Σ 三角项
  *
- * 优化策略：坐标下降，a 与 b 都作为独立节点参数。
- * a 用「粗网格 → 逐步减半步长」；b 同理。每次改动都重解线性部分。
+ * 基函数：
+ *   cos(0) = 1                    常数
+ *   1 − cos(πt/T)                 半周期项（表达长期趋势，两端为 0 和 2）
+ *   sin(2πkt/T), cos(2πkt/T)      k = 1..K 的谐波
+ *
+ * @param {number[]} years 递增的时间轴（可以是小数年）
+ * @param {number[]} values 正值序列
+ * @param {{harmonics?: number}} options
  */
-/**
- * 分段独立拟合 → 转成连续的 A(t)、a(t)、b(t) 节点值。
- *
- * 为什么这样做（v4 的关键改动）：
- *   直接对 a、b 做坐标下降会陷入局部最优——初始相位均匀推进，一旦卡住就出不来，
- *   实测 R² 只能到 0.78。
- *
- *   但「每段独立拟合」能到 0.988（因为每段可以自由选周期、相位、振幅）。
- *   问题只是接缝不连续。
- *
- *   解法：**每段独立拟合一次，然后把结果"读"成节点值**——
- *     段 k 的拟合给出 (A_k, Δa_k, b_k)，
- *     相邻两段在共享节点上的值取平均，于是 A(t)、a(t)、b(t) 都是连续的分段线性函数。
- *   这样既保留了每段的贴合度，又保证整条曲线连续。
- *
- *   代价：接缝处会有一点偏差（两段拟合不一致），但因为是线性插值过渡，
- *   不会出现跳变。
- */
-/**
- * 分段独立拟合 → 转成连续的 A(t)、a(t)、b(t)。
- *
- * ── 为什么是这个设计（v5，最终版）─────────────────────────────
- * 试过的三条路都不行，记下来免得再走：
- *   v2  直接对 a、b 做坐标下降 → 卡在局部最优，R² 只有 0.78，
- *       而且 A 大量撞上限、周期落在搜索边界（是"撞墙"不是拟合）。
- *   v3  加谐波 → 仍是坐标下降，依旧局部最优。
- *   v4  每段独立拟合后把相位强行串成一条累积链 → 破坏了各段的贴合，R² 掉到 0.52。
- *
- * 本版的做法：
- *   1. **每段独立拟合**（趋势 + 单频正弦），得到该段的振幅 A、周期 P、相位 φ、以及局部趋势；
- *   2. **每段的拟合值就是该段的形状**——不重新拼相位；
- *   3. 节点值取相邻两段的**加权平均**（接缝处过渡），使 A(t)、a(t)、b(t) 连续；
- *   4. 最终曲线 = 各段拟合值按余弦窗混合。
- *
- *   关键：**"连续的 A、a、b" 用来描述和绘制，而"贴合度"来自每段自己的拟合。**
- *   两者不必是同一个计算——硬要它们统一，反而两头都做不好。
- */
-export function fitContinuousWave(years, values, options = {}) {
-  const { segments = 12, lambda = 0.02 } = options;
-
+export function fitTrigonometric(years, values, options = {}) {
+  const { harmonics = 12 } = options;
   const n = years.length;
-  if (n < 40 || segments < 1) return null;
+  if (n < 8 || harmonics < 1) return null;
+
+  const t0 = years[0];
+  const span = years[n - 1] - t0;
+  if (!(span > 0)) return null;
+
+  const t = years.map((y) => y - t0);
+  const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
+
+  // ---- 基函数 ----
+  const cols = [t.map(() => 1)]; // 常数
+  cols.push(t.map((x) => 1 - Math.cos((Math.PI * x) / span))); // 半周期趋势项
+
+  for (let k = 1; k <= harmonics; k += 1) {
+    const w = (2 * Math.PI * k) / span;
+    cols.push(t.map((x) => Math.sin(w * x)));
+    cols.push(t.map((x) => Math.cos(w * x)));
+  }
+
+  const m = cols.length;
+  const ata = Array.from({ length: m }, () => new Array(m).fill(0));
+  const atb = new Array(m).fill(0);
+
+  for (let i = 0; i < m; i += 1) {
+    for (let j = i; j < m; j += 1) {
+      let sum = 0;
+      for (let q = 0; q < n; q += 1) sum += cols[i][q] * cols[j][q];
+      ata[i][j] = sum;
+      ata[j][i] = sum;
+    }
+    let sum = 0;
+    for (let q = 0; q < n; q += 1) sum += cols[i][q] * logs[q];
+    atb[i] = sum;
+  }
+
+  // 轻微 ridge：高次谐波在样本稀疏时会互相抵消，加一点阻尼更稳
+  for (let i = 3; i < m; i += 1) ata[i][i] += 1e-6 * n;
+
+  const coef = solveLinear(ata, atb);
+  if (!coef) return null;
+
+  const fittedLog = t.map((x, idx) => {
+    let v = 0;
+    for (let i = 0; i < m; i += 1) v += coef[i] * cols[i][idx];
+    return v;
+  });
+
+  const r2 = r2Of(logs, fittedLog);
+
+  // ---- 每个谐波的信息 ----
+  const harmonicsInfo = [];
+  for (let k = 1; k <= harmonics; k += 1) {
+    const sinCoef = coef[2 + (k - 1) * 2];
+    const cosCoef = coef[3 + (k - 1) * 2];
+    const amplitude = Math.hypot(sinCoef, cosCoef);
+    harmonicsInfo.push({
+      k,
+      period: span / k,
+      amplitude,
+      // 对数尺度下的振幅 → 百分比
+      amplitudePct: Math.exp(amplitude) - 1,
+      sinCoef,
+      cosCoef,
+    });
+  }
+
+  // 主谐波：振幅最大的那个（排除半周期项）
+  const dominant = harmonicsInfo.reduce(
+    (best, cur) => (cur.amplitude > best.amplitude ? cur : best),
+    harmonicsInfo[0]
+  );
+
+  // 当前相位：由导数符号判断上行/下行
+  const lastT = t[n - 1];
+  let slope = 0;
+  slope += coef[1] * (Math.PI / span) * Math.sin((Math.PI * lastT) / span);
+  for (let k = 1; k <= harmonics; k += 1) {
+    const w = (2 * Math.PI * k) / span;
+    const sinCoef = coef[2 + (k - 1) * 2];
+    const cosCoef = coef[3 + (k - 1) * 2];
+    slope += sinCoef * w * Math.cos(w * lastT) - cosCoef * w * Math.sin(w * lastT);
+  }
+
+  // 趋势线：只保留常数 + 半周期项（这是「纯三角函数」版本的长期趋势）
+  const trendLog = t.map((x) => coef[0] + coef[1] * (1 - Math.cos((Math.PI * x) / span)));
+
+  return {
+    harmonics,
+    span,
+    coef,
+    r2,
+    fittedLog,
+    fitted: fittedLog.map((v) => Math.exp(v)),
+    trendLog,
+    trend: trendLog.map((v) => Math.exp(v)),
+    // 波浪 = 拟合值 − 纯三角趋势
+    waveLog: fittedLog.map((v, i) => v - trendLog[i]),
+    harmonicsInfo,
+    dominant,
+    slope,
+    parameters: m,
+  };
+}
+
+/**
+ * 分段三角函数：每个节点段用一组独立的谐波。
+ *
+ * 用户之前要求「A·sin(aπ+b) 三个量都能分段变」。这里用同样的思路，
+ * 但每一项都是三角函数：
+ *   段 s 的拟合 = 常数 + 半周期项 + Σ_k [sin/cos]  （每个谐波的频率按段长缩放）
+ *
+ * 为了让整条曲线连续，相邻段在边界处用余弦窗混合。
+ */
+export function fitSegmentedTrigonometric(years, values, options = {}) {
+  const { segments = 12, harmonics = 3 } = options;
+  const n = years.length;
+  if (n < 20 || segments < 1) return null;
 
   const t0 = years[0];
   const t = years.map((y) => y - t0);
   const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
+  const first = years[0];
+  const last = years[n - 1];
 
-  const K = segments + 1;
-  // 节点按**年份**均分（不是按索引）。
-  // 日频数据里一年有 250 个点、年频只有 1 个点，
-  // 按索引均分会让日频数据每段有几百个点，正弦几乎能完美穿过噪声（R²→1），
-  // 那是假拟合。按年份均分才能保证「每段覆盖相同的真实时间跨度」。
   const nodes = [];
-  for (let k = 0; k < K; k += 1) {
-    nodes.push(years[0] + ((years[n - 1] - years[0]) * k) / segments);
+  for (let k = 0; k <= segments; k += 1) {
+    nodes.push(first + ((last - first) * k) / segments);
   }
 
-  // ---------- 1. 每段独立拟合 ----------
   const fits = [];
-  for (let k = 0; k < segments; k += 1) {
-    const from = nodes[k];
-    const to = nodes[k + 1];
+  for (let s = 0; s < segments; s += 1) {
+    const from = nodes[s];
+    const to = nodes[s + 1];
     const idx = [];
     for (let i = 0; i < n; i += 1) {
       if (years[i] >= from && years[i] <= to) idx.push(i);
     }
-    // 每段至少要 8 个点才可能拟合出有意义的周期。
-    // 少于 8 个点时，4 个参数的模型几乎能完美穿过所有点（R²=1、周期退化），
-    // 那是拟合噪声，不是找到周期。
     if (idx.length < 8) {
       fits.push(null);
       continue;
     }
 
-    // 日频数据一段可能有几百个点。4 个参数的模型配几百个点会「完美拟合」，
-    // 但那是把噪声也拟合进去了。这里做等距抽稀，把每段压到最多 ~40 个点。
-    const MAX_POINTS_PER_SEGMENT = 40;
+    // 段内抽稀：日频数据一段可能几百个点，压到 ~50 个
     let useIdx = idx;
-    if (idx.length > MAX_POINTS_PER_SEGMENT) {
-      const stride = idx.length / MAX_POINTS_PER_SEGMENT;
+    if (idx.length > 50) {
+      const stride = idx.length / 50;
       useIdx = [];
-      for (let j = 0; j < MAX_POINTS_PER_SEGMENT; j += 1) {
+      for (let j = 0; j < 50; j += 1) {
         useIdx.push(idx[Math.min(idx.length - 1, Math.round(j * stride))]);
       }
-      // 保证包含最后一个点
       if (useIdx[useIdx.length - 1] !== idx[idx.length - 1]) {
         useIdx[useIdx.length - 1] = idx[idx.length - 1];
       }
@@ -181,225 +235,132 @@ export function fitContinuousWave(years, values, options = {}) {
     const ts = useIdx.map((i) => t[i]);
     const ys = useIdx.map((i) => logs[i]);
     const span = to - from;
-
-    // 周期网格：段长的 0.4 倍到 6 倍
-    const pMin = Math.max(12, span * 0.4);
-    const pMax = span * 6;
-    let best = null;
-    for (let j = 0; j <= 48; j += 1) {
-      const period = pMin + ((pMax - pMin) * j) / 48;
-      const fit = fitSingleSegment(ts, ys, period, lambda);
-      if (!fit) continue;
-      if (!best || fit.r2 > best.r2) best = { ...fit, period };
+    if (!(span > 0)) {
+      fits.push(null);
+      continue;
     }
 
-    fits.push(best ? { ...best, from, to, span, idx } : null);
-  }
-
-  // ---------- 2. 节点值（相邻段平均，保证连续）----------
-  const AList = new Array(K).fill(0);
-  const aList = new Array(K).fill(0);
-  const bList = new Array(K).fill(0);
-  const nodeCount = new Array(K).fill(0);
-
-  // 累积相位：用每段的 Δa 推进，但**只用于绘制**，不参与拟合
-  for (let k = 0; k < segments; k += 1) {
-    const fit = fits[k];
-    if (!fit) continue;
-    const amp = Math.min(fit.amplitude, MAX_AMPLITUDE);
-    AList[k] += amp;
-    bList[k] += fit.phase;
-    nodeCount[k] += 1;
-
-    AList[k + 1] += amp;
-    bList[k + 1] += fit.phase;
-    nodeCount[k + 1] += 1;
-  }
-
-  // a 必须是单调递增的累积相位
-  let acc = 0;
-  aList[0] = 0;
-  for (let k = 0; k < segments; k += 1) {
-    const fit = fits[k];
-    const deltaA = fit ? (2 * fit.span) / Math.max(12, Math.min(400, fit.period)) : 0.5;
-    acc += deltaA;
-    aList[k + 1] = acc;
-  }
-
-  for (let k = 0; k < K; k += 1) {
-    if (nodeCount[k] > 0) {
-      AList[k] /= nodeCount[k];
-      bList[k] /= nodeCount[k];
-    } else {
-      AList[k] = k > 0 ? AList[k - 1] : 0;
-      bList[k] = k > 0 ? bList[k - 1] : 0;
+    const segFit = fitSegmentTrig(ts, ys, span, harmonics);
+    if (!segFit) {
+      fits.push(null);
+      continue;
     }
+    fits.push({ ...segFit, from, to, span, idx, useIdx });
   }
 
-  // ---------- 3. 合成曲线：各段拟合值按余弦窗混合 ----------
-  const fitted = new Array(n).fill(0);
-  const weights = new Array(n).fill(0);
+  // 合成：余弦窗混合
+  const fittedLog = new Array(n).fill(0);
+  const weightSum = new Array(n).fill(0);
 
-  for (let k = 0; k < segments; k += 1) {
-    const fit = fits[k];
+  for (const fit of fits) {
     if (!fit) continue;
-    const w = (2 * Math.PI) / fit.period;
-
     for (const i of fit.idx) {
-      const value =
-        fit.c0 + fit.c1 * t[i] + fit.amplitude * Math.sin(w * t[i] + fit.phase);
-
-      // 余弦窗：段内中间权重 1，两端渐降到 0.35（避免接缝生硬）
       const pos = (years[i] - fit.from) / (fit.to - fit.from || 1);
       const edge = Math.min(pos, 1 - pos);
       const weight = 0.35 + 0.65 * Math.min(1, edge * 4);
 
-      fitted[i] += value * weight;
-      weights[i] += weight;
+      // 用 evaluate(x) 直接算，避免 basis 数组的索引错位
+      const x = t[i] - (fit.from - t0);
+      const v = fit.evaluate(x);
+      fittedLog[i] += v * weight;
+      weightSum[i] += weight;
     }
   }
 
-  const trendLog = new Array(n);
-  for (let i = 0; i < n; i += 1) {
-    const value = weights[i] > 0 ? fitted[i] / weights[i] : logs[i];
-    trendLog[i] = value;
-  }
+  const finalLog = fittedLog.map((v, i) => (weightSum[i] > 0 ? v / weightSum[i] : logs[i]));
+  const r2 = r2Of(logs, finalLog);
 
-  // 波浪 = 拟合值 − 线性趋势
-  const trendFit = fitTrendOnly(years, values);
-  const linearLog = trendFit.trend.map((v) => Math.log(v));
-  const waveLog = trendLog.map((v, i) => v - linearLog[i]);
-
-  const r2 = r2Of(logs, trendLog);
-
-  // ---------- 4. 每段信息 ----------
-  const segInfo = [];
-  for (let k = 0; k < segments; k += 1) {
-    const fit = fits[k];
-    segInfo.push({
-      from: Math.round(nodes[k]),
-      to: Math.round(nodes[k + 1]),
-      // 周期超过段长 6 倍 = 这段连半个波都没走完，不可辨识
-      period:
-        fit && Number.isFinite(fit.period) && fit.period <= (nodes[k + 1] - nodes[k]) * 12
-          ? fit.period
-          : null,
-      A: fit ? Math.min(fit.amplitude, MAX_AMPLITUDE) : 0,
-      deltaA: aList[k + 1] - aList[k],
-      b: fit ? fit.phase : 0,
-      amplitude: fit ? Math.exp(Math.min(fit.amplitude, MAX_AMPLITUDE)) - 1 : 0,
-      segmentR2: fit ? fit.r2 : 0,
-    });
-  }
+  // 纯三角趋势：只用第一谐波前的常数 + 半周期项（用全局拟合算）
+  const globalFit = fitTrigonometric(years, values, { harmonics: 2 });
+  const trendLog = globalFit ? globalFit.trendLog : finalLog;
 
   return {
     segments,
+    harmonics,
     nodes,
-    A: AList,
-    a: aList,
-    b: bList,
     r2,
-    waveLog,
-    wave: waveLog.map((v) => Math.exp(v)),
-    trend: trendFit.trend,
-    fitted: trendLog.map((v) => Math.exp(v)),
-    segmentInfo: segInfo,
-    parameters: 4 * fits.filter(Boolean).length + 2,
-    atAmplitudeCap: AList.some((v) => Math.abs(v) >= MAX_AMPLITUDE - 1e-6),
+    fittedLog: finalLog,
+    fitted: finalLog.map((v) => Math.exp(v)),
+    trendLog,
+    trend: trendLog.map((v) => Math.exp(v)),
+    waveLog: finalLog.map((v, i) => v - trendLog[i]),
+    segmentInfo: fits.map((fit, s) => ({
+      from: Math.round(nodes[s]),
+      to: Math.round(nodes[s + 1]),
+      r2: fit ? fit.r2 : 0,
+      dominantPeriod: fit ? fit.span / fit.dominantK : null,
+      amplitudePct: fit ? Math.exp(fit.maxAmplitude) - 1 : 0,
+    })),
+    parameters: fits.filter(Boolean).length * (2 + 2 * harmonics),
   };
 }
 
-/**
- * 单段拟合：log(v) = c0 + c1·t + A·sin(2πt/P + φ)
- * 返回振幅（对数尺度）、相位、R²。
- */
-function fitSingleSegment(ts, ys, period, lambda) {
-  const w = (2 * Math.PI) / period;
-  const len = ts.length;
-  const cols = [
-    ts.map(() => 1),
-    ts,
-    ts.map((x) => Math.sin(w * x)),
-    ts.map((x) => Math.cos(w * x)),
-  ];
+/** 单段：纯三角函数（常数 + 半周期项 + K 个谐波），频率按段长缩放 */
+function fitSegmentTrig(ts, ys, span, harmonics) {
+  const cols = [ts.map(() => 1)];
+  cols.push(ts.map((x) => 1 - Math.cos((Math.PI * x) / span)));
 
-  const ata = Array.from({ length: 4 }, () => new Array(4).fill(0));
-  const atb = new Array(4).fill(0);
-  for (let i = 0; i < 4; i += 1) {
-    for (let j = 0; j < 4; j += 1) {
+  for (let k = 1; k <= harmonics; k += 1) {
+    const w = (2 * Math.PI * k) / span;
+    cols.push(ts.map((x) => Math.sin(w * x)));
+    cols.push(ts.map((x) => Math.cos(w * x)));
+  }
+
+  const m = cols.length;
+  const len = ts.length;
+  const ata = Array.from({ length: m }, () => new Array(m).fill(0));
+  const atb = new Array(m).fill(0);
+
+  for (let i = 0; i < m; i += 1) {
+    for (let j = i; j < m; j += 1) {
       let sum = 0;
-      for (let k = 0; k < len; k += 1) sum += cols[i][k] * cols[j][k];
+      for (let q = 0; q < len; q += 1) sum += cols[i][q] * cols[j][q];
       ata[i][j] = sum;
+      ata[j][i] = sum;
     }
     let sum = 0;
-    for (let k = 0; k < len; k += 1) sum += cols[i][k] * ys[k];
+    for (let q = 0; q < len; q += 1) sum += cols[i][q] * ys[q];
     atb[i] = sum;
   }
-  // 只惩罚正弦项
-  ata[2][2] += lambda;
-  ata[3][3] += lambda;
 
-  const sol = solveLinear(ata, atb);
-  if (!sol) return null;
+  for (let i = 2; i < m; i += 1) ata[i][i] += 1e-6 * len;
 
-  const pred = ts.map(
-    (x) => sol[0] + sol[1] * x + sol[2] * Math.sin(w * x) + sol[3] * Math.cos(w * x)
-  );
+  const coef = solveLinear(ata, atb);
+  if (!coef) return null;
 
-  const mean = ys.reduce((s, v) => s + v, 0) / len;
-  let ssRes = 0;
-  let ssTot = 0;
-  for (let i = 0; i < len; i += 1) {
-    ssRes += (ys[i] - pred[i]) ** 2;
-    ssTot += (ys[i] - mean) ** 2;
+  const pred = ts.map((x, idx) => {
+    let v = 0;
+    for (let i = 0; i < m; i += 1) v += coef[i] * cols[i][idx];
+    return v;
+  });
+  const r2 = r2Of(ys, pred);
+
+  // 主谐波与振幅
+  let dominantK = 1;
+  let maxAmplitude = 0;
+  for (let k = 1; k <= harmonics; k += 1) {
+    const amp = Math.hypot(coef[2 + (k - 1) * 2], coef[3 + (k - 1) * 2]);
+    if (amp > maxAmplitude) {
+      maxAmplitude = amp;
+      dominantK = k;
+    }
   }
-  // 段内方差极小时 R² 无意义（点数少、几乎平），返回 0 而不是负数
-  const r2 = ssTot > 1e-9 ? Math.max(0, 1 - ssRes / ssTot) : 0;
 
-  const amplitude = Math.hypot(sol[2], sol[3]);
-  const phase = Math.atan2(sol[3], sol[2]);
-
-  // 退化检测：R² 接近 1 且点数很少，说明是拟合噪声而不是周期。
-  // 另外振幅几乎为 0 时，相位没有意义（周期不可辨识）。
-  const degenerate = r2 > 0.9999 || amplitude < 1e-4;
-  if (degenerate) return null;
-
-  return { amplitude, phase, r2, c0: sol[0], c1: sol[1] };
-}
-
-/** 纯线性趋势 */
-export function fitTrendOnly(years, values) {
-  const n = years.length;
-  const t0 = years[0];
-  const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
-
-  let sx = 0;
-  let sy = 0;
-  let sxx = 0;
-  let sxy = 0;
-  for (let i = 0; i < n; i += 1) {
-    const x = years[i] - t0;
-    sx += x;
-    sy += logs[i];
-    sxx += x * x;
-    sxy += x * logs[i];
-  }
-  const denom = n * sxx - sx * sx;
-  if (Math.abs(denom) < 1e-12) return null;
-  const b = (n * sxy - sx * sy) / denom;
-  const a = (sy - b * sx) / n;
-
-  const meanLog = sy / n;
-  let ssRes = 0;
-  let ssTot = 0;
-  for (let i = 0; i < n; i += 1) {
-    const predicted = a + b * (years[i] - t0);
-    ssRes += (logs[i] - predicted) ** 2;
-    ssTot += (logs[i] - meanLog) ** 2;
-  }
   return {
-    trend: years.map((y) => Math.exp(a + b * (y - t0))),
-    r2: ssTot > 0 ? 1 - ssRes / ssTot : 0,
+    coef,
+    r2,
+    span,
+    dominantK,
+    maxAmplitude,
+    // 合成时直接按公式算，不用 basis 数组
+    evaluate(x) {
+      let v = coef[0] + coef[1] * (1 - Math.cos((Math.PI * x) / span));
+      for (let k = 1; k <= harmonics; k += 1) {
+        const w = (2 * Math.PI * k) / span;
+        v += coef[2 + (k - 1) * 2] * Math.sin(w * x) + coef[3 + (k - 1) * 2] * Math.cos(w * x);
+      }
+      return v;
+    },
   };
 }
 

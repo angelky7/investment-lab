@@ -1,26 +1,21 @@
 /**
- * js/ui/wave-panel.js — 可复用的「长波分析」面板。
+ * js/ui/wave-panel.js — 纯三角函数长波面板。
  *
- * 用在两处：
- *   1. 英国物价 1264–2020（756 年）
- *   2. 宽基指数（上证 1990 起 / 沪深300全收益 2005 起）
- *
- * 关键概念必须讲清楚，否则用户会问「为什么有负数」：
- *
- *   **原始价格图**：纵轴是价格本身，永远为正。
- *   **偏离图**：纵轴是 log(实际) − log(趋势)，**低于长期趋势就是负数**。
- *     负数不是「价格为负」，而是「相对趋势偏低 X%」。
- *     这是对数尺度下的标准做法——把「涨了 100 倍」压成可比的偏离量。
+ * 设计要点（按用户要求调整）：
+ *   1. **拟合全部用三角函数**：log(值) = c₀ + c₁·(1−cos(πt/T)) + Σₖ[aₖsin + bₖcos]
+ *      没有任何线性项。1−cos(πt/T) 这一项本身是余弦，负责表达长期趋势。
+ *   2. **不做偏离图**：用户明确说不在乎，只保留原始价格 + 拟合曲线。
+ *   3. 谐波数用滑条实时调。
+ *   4. 图表可缩放。
  */
 
-import { fitContinuousWave, fitTrendOnly } from "../core/wave.js";
+import { fitTrigonometric } from "../core/wave.js";
 import { lineChart } from "../core/charts.js";
 
 /**
  * @param {HTMLElement} host
- * @param {{title: string, subtitle: string, years: number[], values: number[],
- *          labels: string[], dateLabels?: string[], defaultNodes?: number,
- *          nodesRange?: [number, number], note?: string}} config
+ * @param {{title, subtitle, years, values, dateLabels, defaultHarmonics,
+ *          harmonicsRange, note, valueLabel, formatter}} config
  */
 export function mountWavePanel(host, config) {
   if (!host) return;
@@ -31,13 +26,16 @@ export function mountWavePanel(host, config) {
     years,
     values,
     dateLabels,
-    defaultNodes = 12,
-    nodesRange = [6, 80],
+    defaultHarmonics = 12,
+    harmonicsRange = [2, 40],
     note = "",
+    valueLabel = "价格",
+    formatter = (v) => (Math.abs(v) >= 1000 ? v.toFixed(0) : v.toFixed(1)),
   } = config;
 
-  const [minNodes, maxNodes] = nodesRange;
+  const [minH, maxH] = harmonicsRange;
   const labels = dateLabels || years.map((y) => String(y));
+  const uid = host.id || `wp${Math.random().toString(36).slice(2, 7)}`;
 
   host.innerHTML = `
     <div class="card">
@@ -49,218 +47,167 @@ export function mountWavePanel(host, config) {
 
       <div class="wave-slider-wrap">
         <div class="wave-slider-head">
-          <label for="wn-${host.id}">节点数</label>
-          <strong id="wnout-${host.id}">${defaultNodes}</strong>
+          <label for="wn-${uid}">谐波数</label>
+          <strong id="wnout-${uid}">${defaultHarmonics}</strong>
         </div>
-        <input type="range" id="wn-${host.id}" min="${minNodes}" max="${maxNodes}" step="1"
-               value="${defaultNodes}" aria-label="分段节点数"
-               aria-valuemin="${minNodes}" aria-valuemax="${maxNodes}" aria-valuenow="${defaultNodes}" />
+        <input type="range" id="wn-${uid}" min="${minH}" max="${maxH}" step="1"
+               value="${defaultHarmonics}" aria-label="谐波数"
+               aria-valuemin="${minH}" aria-valuemax="${maxH}" aria-valuenow="${defaultHarmonics}" />
         <div class="wave-slider-scale">
-          <span>${minNodes} 个节点 · 只看大趋势</span>
-          <span>${maxNodes} 个节点 · 更细</span>
+          <span>${minH} · 只剩最慢的波</span>
+          <span>${maxH} · 越细越接近描图</span>
         </div>
         <div class="row" style="gap:.4rem;flex-wrap:wrap;margin-top:.35rem">
-          ${[minNodes, Math.round((minNodes + maxNodes) / 2), maxNodes]
-            .filter((v, i, arr) => arr.indexOf(v) === i && v >= minNodes && v <= maxNodes)
+          ${[minH, Math.round((minH + maxH) / 3), Math.round((2 * (minH + maxH)) / 3), maxH]
+            .filter((v, i, arr) => arr.indexOf(v) === i && v >= minH && v <= maxH)
             .map((v) => `<button class="wave-preset" data-nodes="${v}">${v}</button>`)
             .join("")}
         </div>
-        <div class="small muted" id="wnstat-${host.id}"></div>
+        <div class="small muted" id="wnstat-${uid}"></div>
       </div>
 
-      <h4 class="section-title" style="font-size:1rem;margin-top:.6rem">偏离图（这里会出现负数）</h4>
-      <p class="section-desc" style="margin-top:.1rem">
-        纵轴是 <code>log(实际) − log(趋势)</code>。<b>0 线 = 长期趋势</b>；
-        <b>负数是「低于长期趋势」，不是「价格为负」</b>。
-        对数尺度下这样才能把「涨了几百倍」和「跌了一半」放在同一根轴上比较。
-      </p>
-      <div class="chart tall" id="wdev-${host.id}" style="height:20rem"></div>
-
+      <div class="chart tall" id="wprice-${uid}" style="height:24rem"></div>
       <div class="wave-toolbar">
         <button class="wave-btn" data-act="in">＋</button>
         <button class="wave-btn" data-act="out">－</button>
         <button class="wave-btn" data-act="left">←</button>
         <button class="wave-btn" data-act="right">→</button>
         <button class="wave-btn" data-act="reset">全览</button>
-        <span class="small muted" id="wview-${host.id}"></span>
+        <span class="small muted" id="wview-${uid}"></span>
       </div>
-      <p class="caption" id="wcap-${host.id}"></p>
+      <p class="caption" id="wcap-${uid}"></p>
 
-      <h4 class="section-title" style="font-size:1rem;margin-top:1rem">原始价格（这里不会有负数）</h4>
-      <div class="chart tall" id="wprice-${host.id}" style="height:18rem"></div>
-      <p class="caption" id="wpcap-${host.id}"></p>
-
-      <div id="wtable-${host.id}" style="margin-top:.8rem"></div>
+      <div id="wtable-${uid}" style="margin-top:.8rem"></div>
       <div class="notice" data-tone="warn" style="margin-top:.7rem">
-        <span id="whonest-${host.id}"></span>
+        <span id="whonest-${uid}"></span>
       </div>
     </div>`;
 
-  const slider = host.querySelector(`#wn-${host.id}`);
-  const sliderOut = host.querySelector(`#wnout-${host.id}`);
-  const statHost = host.querySelector(`#wnstat-${host.id}`);
-  const viewHost = host.querySelector(`#wview-${host.id}`);
-  const devHost = host.querySelector(`#wdev-${host.id}`);
-  const priceHost = host.querySelector(`#wprice-${host.id}`);
-  const tableHost = host.querySelector(`#wtable-${host.id}`);
-  const honestHost = host.querySelector(`#whonest-${host.id}`);
+  const slider = host.querySelector(`#wn-${uid}`);
+  const sliderOut = host.querySelector(`#wnout-${uid}`);
+  const statHost = host.querySelector(`#wnstat-${uid}`);
+  const viewHost = host.querySelector(`#wview-${uid}`);
+  const priceHost = host.querySelector(`#wprice-${uid}`);
+  const tableHost = host.querySelector(`#wtable-${uid}`);
+  const honestHost = host.querySelector(`#whonest-${uid}`);
+  const capHost = host.querySelector(`#wcap-${uid}`);
 
-  const trendOnly = fitTrendOnly(years, values);
-  let devChart = null;
-  let priceChart = null;
+  let chart = null;
 
   const updateView = () => {
-    if (!viewHost || !devChart) return;
-    const [from, to, total] = devChart.getView();
+    if (!viewHost || !chart) return;
+    const [from, to, total] = chart.getView();
     viewHost.textContent = `${labels[from]}–${labels[to]}（共 ${total} 点，显示 ${to - from + 1}）`;
   };
 
-  const draw = (nodes) => {
-    const fit = fitContinuousWave(years, values, { segments: nodes });
+  const draw = (harmonics) => {
+    const fit = fitTrigonometric(years, values, { harmonics });
     if (!fit) return;
 
-    // ---------- 偏离图 ----------
-    const devActual = values.map((v, i) => Math.log(v) - Math.log(trendOnly.trend[i]));
-    devChart = lineChart(devHost, {
-      labels,
-      series: [
-        { name: "实际偏离", values: devActual, color: "var(--il-chart-1)", fill: false, width: 1.1 },
-        { name: "长波", values: fit.waveLog, color: "var(--il-chart-3)", fill: false, width: 2.3 },
-      ],
-      baselines: [{ value: 0, label: "趋势" }],
-      formatter: (v) => `${(Math.exp(v) - 1 >= 0 ? "+" : "")}${((Math.exp(v) - 1) * 100).toFixed(0)}%`,
-      tipFormatter: (v) => `${(Math.exp(v) - 1 >= 0 ? "+" : "")}${((Math.exp(v) - 1) * 100).toFixed(1)}%`,
-      ariaLabel: `${title} 相对趋势的偏离`,
-    });
-    if (devChart) {
-      devChart.onViewChange = updateView;
-      updateView();
-    }
+    const series = [
+      { name: `实际${valueLabel}`, values, color: "var(--il-chart-1)", fill: false, width: 1.1 },
+      { name: "三角趋势", values: fit.trend, color: "var(--il-chart-4)", fill: false, width: 1.3 },
+      { name: `${harmonics} 项拟合`, values: fit.fitted, color: "var(--il-chart-3)", fill: false, width: 2.2 },
+    ];
 
-    // ---------- 原始价格 ----------
-    if (priceChart) {
-      priceChart.setState({
-        labels,
-        series: [
-          { name: "实际价格", values, color: "var(--il-chart-1)", fill: false, width: 1.1 },
-          { name: "趋势", values: trendOnly.trend, color: "var(--il-chart-4)", fill: false, width: 1.4 },
-          { name: "长波拟合", values: fit.fitted, color: "var(--il-chart-3)", fill: false, width: 2.3 },
-        ],
-        formatter: (v) => (Math.abs(v) >= 1000 ? v.toFixed(0) : v.toFixed(1)),
-        tipFormatter: (v) => v.toFixed(2),
-        ariaLabel: `${title} 原始价格`,
-      });
-      if (devChart) priceChart.view = devChart.view;
-      priceChart.draw();
+    if (chart) {
+      chart.setState({ labels, series, formatter, tipFormatter: (v) => v.toFixed(2), ariaLabel: title });
+      chart.draw();
     } else {
-      priceChart = lineChart(priceHost, {
+      chart = lineChart(priceHost, {
         labels,
-        series: [
-          { name: "实际价格", values, color: "var(--il-chart-1)", fill: false, width: 1.1 },
-          { name: "趋势", values: trendOnly.trend, color: "var(--il-chart-4)", fill: false, width: 1.4 },
-          { name: "长波拟合", values: fit.fitted, color: "var(--il-chart-3)", fill: false, width: 2.3 },
-        ],
-        formatter: (v) => (Math.abs(v) >= 1000 ? v.toFixed(0) : v.toFixed(1)),
+        series,
+        formatter,
         tipFormatter: (v) => v.toFixed(2),
-        ariaLabel: `${title} 原始价格`,
+        ariaLabel: title,
       });
+      if (chart) chart.onViewChange = updateView;
     }
+    updateView();
 
-    // ---------- 状态 ----------
-    const lastSeg = fit.segmentInfo[fit.segmentInfo.length - 1];
-    // waveLog 本身就是「拟合值 − 趋势」（对数偏离），不能再减一次趋势
+    const rising = fit.slope > 0;
     const devNow = fit.waveLog[fit.waveLog.length - 1];
     const above = devNow >= 0;
-    const validPeriods = fit.segmentInfo.filter((s) => s.period).length;
-    const totalSegs = fit.segmentInfo.length;
 
     if (statHost) {
       statHost.innerHTML =
-        `${nodes} 个节点 · R² <strong>${fit.r2.toFixed(4)}</strong> · ` +
-        `末段周期 <strong>${lastSeg.period ? `${lastSeg.period.toFixed(0)} 年` : "不可辨识"}</strong> · ` +
-        `当前${above ? "高于" : "低于"}趋势 <strong>${Math.abs((Math.exp(devNow) - 1) * 100).toFixed(0)}%</strong>` +
-        (validPeriods < totalSegs ? ` · <span class="muted">${totalSegs - validPeriods} 段周期不可辨识</span>` : "");
+        `${harmonics} 个谐波 · R² <strong>${fit.r2.toFixed(4)}</strong> · ` +
+        `主周期 <strong>${fit.dominant.period.toFixed(0)} 年</strong> · ` +
+        `当前<strong>${rising ? "上行" : "下行"}</strong>段 · ` +
+        `相对趋势 <strong>${above ? "+" : "−"}${Math.abs((Math.exp(Math.abs(devNow)) - 1) * 100).toFixed(0)}%</strong>`;
     }
 
-    const capHost = host.querySelector(`#wcap-${host.id}`);
     if (capHost) {
       capHost.innerHTML =
-        `0 线是长期趋势，曲线在 0 以下就是「<strong>低于趋势</strong>」。` +
-        `当前 ${above ? "高于" : "低于"}趋势 ${Math.abs((Math.exp(devNow) - 1) * 100).toFixed(0)}%。`;
+        `细线是实际${valueLabel}，紫线是<strong>三角趋势</strong>（只含常数 + 半周期余弦项），` +
+        `粗线是 ${harmonics} 项三角拟合。<strong>所有曲线都由 sin/cos 构成</strong>，没有线性项。`;
     }
 
-    const pcapHost = host.querySelector(`#wpcap-${host.id}`);
-    if (pcapHost) {
-      pcapHost.innerHTML = `纵轴是价格本身，<strong>全部为正</strong>——和上面的偏离图是两回事。`;
-    }
-
-    // ---------- 参数表 ----------
     if (tableHost) {
-      const rows = fit.segmentInfo.slice(0, 30).map((seg) => ({
+      const rows = fit.harmonicsInfo.slice(0, 16).map((h) => ({
         cells: [
-          { html: `${seg.from}${config.dateLabels ? "" : "–" + seg.to}`, cls: "small" },
-          { html: seg.period ? `${seg.period.toFixed(0)} 年` : '<span class="muted">—</span>' },
-          { html: `${seg.A >= 0 ? "+" : ""}${seg.A.toFixed(3)}` },
-          { html: seg.segmentR2.toFixed(2), cls: "small muted" },
-          { html: `±${(seg.amplitude * 100).toFixed(0)}%` },
+          { html: `k = ${h.k}`, cls: "small" },
+          { html: `${h.period.toFixed(0)} 年` },
+          { html: `${h.sinCoef >= 0 ? "+" : ""}${h.sinCoef.toFixed(3)}` },
+          { html: `${h.cosCoef >= 0 ? "+" : ""}${h.cosCoef.toFixed(3)}` },
+          { html: `±${(h.amplitudePct * 100).toFixed(0)}%` },
         ],
       }));
       tableHost.innerHTML = `
         <table class="tbl">
           <thead><tr>
-            <th style="text-align:left">区间</th><th>等效周期</th><th>A</th><th>段内 R²</th><th>振幅</th>
+            <th style="text-align:left">谐波</th><th>周期</th><th>sin 系数</th><th>cos 系数</th><th>振幅</th>
           </tr></thead>
-          <tbody>${rows.map((r) => `<tr>${r.cells.map((c) => `<td class="${c.cls || ""}">${c.html}</td>`).join("")}</tr>`).join("")}</tbody>
+          <tbody>${rows
+            .map((r) => `<tr>${r.cells.map((c) => `<td class="${c.cls || ""}">${c.html}</td>`).join("")}</tr>`)
+            .join("")}</tbody>
         </table>
-        <p class="caption">${
-          fit.segmentInfo.length > 30 ? `只显示前 30 段（共 ${fit.segmentInfo.length} 段）。` : ""
-        }「—」表示该段周期不可辨识（正弦退化，只是跟着趋势走）。</p>`;
+        <p class="caption">
+          <code>log(值) = c₀ + c₁·(1−cos(πt/T)) + Σₖ[aₖ·sin(2πkt/T) + bₖ·cos(2πkt/T)]</code>。
+          谐波 k 的周期 = 数据跨度 ÷ k。
+        </p>`;
     }
 
-    // ---------- 诚实说明 ----------
-    const minYear = Math.min(...years);
-    const maxYear = Math.max(...years);
     if (honestHost) {
+      const minYear = Math.min(...years);
+      const maxYear = Math.max(...years);
+      const shortest = fit.span / harmonics;
       honestHost.innerHTML = `
-        <strong>这段数据跨 ${maxYear - minYear + 1} 年</strong>（${labels[0]}–${labels[labels.length - 1]}），
-        所以「周期」能识别的范围很有限：至少要 3–4 个完整周期才谈得上规律，
-        也就是<strong>最长只能看 ${Math.round((maxYear - minYear + 1) / 4)} 年左右的周期</strong>。
-        节点数越多 R² 越高，但每段的周期越不可辨识——
-        这是<strong>样本长度</strong>的限制，不是算法问题。
+        数据跨 <strong>${(maxYear - minYear + 1).toFixed(0)} 年</strong>，
+        所以 ${harmonics} 个谐波时<strong>最短能分辨的周期是 ${shortest.toFixed(1)} 年</strong>。
+        要看出「康波」（50–60 年一轮），至少需要 <strong>3–4 轮 = 150–240 年</strong>的数据。
+        ${(maxYear - minYear + 1) >= 150
+          ? "这条序列<strong>够长</strong>，可以看 50–60 年尺度。"
+          : "这条序列<strong>不够长</strong>，50–60 年尺度只能看出 1–2 个波，统计意义很弱。"}
       `;
     }
   };
 
   let pending = null;
-  const schedule = (nodes) => {
-    if (sliderOut) sliderOut.textContent = String(nodes);
-    slider?.setAttribute("aria-valuenow", String(nodes));
+  const schedule = (h) => {
+    if (sliderOut) sliderOut.textContent = String(h);
+    slider?.setAttribute("aria-valuenow", String(h));
     if (pending) cancelAnimationFrame(pending);
     pending = requestAnimationFrame(() => {
       pending = null;
-      draw(nodes);
+      draw(h);
     });
   };
 
-  draw(defaultNodes);
+  draw(defaultHarmonics);
   slider?.addEventListener("input", () => schedule(Number(slider.value)));
   host.querySelectorAll(".wave-preset").forEach((button) => {
     button.addEventListener("click", () => {
-      const nodes = Number(button.dataset.nodes);
-      if (slider) slider.value = String(nodes);
-      schedule(nodes);
+      const h = Number(button.dataset.nodes);
+      if (slider) slider.value = String(h);
+      schedule(h);
     });
   });
 
-  // 缩放
   const bind = (act, fn) => {
     host.querySelector(`[data-act="${act}"]`)?.addEventListener("click", () => {
-      if (!devChart) return;
-      fn(devChart);
-      if (priceChart) {
-        priceChart.view = devChart.view;
-        priceChart.draw();
-      }
+      if (!chart) return;
+      fn(chart);
     });
   };
   bind("in", (c) => c.zoomBy(1.8));
