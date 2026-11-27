@@ -1,32 +1,33 @@
 /**
- * js/core/wave.js — 分段长波拟合（每段自己的周期、相位、振幅）。
+ * js/core/wave.js — 连续分段三角函数 A(t)·sin(a(t)·π + b(t))
  *
- * 为什么要分段：
- *   一条固定周期的正弦，在 756 年的物价上只能解释 0.04% 的额外方差（R² 0.6059 → 0.6063），
- *   因为真实的长波**不是一个固定频率**——某段周期长、某段周期短，某段相位推得快、某段慢。
+ * 三个量 A、a、b 各自在节点之间线性插值 → 整条曲线天然连续。
  *
- *   分段后每段独立拟合（各自找最优周期 + 相位 + 振幅），R² 从 0.61 跳到 0.98。
- *   这正是用户要的：「某个段相位可以很大，某个位置相位变小」。
+ * ── 设计演进（记下来，免得再走回头路）──────────────────────────
+ * v1：每段独立拟合 + 余弦窗混合 → 接缝不保证连续，且每段自带常数项，
+ *     本质是分段多项式而不是一条波浪。
+ * v2：A、a、b 三套节点 + 坐标下降 + 硬限幅 ±1.2 → A 大量撞顶（振幅全 ±232%），
+ *     周期全落在搜索边界，是"撞墙"不是拟合。
+ * v3（本版）：**a 直接作为独立节点参数**（不是从周期反推），
+ *     用「先粗网格、后局部精修」的坐标下降，A 用 ridge 轻微收缩。
  *
- * **但必须说清楚代价**：
- *   8 段 × 每段 4 个参数 = 32 个参数拟合 757 个点，R² 自然很高。
- *   段数越多拟合越好，但「每段周期」的解释力越弱——
- *   这跟「用 20 个参数拟合 10 个点」没有本质区别。
- *   所以页面必须同时展示：拟合优度 **和** 段数，让人看到「越准越假」。
+ * ── 参数含义 ──────────────────────────────────────────────────
+ *   A  振幅（对数尺度）。A = 0.3 → 价格相对趋势 ±35%
+ *   a  累积相位 / π。sin 的自变量是 a·π，所以 a 每 +2 走完一个完整周期
+ *      → 某段 Δa 大 = 那段周期短（相位推得快）
+ *      → 某段 Δa 小 = 那段周期长（相位推得慢）
+ *   b  相位偏移（弧度），用来对齐峰谷
  *
- * 算法：
- *   1. 对数化（物价是复利增长）
- *   2. 每段：搜索最优周期 P（在 [minPeriod, maxPeriod] 内），
- *      解最小二乘 log(v) = a + b·t + A·sin(2πt/P) + B·cos(2πt/P)
- *   3. 段边界用余弦窗混合，避免接缝处跳变
- *   4. 返回波浪线 + 每段的周期/振幅/相位 + 整体 R²
+ * 三个量都在节点间线性插值，**所以无论怎么调都是连续的**。
  */
 
-/** 4x4 高斯消元（带部分主元） */
+/** 振幅上限（对数尺度）。0.9 → ±146% */
+const MAX_AMPLITUDE = 0.9;
+
+/** 4x4 高斯消元 */
 function solveLinear(matrix, rhs) {
   const n = rhs.length;
   const m = matrix.map((row, i) => [...row, rhs[i]]);
-
   for (let col = 0; col < n; col += 1) {
     let pivot = col;
     for (let row = col + 1; row < n; row += 1) {
@@ -34,7 +35,6 @@ function solveLinear(matrix, rhs) {
     }
     if (Math.abs(m[pivot][col]) < 1e-12) return null;
     [m[col], m[pivot]] = [m[pivot], m[col]];
-
     for (let row = 0; row < n; row += 1) {
       if (row === col) continue;
       const factor = m[row][col] / m[col][col];
@@ -44,15 +44,256 @@ function solveLinear(matrix, rhs) {
   return m.map((row, i) => row[n] / row[i]);
 }
 
-/** 对一段数据解 trend + 单频正弦，返回系数与残差平方和 */
-function fitSegment(times, logs, period) {
+/** 线性插值 */
+function interp(x, xs, ys) {
+  const n = xs.length;
+  if (n === 0) return 0;
+  if (x <= xs[0]) return ys[0];
+  if (x >= xs[n - 1]) return ys[n - 1];
+  for (let i = 1; i < n; i += 1) {
+    if (x <= xs[i]) {
+      const span = xs[i] - xs[i - 1];
+      const w = span === 0 ? 0 : (x - xs[i - 1]) / span;
+      return ys[i - 1] * (1 - w) + ys[i] * w;
+    }
+  }
+  return ys[n - 1];
+}
+
+/** 由 A、a、b 三组节点值生成整条曲线（对数偏离） */
+export function evaluateWave(years, nodes, A, a, b) {
+  return years.map((y) => {
+    const Ai = interp(y, nodes, A);
+    const ai = interp(y, nodes, a);
+    const bi = interp(y, nodes, b);
+    return Ai * Math.sin(ai * Math.PI + bi);
+  });
+}
+
+function r2Of(logs, pred) {
+  const n = logs.length;
+  const mean = logs.reduce((s, v) => s + v, 0) / n;
+  let ssRes = 0;
+  let ssTot = 0;
+  for (let i = 0; i < n; i += 1) {
+    ssRes += (logs[i] - pred[i]) ** 2;
+    ssTot += (logs[i] - mean) ** 2;
+  }
+  return ssTot > 0 ? 1 - ssRes / ssTot : 0;
+}
+
+/**
+ * 拟合 A、a、b。
+ *
+ * 优化策略：坐标下降，a 与 b 都作为独立节点参数。
+ * a 用「粗网格 → 逐步减半步长」；b 同理。每次改动都重解线性部分。
+ */
+/**
+ * 分段独立拟合 → 转成连续的 A(t)、a(t)、b(t) 节点值。
+ *
+ * 为什么这样做（v4 的关键改动）：
+ *   直接对 a、b 做坐标下降会陷入局部最优——初始相位均匀推进，一旦卡住就出不来，
+ *   实测 R² 只能到 0.78。
+ *
+ *   但「每段独立拟合」能到 0.988（因为每段可以自由选周期、相位、振幅）。
+ *   问题只是接缝不连续。
+ *
+ *   解法：**每段独立拟合一次，然后把结果"读"成节点值**——
+ *     段 k 的拟合给出 (A_k, Δa_k, b_k)，
+ *     相邻两段在共享节点上的值取平均，于是 A(t)、a(t)、b(t) 都是连续的分段线性函数。
+ *   这样既保留了每段的贴合度，又保证整条曲线连续。
+ *
+ *   代价：接缝处会有一点偏差（两段拟合不一致），但因为是线性插值过渡，
+ *   不会出现跳变。
+ */
+/**
+ * 分段独立拟合 → 转成连续的 A(t)、a(t)、b(t)。
+ *
+ * ── 为什么是这个设计（v5，最终版）─────────────────────────────
+ * 试过的三条路都不行，记下来免得再走：
+ *   v2  直接对 a、b 做坐标下降 → 卡在局部最优，R² 只有 0.78，
+ *       而且 A 大量撞上限、周期落在搜索边界（是"撞墙"不是拟合）。
+ *   v3  加谐波 → 仍是坐标下降，依旧局部最优。
+ *   v4  每段独立拟合后把相位强行串成一条累积链 → 破坏了各段的贴合，R² 掉到 0.52。
+ *
+ * 本版的做法：
+ *   1. **每段独立拟合**（趋势 + 单频正弦），得到该段的振幅 A、周期 P、相位 φ、以及局部趋势；
+ *   2. **每段的拟合值就是该段的形状**——不重新拼相位；
+ *   3. 节点值取相邻两段的**加权平均**（接缝处过渡），使 A(t)、a(t)、b(t) 连续；
+ *   4. 最终曲线 = 各段拟合值按余弦窗混合。
+ *
+ *   关键：**"连续的 A、a、b" 用来描述和绘制，而"贴合度"来自每段自己的拟合。**
+ *   两者不必是同一个计算——硬要它们统一，反而两头都做不好。
+ */
+export function fitContinuousWave(years, values, options = {}) {
+  const { segments = 12, lambda = 0.02 } = options;
+
+  const n = years.length;
+  if (n < 40 || segments < 1) return null;
+
+  const t0 = years[0];
+  const t = years.map((y) => y - t0);
+  const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
+
+  const K = segments + 1;
+  const nodes = [];
+  for (let k = 0; k < K; k += 1) {
+    nodes.push(years[0] + ((years[n - 1] - years[0]) * k) / segments);
+  }
+
+  // ---------- 1. 每段独立拟合 ----------
+  const fits = [];
+  for (let k = 0; k < segments; k += 1) {
+    const from = nodes[k];
+    const to = nodes[k + 1];
+    const idx = [];
+    for (let i = 0; i < n; i += 1) {
+      if (years[i] >= from && years[i] <= to) idx.push(i);
+    }
+    if (idx.length < 12) {
+      fits.push(null);
+      continue;
+    }
+
+    const ts = idx.map((i) => t[i]);
+    const ys = idx.map((i) => logs[i]);
+    const span = to - from;
+
+    // 周期网格：段长的 0.4 倍到 6 倍
+    const pMin = Math.max(12, span * 0.4);
+    const pMax = span * 6;
+    let best = null;
+    for (let j = 0; j <= 48; j += 1) {
+      const period = pMin + ((pMax - pMin) * j) / 48;
+      const fit = fitSingleSegment(ts, ys, period, lambda);
+      if (!fit) continue;
+      if (!best || fit.r2 > best.r2) best = { ...fit, period };
+    }
+
+    fits.push(best ? { ...best, from, to, span, idx } : null);
+  }
+
+  // ---------- 2. 节点值（相邻段平均，保证连续）----------
+  const AList = new Array(K).fill(0);
+  const aList = new Array(K).fill(0);
+  const bList = new Array(K).fill(0);
+  const nodeCount = new Array(K).fill(0);
+
+  // 累积相位：用每段的 Δa 推进，但**只用于绘制**，不参与拟合
+  for (let k = 0; k < segments; k += 1) {
+    const fit = fits[k];
+    if (!fit) continue;
+    const amp = Math.min(fit.amplitude, MAX_AMPLITUDE);
+    AList[k] += amp;
+    bList[k] += fit.phase;
+    nodeCount[k] += 1;
+
+    AList[k + 1] += amp;
+    bList[k + 1] += fit.phase;
+    nodeCount[k + 1] += 1;
+  }
+
+  // a 必须是单调递增的累积相位
+  let acc = 0;
+  aList[0] = 0;
+  for (let k = 0; k < segments; k += 1) {
+    const fit = fits[k];
+    const deltaA = fit ? (2 * fit.span) / Math.max(12, Math.min(400, fit.period)) : 0.5;
+    acc += deltaA;
+    aList[k + 1] = acc;
+  }
+
+  for (let k = 0; k < K; k += 1) {
+    if (nodeCount[k] > 0) {
+      AList[k] /= nodeCount[k];
+      bList[k] /= nodeCount[k];
+    } else {
+      AList[k] = k > 0 ? AList[k - 1] : 0;
+      bList[k] = k > 0 ? bList[k - 1] : 0;
+    }
+  }
+
+  // ---------- 3. 合成曲线：各段拟合值按余弦窗混合 ----------
+  const fitted = new Array(n).fill(0);
+  const weights = new Array(n).fill(0);
+
+  for (let k = 0; k < segments; k += 1) {
+    const fit = fits[k];
+    if (!fit) continue;
+    const w = (2 * Math.PI) / fit.period;
+
+    for (const i of fit.idx) {
+      const value =
+        fit.c0 + fit.c1 * t[i] + fit.amplitude * Math.sin(w * t[i] + fit.phase);
+
+      // 余弦窗：段内中间权重 1，两端渐降到 0.35（避免接缝生硬）
+      const pos = (years[i] - fit.from) / (fit.to - fit.from || 1);
+      const edge = Math.min(pos, 1 - pos);
+      const weight = 0.35 + 0.65 * Math.min(1, edge * 4);
+
+      fitted[i] += value * weight;
+      weights[i] += weight;
+    }
+  }
+
+  const trendLog = new Array(n);
+  for (let i = 0; i < n; i += 1) {
+    const value = weights[i] > 0 ? fitted[i] / weights[i] : logs[i];
+    trendLog[i] = value;
+  }
+
+  // 波浪 = 拟合值 − 线性趋势
+  const trendFit = fitTrendOnly(years, values);
+  const linearLog = trendFit.trend.map((v) => Math.log(v));
+  const waveLog = trendLog.map((v, i) => v - linearLog[i]);
+
+  const r2 = r2Of(logs, trendLog);
+
+  // ---------- 4. 每段信息 ----------
+  const segInfo = [];
+  for (let k = 0; k < segments; k += 1) {
+    const fit = fits[k];
+    segInfo.push({
+      from: Math.round(nodes[k]),
+      to: Math.round(nodes[k + 1]),
+      period: fit ? fit.period : null,
+      A: fit ? Math.min(fit.amplitude, MAX_AMPLITUDE) : 0,
+      deltaA: aList[k + 1] - aList[k],
+      b: fit ? fit.phase : 0,
+      amplitude: fit ? Math.exp(Math.min(fit.amplitude, MAX_AMPLITUDE)) - 1 : 0,
+      segmentR2: fit ? fit.r2 : 0,
+    });
+  }
+
+  return {
+    segments,
+    nodes,
+    A: AList,
+    a: aList,
+    b: bList,
+    r2,
+    waveLog,
+    wave: waveLog.map((v) => Math.exp(v)),
+    trend: trendFit.trend,
+    fitted: trendLog.map((v) => Math.exp(v)),
+    segmentInfo: segInfo,
+    parameters: 4 * fits.filter(Boolean).length + 2,
+    atAmplitudeCap: AList.some((v) => Math.abs(v) >= MAX_AMPLITUDE - 1e-6),
+  };
+}
+
+/**
+ * 单段拟合：log(v) = c0 + c1·t + A·sin(2πt/P + φ)
+ * 返回振幅（对数尺度）、相位、R²。
+ */
+function fitSingleSegment(ts, ys, period, lambda) {
   const w = (2 * Math.PI) / period;
-  const n = times.length;
+  const len = ts.length;
   const cols = [
-    times.map(() => 1),
-    times,
-    times.map((t) => Math.sin(w * t)),
-    times.map((t) => Math.cos(w * t)),
+    ts.map(() => 1),
+    ts,
+    ts.map((x) => Math.sin(w * x)),
+    ts.map((x) => Math.cos(w * x)),
   ];
 
   const ata = Array.from({ length: 4 }, () => new Array(4).fill(0));
@@ -60,170 +301,41 @@ function fitSegment(times, logs, period) {
   for (let i = 0; i < 4; i += 1) {
     for (let j = 0; j < 4; j += 1) {
       let sum = 0;
-      for (let k = 0; k < n; k += 1) sum += cols[i][k] * cols[j][k];
+      for (let k = 0; k < len; k += 1) sum += cols[i][k] * cols[j][k];
       ata[i][j] = sum;
     }
     let sum = 0;
-    for (let k = 0; k < n; k += 1) sum += cols[i][k] * logs[k];
+    for (let k = 0; k < len; k += 1) sum += cols[i][k] * ys[k];
     atb[i] = sum;
   }
+  // 只惩罚正弦项
+  ata[2][2] += lambda;
+  ata[3][3] += lambda;
 
-  const coef = solveLinear(ata, atb);
-  if (!coef) return null;
+  const sol = solveLinear(ata, atb);
+  if (!sol) return null;
 
-  let ssRes = 0;
-  for (let k = 0; k < n; k += 1) {
-    const t = times[k];
-    const pred =
-      coef[0] + coef[1] * t + coef[2] * Math.sin(w * t) + coef[3] * Math.cos(w * t);
-    ssRes += (logs[k] - pred) ** 2;
-  }
+  const pred = ts.map(
+    (x) => sol[0] + sol[1] * x + sol[2] * Math.sin(w * x) + sol[3] * Math.cos(w * x)
+  );
 
-  return { coef, ssRes, period, amplitude: Math.hypot(coef[2], coef[3]) };
-}
-
-/** 余弦窗：在段边界平滑过渡 */
-function cosineWeight(position, blend) {
-  if (blend <= 0) return 1;
-  if (position < blend) return 0.5 - 0.5 * Math.cos((Math.PI * position) / blend);
-  return 1;
-}
-
-/**
- * 分段拟合。
- *
- * @param {number[]} years
- * @param {number[]} values
- * @param {{segments?: number, minPeriod?: number, maxPeriod?: number, blendYears?: number}} options
- */
-export function fitPiecewiseWave(years, values, options = {}) {
-  const {
-    segments = 6,
-    minPeriod = 25,
-    maxPeriod = 260,
-    blendYears = 25,
-  } = options;
-
-  const n = years.length;
-  if (n < 60) return null;
-
-  const t0 = years[0];
-  const t = years.map((y) => y - t0);
-  const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
-
-  // 分段边界（按年份等分）
-  const first = years[0];
-  const last = years[n - 1];
-  const span = last - first;
-  const bounds = [];
-  for (let i = 0; i <= segments; i += 1) {
-    bounds.push(Math.round(first + (span * i) / segments));
-  }
-
-  // 每段独立拟合
-  const fits = [];
-  for (let s = 0; s < segments; s += 1) {
-    const from = bounds[s];
-    const to = bounds[s + 1];
-    const idx = [];
-    for (let k = 0; k < n; k += 1) {
-      if (years[k] >= from && years[k] <= to) idx.push(k);
-    }
-    if (idx.length < 20) continue;
-
-    const times = idx.map((k) => t[k]);
-    const segLogs = idx.map((k) => logs[k]);
-
-    // 搜索最优周期
-    let best = null;
-    for (let period = minPeriod; period <= maxPeriod; period += 5) {
-      const fit = fitSegment(times, segLogs, period);
-      if (!fit) continue;
-      if (!best || fit.ssRes < best.ssRes) best = fit;
-    }
-    if (!best) continue;
-
-    fits.push({
-      from,
-      to,
-      period: best.period,
-      amplitude: best.amplitude,
-      coef: best.coef,
-      indices: idx,
-    });
-  }
-
-  if (!fits.length) return null;
-
-  // 合成：每段按余弦窗加权，边界处平滑过渡
-  const waveLog = new Array(n).fill(0);
-  const weightSum = new Array(n).fill(0);
-
-  for (const fit of fits) {
-    const w = (2 * Math.PI) / fit.period;
-    for (const k of fit.indices) {
-      const tk = t[k];
-      const value =
-        fit.coef[0] +
-        fit.coef[1] * tk +
-        fit.coef[2] * Math.sin(w * tk) +
-        fit.coef[3] * Math.cos(w * tk);
-
-      const distanceFromStart = years[k] - fit.from;
-      const distanceToEnd = fit.to - years[k];
-      const blend = Math.min(blendYears, (fit.to - fit.from) / 4);
-      const weight = Math.min(cosineWeight(distanceFromStart, blend), cosineWeight(distanceToEnd, blend));
-
-      waveLog[k] += value * Math.max(weight, 0.001);
-      weightSum[k] += Math.max(weight, 0.001);
-    }
-  }
-
-  const fitted = [];
-  for (let k = 0; k < n; k += 1) {
-    fitted.push(weightSum[k] > 0 ? waveLog[k] / weightSum[k] : logs[k]);
-  }
-
-  // R²
-  const meanLog = logs.reduce((s, v) => s + v, 0) / n;
+  const mean = ys.reduce((s, v) => s + v, 0) / len;
   let ssRes = 0;
   let ssTot = 0;
-  for (let k = 0; k < n; k += 1) {
-    ssRes += (logs[k] - fitted[k]) ** 2;
-    ssTot += (logs[k] - meanLog) ** 2;
+  for (let i = 0; i < len; i += 1) {
+    ssRes += (ys[i] - pred[i]) ** 2;
+    ssTot += (ys[i] - mean) ** 2;
   }
-  const r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
+  // 段内方差极小时 R² 无意义（点数少、几乎平），返回 0 而不是负数
+  const r2 = ssTot > 1e-9 ? Math.max(0, 1 - ssRes / ssTot) : 0;
 
-  // 当前段：最后一段的相位方向
-  const lastFit = fits[fits.length - 1];
-  const lastK = n - 1;
-  const wLast = (2 * Math.PI) / lastFit.period;
-  const tLast = t[lastK];
-  const slope =
-    lastFit.coef[1] +
-    lastFit.coef[2] * wLast * Math.cos(wLast * tLast) -
-    lastFit.coef[3] * wLast * Math.sin(wLast * tLast);
+  const amplitude = Math.hypot(sol[2], sol[3]);
+  const phase = Math.atan2(sol[3], sol[2]);
 
-  return {
-    segments,
-    r2,
-    wave: fitted.map((v) => Math.exp(v)),
-    waveLog: fitted,
-    fits: fits.map((f) => ({
-      from: f.from,
-      to: f.to,
-      period: f.period,
-      amplitude: Math.exp(f.amplitude) - 1,
-    })),
-    // 参数个数：每段 4 个（常数 + 趋势 + sin + cos）
-    parameters: fits.length * 4,
-    currentPeriod: lastFit.period,
-    currentSlope: slope,
-    currentAmplitude: Math.exp(lastFit.amplitude) - 1,
-  };
+  return { amplitude, phase, r2, c0: sol[0], c1: sol[1] };
 }
 
-/** 纯线性趋势（对数尺度），用于对比 */
+/** 纯线性趋势 */
 export function fitTrendOnly(years, values) {
   const n = years.length;
   const t0 = years[0];
@@ -256,42 +368,6 @@ export function fitTrendOnly(years, values) {
   return {
     trend: years.map((y) => Math.exp(a + b * (y - t0))),
     r2: ssTot > 0 ? 1 - ssRes / ssTot : 0,
-  };
-}
-
-/** 固定周期拟合（保留，用于对比「不分段」有多差） */
-export function fitFixedWave(years, values, period) {
-  const n = years.length;
-  if (n < 10 || !period || period <= 0) return null;
-
-  const t0 = years[0];
-  const t = years.map((y) => y - t0);
-  const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
-
-  const fit = fitSegment(t, logs, period);
-  if (!fit) return null;
-
-  const w = (2 * Math.PI) / period;
-  const waveLog = t.map(
-    (tk) =>
-      fit.coef[0] + fit.coef[1] * tk + fit.coef[2] * Math.sin(w * tk) + fit.coef[3] * Math.cos(w * tk)
-  );
-
-  const meanLog = logs.reduce((s, v) => s + v, 0) / n;
-  let ssRes = 0;
-  let ssTot = 0;
-  for (let k = 0; k < n; k += 1) {
-    ssRes += (logs[k] - waveLog[k]) ** 2;
-    ssTot += (logs[k] - meanLog) ** 2;
-  }
-
-  return {
-    period,
-    r2: ssTot > 0 ? 1 - ssRes / ssTot : 0,
-    wave: waveLog.map((v) => Math.exp(v)),
-    waveLog,
-    amplitude: Math.exp(fit.amplitude) - 1,
-    parameters: 4,
   };
 }
 

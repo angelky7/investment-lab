@@ -137,6 +137,9 @@ class CanvasChart {
     this.ctx = this.canvas.getContext ? this.canvas.getContext("2d") : null;
     this.state = null;
     this.hoverIndex = null;
+    // 视窗（缩放/平移）：[from, to] 为索引区间，null 表示全览
+    this.view = null;
+    this.onViewChange = null;
     this.width = 0;
     this.height = 0;
 
@@ -172,6 +175,77 @@ class CanvasChart {
     const label = state?.ariaLabel || state?.name || state?.title;
     if (label) this.canvas.setAttribute("aria-label", `${label}（数据图表）`);
     this.draw();
+  }
+
+  /** 设置可见区间（索引），null 表示全览 */
+  setView(from, to) {
+    const count = this.state?.labels?.length || 0;
+    if (!count) return;
+    if (from === null || to === null) {
+      this.view = null;
+    } else {
+      let a = Math.max(0, Math.min(Math.floor(from), count - 2));
+      let b = Math.min(count - 1, Math.max(Math.ceil(to), a + 1));
+      // 太窄就没意义（至少留 5 个点）
+      if (b - a < 4) {
+        if (a + 4 <= count - 1) b = a + 4;
+        else {
+          b = count - 1;
+          a = Math.max(0, b - 4);
+        }
+      }
+      this.view = [a, b];
+    }
+    this.hoverIndex = null;
+    this.draw();
+    this.onViewChange?.(this.view ? [this.view[0], this.view[1], count] : null);
+  }
+
+  /** 以中心点缩放，factor > 1 放大 */
+  zoomBy(factor, centerIndex = null) {
+    const count = this.state?.labels?.length || 0;
+    if (!count) return;
+    const [from, to] = this.view || [0, count - 1];
+    const span = to - from;
+    const center = centerIndex ?? (from + to) / 2;
+    const nextSpan = Math.max(4, Math.min(count - 1, Math.round(span / factor)));
+    const ratio = (center - from) / (span || 1);
+    let a = Math.round(center - nextSpan * ratio);
+    let b = a + nextSpan;
+    if (a < 0) {
+      a = 0;
+      b = nextSpan;
+    }
+    if (b > count - 1) {
+      b = count - 1;
+      a = Math.max(0, b - nextSpan);
+    }
+    this.setView(a, b);
+  }
+
+  /** 平移，delta 为索引数 */
+  panBy(delta) {
+    const count = this.state?.labels?.length || 0;
+    if (!count) return;
+    const [from, to] = this.view || [0, count - 1];
+    const span = to - from;
+    let a = Math.round(from + delta);
+    let b = a + span;
+    if (a < 0) {
+      a = 0;
+      b = span;
+    }
+    if (b > count - 1) {
+      b = count - 1;
+      a = Math.max(0, b - span);
+    }
+    this.setView(a, b);
+  }
+
+  /** 当前视窗（供外部显示） */
+  getView() {
+    const count = this.state?.labels?.length || 0;
+    return this.view ? [this.view[0], this.view[1], count] : [0, Math.max(0, count - 1), count];
   }
 
   resize() {
@@ -231,10 +305,14 @@ class CanvasChart {
     const count = labels.length;
     if (!count || !series.length) return;
 
+    // 视窗：只统计与绘制可见区间，放大后纵轴自动适配
+    const [viewFrom, viewTo] = this.view || [0, count - 1];
+
     let min = Infinity;
     let max = -Infinity;
     for (const s of series) {
-      for (const v of s.values) {
+      for (let i = viewFrom; i <= viewTo && i < s.values.length; i += 1) {
+        const v = s.values[i];
         if (v === null || v === undefined || !Number.isFinite(v)) continue;
         if (v < min) min = v;
         if (v > max) max = v;
@@ -263,17 +341,18 @@ class CanvasChart {
       ctx.fillText(formatter(tick), box.left - 6, y);
     }
 
-    // X 轴标签（最多 6 个）
+    // X 轴标签（最多 6 个）——按视窗范围取
     const labelFormatter = this.state.labelFormatter ?? ((v) => v);
     const maxLabels = Math.max(2, Math.min(6, Math.floor(box.width / 78)));
-    const step = Math.max(1, Math.ceil((count - 1) / (maxLabels - 1)));
+    const spanCount = viewTo - viewFrom;
+    const step = Math.max(1, Math.ceil(spanCount / (maxLabels - 1)));
     ctx.textAlign = "center";
     ctx.fillStyle = axisColor;
-    for (let i = 0; i < count; i += step) {
-      const x = this.xForIndex(i, count, box);
+    for (let i = viewFrom; i <= viewTo; i += step) {
+      const x = this.xForIndex(i - viewFrom, spanCount + 1, box);
       const text = labelFormatter(labels[i], i);
       if (!text) continue;
-      if (i === 0) {
+      if (i === viewFrom) {
         ctx.textAlign = "left";
         ctx.fillText(text, box.left, this.height - 12);
         ctx.textAlign = "center";
@@ -281,8 +360,8 @@ class CanvasChart {
         ctx.fillText(text, Math.min(x, box.right - 6), this.height - 12);
       }
     }
-    if ((count - 1) % step !== 0) {
-      const last = labelFormatter(labels[count - 1], count - 1);
+    {
+      const last = labelFormatter(labels[viewTo], viewTo);
       if (last) {
         ctx.textAlign = "right";
         ctx.fillText(last, box.right, this.height - 12);
@@ -311,7 +390,11 @@ class CanvasChart {
     ctx.rect(box.left, box.top - 2, box.width, box.height + 4);
     ctx.clip();
 
-    const indices = downsampleIndices(count, Math.max(60, Math.floor(box.width)));
+    // 只取视窗内的索引；放大后点更少，drawdown 更细
+    const visibleIndices = [];
+    for (let i = viewFrom; i <= viewTo; i += 1) visibleIndices.push(i);
+    const indices = downsampleIndices(visibleIndices.length, Math.max(60, Math.floor(box.width)))
+      .map((pos) => visibleIndices[pos]);
 
     series.forEach((s, order) => {
       const color = resolveColor(s.color || paletteColor(order));
@@ -319,7 +402,7 @@ class CanvasChart {
       for (const i of indices) {
         const v = s.values[i];
         if (v === null || v === undefined || !Number.isFinite(v)) continue;
-        points.push([this.xForIndex(i, count, box), yFor(v)]);
+        points.push([this.xForIndex(i - viewFrom, spanCount + 1, box), yFor(v)]);
       }
       if (points.length < 2) return;
 
@@ -682,7 +765,9 @@ class CanvasChart {
       return;
     }
     const ratio = Math.min(1, Math.max(0, (x - box.left) / box.width));
-    const index = Math.round(ratio * (count - 1));
+    // 有视窗时，把 0–1 的比例映射到视窗内的索引
+    const [vFrom, vTo] = this.view || [0, count - 1];
+    const index = Math.round(vFrom + ratio * (vTo - vFrom));
     if (index === this.hoverIndex) return;
     this.hoverIndex = index;
     this.draw();

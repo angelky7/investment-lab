@@ -2498,6 +2498,38 @@ details.lesson-card summary::-webkit-details-marker {
   }
 }
 
+
+/* --------------------------- 长波图缩放工具栏 --------------------------- */
+
+.wave-toolbar {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0.5rem 0 0.3rem;
+}
+
+.wave-btn {
+  min-width: 2rem;
+  padding: 0.28rem 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  border-radius: var(--mdui-shape-corner-small);
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  background: rgb(var(--mdui-color-surface-container-low));
+  color: inherit;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.wave-btn:hover {
+  background: rgb(var(--mdui-color-surface-container-high));
+}
+
+.wave-btn:active {
+  transform: scale(0.96);
+}
+
 /* ------------------------------ 工具类 ------------------------------ */
 
 .mono {
