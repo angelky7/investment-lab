@@ -21,7 +21,6 @@ export const NAV = [
   { id: "history", href: "history.html", label: "历史时期", icon: "clock", desc: "关键市场窗口复盘" },
   { id: "calculator", href: "calculator.html", label: "投资计算器", icon: "calculator", desc: "复利/定投/回撤/再平衡" },
   { id: "glossary", href: "glossary.html", label: "术语词典", icon: "book", desc: "一词一句，附本站实例" },
-  { id: "corrections", href: "corrections.html", label: "更正记录", icon: "warn", desc: "我们说错过的地方" },
   { id: "planner", href: "planner.html", label: "配置求解器", icon: "spark", desc: "按回撤预算筛配比" },
   { id: "data", href: "data.html", label: "数据状态", icon: "database", desc: "数据来源与质量" },
 ];

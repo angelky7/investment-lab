@@ -24,240 +24,45 @@
     <mdui-layout-main>
       <main class="page">
         <header class="page-head">
-          <span class="eyebrow">Learn</span>
-          <h1>投资课程</h1>
+          <span class="eyebrow">Learn by doing</span>
+          <h1>闯关式学习</h1>
           <p class="lead">
-            五级共 <b>46 节</b>，每节有展开详解、<b>本站真实例子</b>、最常被误解的地方，
-            以及<b>一道自测题</b>（点一下立刻给对错与解释）。另有 5 个可以动手的实验室。
-            不要只读——自测题要真的点一遍，「看懂」和「会算」之间隔着一整个投资的难度。
-            遇到不认识的词，去 <a href="glossary.html">术语词典</a>查。
+            一次只过一关：读一段、答一题、解锁下一关。<b>46 关</b>走完，
+            你对收益、风险、成本的直觉会比读十篇文章更牢。
           </p>
         </header>
 
-        <section class="section">
-          <mdui-tabs id="learn-tabs" value="beginner" variant="primary">
-            <mdui-tab value="beginner">小白</mdui-tab>
-            <mdui-tab value="intermediate">进阶</mdui-tab>
-            <mdui-tab value="advanced">高级</mdui-tab>
-            <mdui-tab value="strategy">策略</mdui-tab>
-            <mdui-tab value="case">决策训练</mdui-tab>
-            <mdui-tab value="practice">刷题</mdui-tab>
-          </mdui-tabs>
+        <section class="section" id="quest-section">
+          <div id="quest-host"></div>
         </section>
-
-        <div class="level-panel hidden" data-level="beginner">
-          <section class="section">
-            <div class="notice" data-tone="accent">
-              <span>
-                这一级只回答一个问题：<strong>你在买什么？</strong>
-                如果说不清一项资产背后是什么、靠什么产生回报，那就不该把钱放进去。
-              </span>
-            </div>
-          </section>
-          <section class="section">
-            <div class="progress-line" data-progress="beginner"></div>
-            <div class="course-grid" data-lessons="beginner"></div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">复利实验室</h2>
-              <p class="section-desc">
-                拖动三个滑块，看本金和年限谁更重要。这条曲线前十年几乎是平的——
-                复利的陡峭感只出现在后半段，这也是为什么「早点开始」比「找到高收益」重要得多。
-              </p>
-              <div id="lab-compound"></div>
-            </div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">猜一猜 · 数据直觉测试</h2>
-              <p class="section-desc">
-                六道题，答案全部由站内真实历史现算。先猜，再揭晓——大多数人的直觉都偏乐观。
-              </p>
-              <div id="lab-guess"></div>
-            </div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">排序题 · 谁跌得最狠</h2>
-              <p class="section-desc">
-                把五类资产按「历史最大回撤从深到浅」拖成你认为的顺序，提交后看真实排名。
-                注意「避险资产」通常不是你排的那个位置。
-              </p>
-              <div id="lab-rank"></div>
-            </div>
-          </section>
-          <section class="section">
-            <h2 class="section-title">本级综合测验</h2>
-            <div class="quiz" data-quiz="beginner"></div>
-          </section>
-        </div>
-
-        <div class="level-panel hidden" data-level="intermediate">
-          <section class="section">
-            <div class="notice" data-tone="accent">
-              <span>
-                这一级讲<strong>怎么判断贵不贵</strong>：估值、盈利质量、护城河，
-                以及「配置」这个比选股更重要的决定。
-              </span>
-            </div>
-          </section>
-          <section class="section">
-            <div class="progress-line" data-progress="intermediate"></div>
-            <div class="course-grid" data-lessons="intermediate"></div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">分散实验室</h2>
-              <p class="section-desc">
-                拖动股票权重，观察「组合实际波动」与「加权平均波动」之间的缝隙。
-                这条缝隙就是分散白送的部分；滑块拖到两端，缝隙就消失了。
-              </p>
-              <div id="lab-diversify"></div>
-            </div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">拖拽组合构建器</h2>
-              <p class="section-desc">
-                把资产卡片拖到槽位就等于给它加权，实时看到年化、回撤、夏普怎么变。
-                这里没有正确答案——只有「你能承受多少」。
-              </p>
-              <div id="lab-builder"></div>
-            </div>
-          </section>
-          <section class="section">
-            <h2 class="section-title">本级综合测验</h2>
-            <div class="quiz" data-quiz="intermediate"></div>
-          </section>
-        </div>
-
-        <div class="level-panel hidden" data-level="advanced">
-          <section class="section">
-            <div class="notice" data-tone="accent">
-              <span>
-                这一级讲<strong>怎么衡量</strong>：夏普、索提诺、卡玛、Beta、Alpha，
-                以及压力测试、情景分析与模拟——每个指标都有它的软肋。
-              </span>
-            </div>
-          </section>
-          <section class="section">
-            <div class="progress-line" data-progress="advanced"></div>
-            <div class="course-grid" data-lessons="advanced"></div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">配比实验室</h2>
-              <p class="section-desc">
-                四个滑块，全部用真实历史（沪深300全收益 / 上证国债 / 合成人民币金价 / 货币基金指数，
-                2005 年起）。你会很快发现：<strong>想要更低回撤，就得交出收益</strong>。
-              </p>
-              <div id="lab-alloc"></div>
-            </div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">蒙特卡洛实验室</h2>
-              <p class="section-desc">
-                把永久组合的历史月度收益当袋子，有放回地抽 20 年、重复 1000 次。
-                它回答的不是「未来会怎样」，而是<strong>「如果未来只是历史的随机抽样，最差能有多差」</strong>。
-              </p>
-              <div id="lab-montecarlo"></div>
-            </div>
-          </section>
-          <section class="section">
-            <h2 class="section-title">本级综合测验</h2>
-            <div class="quiz" data-quiz="advanced"></div>
-          </section>
-        </div>
-
-        <div class="level-panel hidden" data-level="strategy">
-          <section class="section">
-            <div class="notice" data-tone="accent">
-              <span>
-                这一级讲<strong>组合是怎么被设计出来的</strong>：为什么是四等分、为什么要在最难受的时候不动手、
-                以及这些经典配置各自在什么情况下会失灵。配置解决的是「你能不能拿住」，不是「你能不能赚更多」。
-              </span>
-            </div>
-          </section>
-          <section class="section">
-            <div class="progress-line" data-progress="strategy"></div>
-            <div class="course-grid" data-lessons="strategy"></div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">2008 体验馆</h2>
-              <p class="section-desc">
-                这一节没有标准答案。先看曲线，做一个真实决定，再看后果——
-                这是理解「配置为什么会存在」最快的方式。
-              </p>
-              <div id="lab-experience"></div>
-            </div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">决策旅程 · 2006 → 2026</h2>
-              <p class="section-desc">
-                四个关键时点，每次做一次真实决定，最后按真实数据算你的结局。
-                它不会告诉你「应该怎么选」，只会让你看到<strong>自己的判断值多少钱</strong>。
-              </p>
-              <div id="lab-journey"></div>
-            </div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <h2 class="section-title">下一步</h2>
-              <p class="section-desc">
-                理论到这里就够了，剩下的要靠手：
-                <a href="portfolio.html#strategy">组合分析 → 策略组合</a> 可以把永久组合、60/40、满仓股票
-                放在同一段时间里回测；<a href="planner.html">配置求解器</a> 会按你的回撤预算反过来算配比；
-                <a href="portfolio.html">相关性页签</a> 还有一张「黄金真的是避险资产吗」的数据检验。
-              </p>
-            </div>
-          </section>
-        </div>
-
-        <div class="level-panel hidden" data-level="case">
-          <section class="section">
-            <div class="notice" data-tone="accent">
-              <span>
-                这一级没有标准答案，也<b>不打分</b>。三个场景、每个 3 步，每一步你只看得到「当时能看到的信息」——
-                做完决定才揭晓后来发生了什么。结束时给你的是<b>决策风格画像</b>，不是对错。
-              </span>
-            </div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <div id="lab-decision"></div>
-            </div>
-          </section>
-        </div>
-
-        <div class="level-panel hidden" data-level="practice">
-          <section class="section">
-            <div class="notice" data-tone="accent">
-              <span>
-                题库共 <strong>67 道</strong>选择题（小白 15 / 进阶 16 / 高级 12 / 策略 12 / 方法论 12），
-                每组的题目与选项顺序都会打乱。答完立刻给解析，结束时列出错题——<strong>错题比新题有用</strong>。
-              </span>
-            </div>
-          </section>
-          <section class="section">
-            <div class="card">
-              <div id="lab-practice"></div>
-            </div>
-          </section>
-        </div>
-
 
         <section class="section">
           <div class="notice" data-tone="info">
             <span>
-              课程里的所有指标都可以在
-              <a href="analysis.html">资产分析</a> 与
-              <a href="portfolio.html">组合分析</a> 里用真实数据验证一遍。
-              看到公式就去算一次，比读十遍定义有用。
+              不想按顺序？<a href="#practice" id="link-practice">直接刷题</a>，
+              或去 <a href="#case" id="link-case">决策训练</a> 做三步处境题。
+              闯关进度存在本地，随时可以接着来。
             </span>
+          </div>
+        </section>
+
+        <section class="section" id="practice-section" hidden>
+          <div class="card">
+            <div class="chart-head">
+              <h3>刷题（独立题库 67 道）</h3>
+              <button class="quest-btn" id="back-to-quest">← 回到闯关</button>
+            </div>
+            <div id="lab-practice"></div>
+          </div>
+        </section>
+
+        <section class="section" id="case-section" hidden>
+          <div class="card">
+            <div class="chart-head">
+              <h3>决策训练（3 个多步场景）</h3>
+              <button class="quest-btn" id="back-to-quest-2">← 回到闯关</button>
+            </div>
+            <div id="lab-decision"></div>
           </div>
         </section>
       </main>

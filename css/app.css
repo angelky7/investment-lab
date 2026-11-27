@@ -2067,6 +2067,437 @@ details.lesson-card summary::-webkit-details-marker {
   }
 }
 
+
+/* -------------------------------- 闯关系统 -------------------------------- */
+
+.quest {
+  display: grid;
+  gap: 1rem;
+}
+
+.quest-top {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.quest-progress-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.78rem;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.quest-counter strong {
+  font-size: 1.05rem;
+  color: rgb(var(--mdui-color-primary));
+}
+
+.quest-percent {
+  font-variant-numeric: tabular-nums;
+}
+
+.quest-bar {
+  height: 0.35rem;
+  border-radius: 100px;
+  background: rgb(var(--mdui-color-surface-container-high));
+  overflow: hidden;
+}
+
+.quest-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, rgb(var(--mdui-color-primary)), rgb(var(--mdui-color-tertiary)));
+  transition: width 350ms ease;
+}
+
+.quest-chapters {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.quest-chapter-pill {
+  padding: 0.18rem 0.6rem;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  background: rgb(var(--mdui-color-surface-container-high));
+  color: rgb(var(--mdui-color-on-surface-variant));
+  white-space: nowrap;
+}
+
+.quest-chapter-pill.done {
+  background: rgba(var(--mdui-color-primary), 0.18);
+  color: rgb(var(--mdui-color-primary));
+}
+
+.quest-chapter-pill.current {
+  outline: 1.5px solid rgb(var(--mdui-color-primary));
+  outline-offset: 1px;
+  color: rgb(var(--mdui-color-primary));
+}
+
+.quest-chapter-pill.locked {
+  opacity: 0.5;
+}
+
+.quest-chapter-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 0.68rem;
+  background: rgb(var(--mdui-color-surface-container-high));
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.quest-chapter-dot.done {
+  background: rgba(var(--mdui-color-primary), 0.18);
+  color: rgb(var(--mdui-color-primary));
+}
+
+.quest-chapter-dot.active {
+  background: rgb(var(--mdui-color-surface-container));
+  color: rgb(var(--mdui-color-on-surface));
+}
+
+.quest-chapter-dot.current {
+  outline: 2px solid rgb(var(--mdui-color-primary));
+  outline-offset: 2px;
+}
+
+.quest-card {
+  padding: 1.1rem 1.15rem;
+  border-radius: var(--mdui-shape-corner-large);
+  background: rgb(var(--mdui-color-surface-container-low));
+  display: grid;
+  gap: 0.7rem;
+}
+
+.quest-chapter-label {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(var(--mdui-color-primary));
+}
+
+.quest-title {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+.quest-lead {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.85;
+  color: rgb(var(--mdui-color-on-surface));
+}
+
+.quest-detail {
+  border-radius: var(--mdui-shape-corner-small);
+  background: rgb(var(--mdui-color-surface-container));
+  padding: 0.6rem 0.8rem;
+}
+
+.quest-detail summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: rgb(var(--mdui-color-primary));
+  list-style: none;
+}
+
+.quest-detail summary::-webkit-details-marker {
+  display: none;
+}
+
+.quest-detail summary::before {
+  content: "▸ ";
+}
+
+.quest-detail[open] summary::before {
+  content: "▾ ";
+}
+
+.quest-detail p {
+  margin: 0.6rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.95;
+}
+
+.quest-myth {
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--mdui-shape-corner-extra-small);
+  background: rgba(198, 40, 40, 0.07);
+  border-left: 3px solid var(--il-up);
+}
+
+.quest-example {
+  font-size: 0.8rem !important;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.quest-check {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.3rem;
+  border-top: 1px dashed rgb(var(--mdui-color-outline-variant));
+}
+
+.quest-check-label {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.quest-q {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+.quest-opts {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.quest-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  text-align: left;
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  border-radius: var(--mdui-shape-corner-small);
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  background: rgb(var(--mdui-color-surface-container));
+  color: inherit;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, transform 120ms;
+}
+
+.quest-opt:hover:not(:disabled) {
+  background: rgb(var(--mdui-color-surface-container-high));
+  transform: translateX(2px);
+}
+
+.quest-opt.right {
+  border-color: rgb(var(--mdui-color-primary));
+  background: rgba(var(--mdui-color-primary), 0.14);
+}
+
+.quest-opt.wrong {
+  border-color: var(--il-up);
+  background: rgba(198, 40, 40, 0.1);
+}
+
+.quest-opt:disabled {
+  cursor: default;
+}
+
+.quest-opt:disabled:not(.right):not(.wrong) {
+  opacity: 0.45;
+}
+
+.quest-key {
+  flex: 0 0 auto;
+  width: 1.35rem;
+  height: 1.35rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(var(--mdui-color-surface-container-highest));
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.quest-feedback {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--mdui-shape-corner-small);
+  animation: quest-in 220ms ease;
+}
+
+@keyframes quest-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.quest-feedback.ok {
+  background: rgba(var(--mdui-color-primary), 0.1);
+  border-left: 3px solid rgb(var(--mdui-color-primary));
+}
+
+.quest-feedback.bad {
+  background: rgba(198, 40, 40, 0.07);
+  border-left: 3px solid var(--il-up);
+}
+
+.quest-feedback p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.85;
+}
+
+.quest-feedback-title {
+  font-weight: 700;
+  font-size: 0.92rem !important;
+}
+
+.quest-hint {
+  padding-top: 0.35rem;
+  border-top: 1px dashed rgba(var(--mdui-color-outline-variant), 0.6);
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.quest-btn {
+  justify-self: start;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-size: 0.85rem;
+  border-radius: 100px;
+  border: 1px solid rgb(var(--mdui-color-outline-variant));
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.quest-btn:hover {
+  background: rgb(var(--mdui-color-surface-container-high));
+}
+
+.quest-btn.primary {
+  background: rgb(var(--mdui-color-primary));
+  color: rgb(var(--mdui-color-on-primary));
+  border-color: transparent;
+}
+
+.quest-btn.primary:hover {
+  filter: brightness(1.08);
+}
+
+.quest-finish {
+  display: grid;
+  gap: 0.7rem;
+  padding: 2rem 1.2rem;
+  text-align: center;
+  border-radius: var(--mdui-shape-corner-large);
+  background: rgb(var(--mdui-color-surface-container-low));
+}
+
+.quest-finish-badge {
+  justify-self: center;
+  margin: 0;
+  padding: 0.2rem 0.8rem;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  background: rgba(var(--mdui-color-primary), 0.18);
+  color: rgb(var(--mdui-color-primary));
+}
+
+.quest-finish h3 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.quest-finish-text {
+  margin: 0;
+  max-width: 34rem;
+  justify-self: center;
+  font-size: 0.9rem;
+  line-height: 1.9;
+  color: rgb(var(--mdui-color-on-surface-variant));
+}
+
+.quest-finish-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.quest-map {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.quest-map-chapter {
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--mdui-shape-corner-small);
+  background: rgb(var(--mdui-color-surface-container-low));
+}
+
+.quest-map-chapter.locked {
+  opacity: 0.55;
+}
+
+.quest-map-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.quest-map-lessons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.quest-map-item {
+  padding: 0.2rem 0.6rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  background: rgb(var(--mdui-color-surface-container-high));
+}
+
+.quest-map-item.done {
+  background: rgba(var(--mdui-color-primary), 0.16);
+  color: rgb(var(--mdui-color-primary));
+}
+
+.quest-map-item.current {
+  outline: 1.5px solid rgb(var(--mdui-color-primary));
+}
+
+.quest-map-item.locked {
+  opacity: 0.5;
+}
+
+@media (max-width: 599px) {
+  .quest-card {
+    padding: 0.9rem 0.95rem;
+  }
+  .quest-title {
+    font-size: 1.15rem;
+  }
+  .quest-lead {
+    font-size: 0.9rem;
+  }
+  .quest-chapter-dot {
+    width: 1.3rem;
+    height: 1.3rem;
+    font-size: 0.62rem;
+  }
+}
+
 /* ------------------------------ 工具类 ------------------------------ */
 
 .mono {

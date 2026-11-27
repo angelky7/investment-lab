@@ -24,15 +24,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # 每个页面的结构契约：{ 文件: { 必需的选择器描述 } }
 CONTRACTS = {
+    # learn.html 已改为闯关结构：不再是「标签 → 面板」，而是单页三模式
     "learn.html": {
-        "levels": ["beginner", "intermediate", "advanced", "strategy", "case", "practice"],
-        "labs": [
-            "lab-compound", "lab-guess", "lab-rank",
-            "lab-diversify", "lab-builder",
-            "lab-alloc", "lab-montecarlo",
-            "lab-experience", "lab-journey",
-            "lab-decision", "lab-practice",
-        ],
+        "ids": ["quest-host", "quest-section", "practice-section", "case-section", "lab-practice", "lab-decision"],
     },
     "analysis.html": {"ids": ["single-metrics", "single-charts", "single-basis"]},
     "portfolio.html": {"ids": ["strategy-result"]},
