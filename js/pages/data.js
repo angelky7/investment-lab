@@ -255,6 +255,176 @@ function renderTable(assets, quality) {
 }
 
 
+
+/* ---------------------- 跨 757 年的物价序列（1264–2020） ---------------------- */
+
+/**
+ * 这条序列是拼出来的，所以页面必须**把拼接方式写出来**：
+ * 1264–1830 来自 Allen (2001) 伦敦 CPI，1870–2020 来自 JST，
+ * 中间 1831–1869 是几何插值（不是原始观测）。
+ *
+ * 不写清楚这三段，读者会以为 1831–1869 也是实测数据——那就是编数据。
+ */
+function renderUkPriceIndex(host, payload) {
+  const uk = payload?.uk_price_index;
+  if (!host || !uk?.years?.length) return false;
+
+  const years = uk.years;
+  const values = uk.values;
+  const interpolated = uk.interpolated;
+  const first = years[0];
+  const last = years[years.length - 1];
+
+  const at = (year) => {
+    const index = years.indexOf(year);
+    return index < 0 ? null : values[index];
+  };
+
+  // 关键节点
+  const nodes = [
+    [1264, "序列起点"],
+    [1348, "黑死病"],
+    [1500, "价格革命前"],
+    [1600, "价格革命后"],
+    [1700, "18 世纪初"],
+    [1800, "工业革命中"],
+    [1870, "JST 起点"],
+    [1914, "一战前"],
+    [2020, "现在"],
+  ].filter(([y]) => years.includes(y));
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="chart-head">
+      <h3>英国物价：跨 ${last - first} 年（${first}–${last}）</h3>
+      <span class="hint">${years.length} 个年度值 · 拼接自两个学术数据源</span>
+    </div>
+    <p class="section-desc">
+      这是本站能拿到的<strong>最长连续序列</strong>：从 1264 年（南宋末年、英格兰爱德华一世时期）
+      到 2020 年，共 <strong>${last - first} 年</strong>。
+      它比上证指数的 35 年长 20 倍，也是讨论「长波 / 周期」唯一够用的尺度。
+    </p>
+
+    <div class="chart tall" id="chart-uk-price" style="margin-top:0.8rem"></div>
+
+    <p class="caption">
+      <strong>怎么读：</strong>纵轴是物价指数（1264 = 1）。
+      注意 1264–1500 的 236 年里物价几乎没有净变化（年均 −0.09%），
+      而 1500–1600 的 100 年里涨了 <strong>2.34 倍</strong>（年均 +0.85%）——
+      这就是史学界说的「价格革命」：美洲白银大量流入欧洲。
+      之后 1700–1800 又涨 2.54 倍。
+      <strong>同一个经济体，在不同世纪里的「正常通胀率」可以差十倍。</strong>
+    </p>
+
+    <h4 class="section-title" style="font-size:1rem;margin-top:1.1rem">这条序列是怎么拼出来的</h4>
+    ${tableHtml({
+      columns: [
+        { label: "区间", align: "left" },
+        { label: "来源" },
+        { label: "性质" },
+      ],
+      rows: [
+        {
+          cells: [
+            { html: `<strong>1264 – 1830</strong>` },
+            { html: "Allen (2001) 伦敦消费者物价指数" },
+            { html: "原始观测", cls: "small" },
+          ],
+        },
+        {
+          cells: [
+            { html: `<strong>1831 – 1869</strong>` },
+            { html: "两端几何插值" },
+            { html: '<span class="muted">插值，非原始观测</span>', cls: "small" },
+          ],
+        },
+        {
+          cells: [
+            { html: `<strong>1870 – 2020</strong>` },
+            { html: "JST Macrohistory R6" },
+            { html: "原始观测", cls: "small" },
+          ],
+        },
+      ],
+      caption:
+        `两段用比值 ${uk.splice_scale} 缩放到同一基准（接近 1，说明基期本就相近）。` +
+        "插值段在图上用不同颜色标出——<strong>不标注就等于把插值冒充观测</strong>。",
+    })}
+
+    <h4 class="section-title" style="font-size:1rem;margin-top:1.1rem">关键节点</h4>
+    ${tableHtml({
+      columns: [
+        { label: "年份", align: "left" },
+        { label: "事件" },
+        { label: "物价指数" },
+        { label: "相对 1264" },
+      ],
+      rows: nodes.map(([year, label]) => ({
+        cells: [
+          { html: `<strong>${year}</strong>` },
+          { html: label, cls: "small muted" },
+          { html: at(year)?.toFixed(3) ?? "—" },
+          { html: `${(at(year) / at(first)).toFixed(1)} 倍` },
+        ],
+      })),
+      caption:
+        "1348 年黑死病之后人口锐减，工资上涨、物价相对下跌——这在数据里能直接看到。" +
+        "但注意：<strong>单点数字的对比不等于趋势</strong>，中世纪数据的年份间波动极大。",
+    })}
+
+    <div class="notice" data-tone="info" style="margin-top:0.9rem">
+      <span>
+        <strong>它证明了什么、没证明什么：</strong>
+        它证明了「物价水平在长周期上会经历几十年的单向阶段」——
+        1264–1500 平、1500–1600 暴涨、1600–1700 平、1700–1800 又涨。
+        但它<strong>没有</strong>证明这些阶段有固定周期：段长分别是 236 / 100 / 100 / 100 年，
+        各不相同，也找不到「每 50–60 年一轮」的规律。
+        <strong>看得见波动 ≠ 存在可预测的周期。</strong>
+      </span>
+    </div>
+
+    <p class="caption">
+      来源：${payload.source.allen.citation} · ${payload.source.jst.citation}
+    </p>`;
+
+  host.appendChild(card);
+
+  // 图上把插值段标出来：整条线 + 一条虚线覆盖插值区间
+  const labels = years.map((y) => String(y));
+  const series = [
+    { name: "英国物价指数", values, color: "var(--il-chart-1)" },
+  ];
+
+  if (interpolated) {
+    const [gapStart, gapEnd] = interpolated;
+    // 插值段单独一条线（前端用不同颜色，视觉上区分）
+    const gapValues = years.map((y) =>
+      y >= gapStart && y <= gapEnd ? values[years.indexOf(y)] : null
+    );
+    if (gapValues.some((v) => v !== null)) {
+      series.push({
+        name: `插值段（${gapStart}–${gapEnd}）`,
+        values: gapValues,
+        color: "var(--il-chart-3)",
+        fill: false,
+        width: 2.2,
+      });
+    }
+  }
+
+  lineChart(document.getElementById("chart-uk-price"), {
+    labels,
+    series,
+    formatter: (v) => `${v.toFixed(0)}`,
+    tipFormatter: (v) => v.toFixed(3),
+    tipDateFormatter: (d) => `${d} 年`,
+    ariaLabel: `英国物价指数 ${first} 至 ${last}`,
+  });
+
+  return true;
+}
+
 /* --------------------------- 长历史宏观（JST） --------------------------- */
 
 const LONGRUN_COUNTRY_LABEL = { USA: "美国", GBR: "英国", DEU: "德国", JPN: "日本", FRA: "法国" };
@@ -275,8 +445,9 @@ async function loadLongrun() {
  * 为什么它单独一块而不是混进资产表：它只有 151 个年度点，
  * 和日频资产的「年化收益 / 波动率」不是一回事，放在资产表里会误导。
  */
-function renderLongrun(host, payload) {
+function renderLongrun(host, payload, options = {}) {
   if (!host) return;
+  const { skipIfShown = false } = options;
   if (!payload) {
     host.innerHTML = notice(
       "没有找到长历史宏观数据（data/longrun.json）。运行 `py scripts/import_jst.py` 生成。",
@@ -288,6 +459,7 @@ function renderLongrun(host, payload) {
   const usa = payload.countries?.USA;
   const gbr = payload.countries?.GBR;
   if (!usa) {
+    if (skipIfShown) return;
     host.innerHTML = notice("长历史数据里缺少美国序列。", "warn");
     return;
   }
@@ -306,8 +478,9 @@ function renderLongrun(host, payload) {
   // 年度 → 日期字符串（用于图表标签）
   const toLabels = (series) => series.years.map((y) => String(y));
 
-  host.innerHTML = `
-    <div class="card">
+  const wrapper = document.createElement("div");
+  wrapper.className = "card";
+  wrapper.innerHTML = `
       <div class="chart-head">
         <h3>长历史宏观序列</h3>
         <span class="hint">${cov.from}–${cov.to} 年度 · ${Object.keys(payload.countries).length} 国 · ${total.toLocaleString("zh-CN")} 个观测值</span>
@@ -411,10 +584,10 @@ function renderLongrun(host, payload) {
       </div>
 
       <p class="caption">
-        来源：${payload.source.name} · <a href="${payload.source.page}" target="_blank" rel="noopener">数据主页</a> ·
-        引用：${payload.source.citation}
-      </p>
-    </div>`;
+        来源：${payload.source.jst?.citation || payload.source.citation} ·
+        <a href="${payload.source.jst?.page || payload.source.page}" target="_blank" rel="noopener">数据主页</a>
+      </p>`;
+  host.appendChild(wrapper);
 
   // 物价（对数感的线性展示即可——151 个点不至于看不清）
   lineChart(document.getElementById("chart-longrun-cpi"), {
@@ -477,7 +650,9 @@ async function main() {
     const longrunHost = document.getElementById("longrun-section");
     if (longrunHost) {
       const payload = await loadLongrun();
-      renderLongrun(longrunHost, payload);
+      // 优先展示跨 757 年的英国物价；没有就退回 JST 的 151 年展示
+      const shown = renderUkPriceIndex(longrunHost, payload);
+      renderLongrun(longrunHost, payload, { skipIfShown: shown });
     }
 
     renderGaps(quality);

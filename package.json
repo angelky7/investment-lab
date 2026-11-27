@@ -1,6 +1,6 @@
 {
   "name": "investment-lab",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "private": true,
   "type": "module",
   "description": "开源投资实验室：用 20 年真实行情讲解收益、风险、分散与再平衡，零构建、零框架依赖，界面基于 MDUI 2。",
@@ -39,7 +39,8 @@
     "lint": "eslint js tests",
     "check:structure": "py scripts/check_structure.py",
     "data:jst": "py scripts/import_jst.py",
-    "data:jst:verify": "py scripts/import_jst.py --verify"
+    "data:jst:verify": "py scripts/import_jst.py --verify",
+    "data:longrun": "py scripts/import_longrun.py"
   },
   "devDependencies": {
     "playwright-core": "^1.49.1",

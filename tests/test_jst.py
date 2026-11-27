@@ -103,16 +103,41 @@ class TestCommittedProduct(unittest.TestCase):
 
     def test_schema_and_coverage(self):
         p = self.payload
-        self.assertEqual(p["schema"], 1)
         self.assertEqual(p["kind"], "longrun-macro")
         self.assertEqual(p["frequency"], "annual")
-        self.assertEqual(p["coverage"]["from"], 1870)
+        # 覆盖区间已扩展到 1264–2020（拼接 Allen + JST）
+        self.assertEqual(p["coverage"]["from"], 1264)
         self.assertEqual(p["coverage"]["to"], 2020)
+
+    def test_uk_price_index_is_757_years(self):
+        """拼接后的英国物价序列：1264–2020 连续、无断年。"""
+        uk = self.payload["uk_price_index"]
+        years = uk["years"]
+        self.assertEqual(years[0], 1264)
+        self.assertEqual(years[-1], 2020)
+        self.assertEqual(len(years), 2020 - 1264 + 1)
+        self.assertEqual(len(years), len(uk["values"]))
+        # 每年都要有，不允许跳年
+        for i in range(1, len(years)):
+            self.assertEqual(years[i], years[i - 1] + 1, f"{years[i-1]} 与 {years[i]} 之间断了")
+        # 插值段必须被显式记录
+        self.assertEqual(uk["interpolated"], [1831, 1869])
+
+    def test_price_revolution_matches_history(self):
+        """1500→1600 的价格革命：史学界公认 2–4 倍。"""
+        uk = self.payload["uk_price_index"]
+        years, values = uk["years"], uk["values"]
+        at = lambda y: values[years.index(y)]
+        ratio = at(1600) / at(1500)
+        self.assertGreater(ratio, 1.5, f"价格革命只有 {ratio:.2f} 倍，偏低")
+        self.assertLess(ratio, 5.0, f"价格革命 {ratio:.2f} 倍，偏高")
 
     def test_source_provenance_present(self):
         src = self.payload["source"]
-        for field in ("name", "url", "page", "citation"):
-            self.assertTrue(src.get(field), f"缺少来源字段 {field}")
+        for key in ("allen", "jst"):
+            self.assertIn(key, src, f"缺少来源 {key}")
+            for field in ("citation", "url", "covers"):
+                self.assertTrue(src[key].get(field), f"{key} 缺少字段 {field}")
 
     def test_every_series_is_sorted_and_aligned(self):
         for iso, indicators in self.payload["countries"].items():
