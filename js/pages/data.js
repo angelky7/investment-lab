@@ -13,6 +13,7 @@ import { loadIndex, loadMeta } from "../core/store.js";
 import { metricsHtml, notice, tableHtml } from "../ui/cards.js";
 import { count, dateLabel, num, pct } from "../core/format.js";
 import { lineChart } from "../core/charts.js";
+import { fitWave, fitTrendOnly, KONDRATIEFF_PHASES } from "../core/wave.js";
 
 const MARKET_LABEL = { CN: "A 股", HK: "港股", US: "美股" };
 const TYPE_LABEL = { index: "指数", etf: "ETF", stock: "股票", fund: "基金", fx: "汇率" };
@@ -317,6 +318,87 @@ function renderUkPriceIndex(host, payload) {
       <strong>同一个经济体，在不同世纪里的「正常通胀率」可以差十倍。</strong>
     </p>
 
+    <h4 class="section-title" style="font-size:1rem;margin-top:1.4rem">叠加一条长波（示意）</h4>
+    <p class="section-desc" style="margin-top:0.2rem">
+      下面这张图把「趋势」和「波浪」分开画：<strong>细线是趋势</strong>（对数线性拟合），
+      <strong>粗波浪线是在趋势上叠了一个正弦</strong>。它只回答一个问题：
+      <em>当前物价相对长期趋势，处在偏高的位置还是偏低的位置</em>。
+    </p>
+
+    <div class="row" style="gap:.5rem;flex-wrap:wrap;align-items:center;margin:0.5rem 0">
+      <span class="small muted">波浪周期</span>
+      <mdui-segmented-button-group id="wave-period" value="55" selects="single">
+        <mdui-segmented-button value="45">45 年</mdui-segmented-button>
+        <mdui-segmented-button value="55">55 年</mdui-segmented-button>
+        <mdui-segmented-button value="70">70 年</mdui-segmented-button>
+        <mdui-segmented-button value="100">100 年</mdui-segmented-button>
+        <mdui-segmented-button value="175">175 年</mdui-segmented-button>
+      </mdui-segmented-button-group>
+      <span class="small muted" id="wave-stat"></span>
+    </div>
+
+    <div class="chart tall" id="chart-uk-wave"></div>
+    <p class="caption" id="wave-caption"></p>
+
+    <p class="section-desc" style="margin-top:1rem">
+      上面那张图里，实际物价在最后 100 年涨得太猛，把波浪压成了一条直线——
+      这正是<strong>线性尺度</strong>的问题。下面换成「相对趋势的偏离」（对数差），
+      波浪的形状才看得清：<strong>高于 0 = 物价高于长期趋势</strong>。
+    </p>
+    <div class="chart" id="chart-uk-deviation" style="height:18rem"></div>
+    <p class="caption" id="dev-caption"></p>
+
+    <div class="notice" data-tone="warn" style="margin-top:0.7rem">
+      <span id="wave-honest"></span>
+    </div>
+
+    <h4 class="section-title" style="font-size:1rem;margin-top:1.4rem">公认的康波四波，对上数据了吗</h4>
+    <p class="section-desc" style="margin-top:0.2rem">
+      史学界常把 1789 年以来的价格划成四波、每波分上行与下行。既然手上有 756 年数据，
+      就直接把每一段的实际涨跌算出来——<strong>如果康波在价格上成立，
+      上行段应普遍为正、下行段应普遍为负</strong>。
+    </p>
+    ${tableHtml({
+      columns: [
+        { label: "波次", align: "left" },
+        { label: "上行段" },
+        { label: "实际涨跌" },
+        { label: "下行段" },
+        { label: "实际涨跌" },
+      ],
+      rows: KONDRATIEFF_PHASES.map((p) => {
+        const upA = at(p.up[0]);
+        const upB = at(p.up[1]);
+        const downA = at(p.down[0]);
+        const downB = at(p.down[1]);
+        const upChg = upA && upB ? upB / upA - 1 : null;
+        const downChg = downA && downB ? downB / downA - 1 : null;
+        const cls = (v) => (v === null ? "" : v > 0 ? "pos" : "neg");
+        return {
+          cells: [
+            { html: `<strong>第 ${p.wave} 波</strong>` },
+            { html: `${p.up[0]}–${p.up[1]}`, cls: "small muted" },
+            { html: upChg === null ? "—" : pct(upChg), cls: cls(upChg) },
+            { html: `${p.down[0]}–${p.down[1]}`, cls: "small muted" },
+            { html: downChg === null ? "—" : pct(downChg), cls: cls(downChg) },
+          ],
+        };
+      }),
+      caption:
+        "「上行段为正、下行段为负」本该是康波在价格上的基本预测。实际：四段下行里只有两段下跌，" +
+        "第四波的下行段（1970–1990）物价反而涨了近五倍——那是石油危机与大通胀，不是萧条。",
+    })}
+
+    <div class="notice" data-tone="warn" style="margin-top:0.7rem">
+      <span>
+        <strong>这说明了什么：</strong>
+        康波四波是<strong>事后划分</strong>的——把 1929、1973、2008 放进「哪个阶段」，
+        不同作者给出的答案并不一致。当一段「下行期」里物价涨了 477%，
+        要么是划分错了，要么是这个框架不适用于价格。
+        <strong>无论哪种，它都不能用来判断「现在处在哪一阶段」。</strong>
+      </span>
+    </div>
+
     <h4 class="section-title" style="font-size:1rem;margin-top:1.1rem">这条序列是怎么拼出来的</h4>
     ${tableHtml({
       columns: [
@@ -422,7 +504,127 @@ function renderUkPriceIndex(host, payload) {
     ariaLabel: `英国物价指数 ${first} 至 ${last}`,
   });
 
+  mountWaveChart(years, values);
   return true;
+}
+
+/**
+ * 长波叠加图。
+ *
+ * 刻意做成「趋势 + 波浪」两条线分开画，而不是只画一条波浪：
+ * 只画波浪会让人以为那是预测值；分开画才看得清「波浪只是相对趋势的偏离」。
+ */
+function mountWaveChart(years, values) {
+  const chartHost = document.getElementById("chart-uk-wave");
+  const statHost = document.getElementById("wave-stat");
+  const captionHost = document.getElementById("wave-caption");
+  const honestHost = document.getElementById("wave-honest");
+  const group = document.getElementById("wave-period");
+  if (!chartHost) return;
+
+  const trendOnly = fitTrendOnly(years, values);
+
+  const draw = (period) => {
+    const fit = fitWave(years, values, period);
+    if (!fit) return;
+
+    const labels = years.map((y) => String(y));
+    lineChart(chartHost, {
+      labels,
+      series: [
+        {
+          name: "实际物价",
+          values,
+          color: "var(--il-chart-1)",
+          fill: false,
+          width: 1.2,
+        },
+        {
+          name: "趋势（对数线性）",
+          values: fit.trend,
+          color: "var(--il-chart-4)",
+          fill: false,
+          width: 1.6,
+        },
+        {
+          name: `${period} 年长波`,
+          values: fit.wave,
+          color: "var(--il-chart-3)",
+          fill: false,
+          width: 2.6,
+        },
+      ],
+      formatter: (v) => `${v.toFixed(0)}`,
+      tipFormatter: (v) => v.toFixed(2),
+      tipDateFormatter: (d) => `${d} 年`,
+      ariaLabel: `英国物价叠加 ${period} 年长波`,
+    });
+
+    // 当前位置：相对趋势偏高还是偏低、在往上还是往下
+    const above = fit.position >= 0;
+    const rising = fit.slope > 0;
+    const positionText = above ? "高于趋势" : "低于趋势";
+    const directionText = rising ? "上行段" : "下行段";
+    const gap = Math.exp(fit.amplitude * fit.position) - 1;
+
+    if (statHost) {
+      statHost.innerHTML = `当前位置：<strong>${positionText} ${Math.abs(gap * 100).toFixed(0)}%</strong> · <strong>${directionText}</strong>`;
+    }
+
+    if (captionHost) {
+      captionHost.innerHTML =
+        `粗线是 ${period} 年周期的正弦拟合，细线是对数线性趋势，最细那条是实际值。` +
+        `波浪的振幅约 <strong>±${((Math.exp(fit.amplitude) - 1) * 100).toFixed(0)}%</strong>` +
+        `（相对趋势）。` +
+        (above
+          ? `当前物价<strong>高于</strong>长期趋势约 ${Math.abs(gap * 100).toFixed(0)}%，按这条波浪看属于<strong>偏高位置</strong>。`
+          : `当前物价<strong>低于</strong>长期趋势约 ${Math.abs(gap * 100).toFixed(0)}%，按这条波浪看属于<strong>偏低位置</strong>。`);
+    }
+
+    // 偏离图：log(实际) - log(趋势)，波浪就看得清了
+    const devHost = document.getElementById("chart-uk-deviation");
+    if (devHost) {
+      const devActual = values.map((v, i) => Math.log(v) - Math.log(fit.trend[i]));
+      const devWave = fit.wave.map((v, i) => Math.log(v) - Math.log(fit.trend[i]));
+      lineChart(devHost, {
+        labels,
+        series: [
+          { name: "实际偏离", values: devActual, color: "var(--il-chart-1)", fill: false, width: 1.2 },
+          { name: `${period} 年长波`, values: devWave, color: "var(--il-chart-3)", fill: false, width: 2.6 },
+        ],
+        baselines: [{ value: 0, label: "趋势" }],
+        formatter: (v) => `${(Math.exp(v) - 1 >= 0 ? "+" : "")}${((Math.exp(v) - 1) * 100).toFixed(0)}%`,
+        tipFormatter: (v) => `${(Math.exp(v) - 1 >= 0 ? "+" : "")}${((Math.exp(v) - 1) * 100).toFixed(1)}%`,
+        tipDateFormatter: (d) => `${d} 年`,
+        ariaLabel: `英国物价相对趋势的偏离，叠加 ${period} 年长波`,
+      });
+
+      const devCaption = document.getElementById("dev-caption");
+      if (devCaption) {
+        devCaption.innerHTML =
+          `0 线是长期趋势。曲线在 0 以上表示物价高于趋势，在 0 以下表示低于趋势。` +
+          `粗波浪线的峰谷就是「什么时候上、什么时候下」——` +
+          `但它同时显示：实际偏离的<strong>毛刺很大</strong>，波浪只抓到了最粗的那层形状。`;
+      }
+    }
+
+    if (honestHost) {
+      const gain = fit.r2 - trendOnly.r2;
+      honestHost.innerHTML = `
+        <strong>这条波浪线有多可信？</strong>
+        纯趋势的 R² = <strong>${trendOnly.r2.toFixed(4)}</strong>，
+        加上 ${period} 年正弦后 R² = <strong>${fit.r2.toFixed(4)}</strong>，
+        <strong>只提升了 ${gain.toFixed(4)}</strong>。
+        也就是说：这条波浪在统计上几乎解释不了任何东西，
+        它的作用是<strong>视觉辅助</strong>——帮你看到「相对趋势高了还是低了」，
+        <strong>不是</strong>预测下一次拐点在哪一年。
+        换一个周期（45 / 70 / 175 年），形状和「当前位置」都会变——这本身就说明它不唯一。`;
+    }
+  };
+
+  draw(Number(group?.value) || 55);
+
+  group?.addEventListener("change", () => draw(Number(group.value)));
 }
 
 /* --------------------------- 长历史宏观（JST） --------------------------- */
