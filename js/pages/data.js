@@ -11,7 +11,8 @@
 import { initShell, showError } from "../core/shell.js";
 import { loadIndex, loadMeta } from "../core/store.js";
 import { metricsHtml, notice, tableHtml } from "../ui/cards.js";
-import { count, dateLabel, pct } from "../core/format.js";
+import { count, dateLabel, num, pct } from "../core/format.js";
+import { lineChart } from "../core/charts.js";
 
 const MARKET_LABEL = { CN: "A 股", HK: "港股", US: "美股" };
 const TYPE_LABEL = { index: "指数", etf: "ETF", stock: "股票", fund: "基金", fx: "汇率" };
@@ -253,6 +254,206 @@ function renderTable(assets, quality) {
   })}</div>`;
 }
 
+
+/* --------------------------- 长历史宏观（JST） --------------------------- */
+
+const LONGRUN_COUNTRY_LABEL = { USA: "美国", GBR: "英国", DEU: "德国", JPN: "日本", FRA: "法国" };
+
+async function loadLongrun() {
+  try {
+    const resp = await fetch(`data/longrun.json?v=${Date.now()}`, { cache: "no-cache" });
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 长历史宏观：1870–2020 的年度序列。
+ *
+ * 为什么它单独一块而不是混进资产表：它只有 151 个年度点，
+ * 和日频资产的「年化收益 / 波动率」不是一回事，放在资产表里会误导。
+ */
+function renderLongrun(host, payload) {
+  if (!host) return;
+  if (!payload) {
+    host.innerHTML = notice(
+      "没有找到长历史宏观数据（data/longrun.json）。运行 `py scripts/import_jst.py` 生成。",
+      "warn"
+    );
+    return;
+  }
+
+  const usa = payload.countries?.USA;
+  const gbr = payload.countries?.GBR;
+  if (!usa) {
+    host.innerHTML = notice("长历史数据里缺少美国序列。", "warn");
+    return;
+  }
+
+  const cov = payload.coverage || {};
+  const counts = payload.counts || {};
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  const at = (indicator, year) => {
+    const series = usa[indicator];
+    if (!series) return null;
+    const index = series.years.indexOf(year);
+    return index < 0 ? null : series.values[index];
+  };
+
+  // 年度 → 日期字符串（用于图表标签）
+  const toLabels = (series) => series.years.map((y) => String(y));
+
+  host.innerHTML = `
+    <div class="card">
+      <div class="chart-head">
+        <h3>长历史宏观序列</h3>
+        <span class="hint">${cov.from}–${cov.to} 年度 · ${Object.keys(payload.countries).length} 国 · ${total.toLocaleString("zh-CN")} 个观测值</span>
+      </div>
+      <p class="section-desc">
+        本站原有的最长序列是上证指数 1990 年起（35 年）。讨论「长波 / 周期」这个尺度不够，
+        所以接入了 <strong>JST Macrohistory Database</strong>：1870–2020 连续 151 年，
+        含物价、长期利率、政府债务 / GDP、银行危机标记、实际人均 GDP。
+        <strong>频率是年度的</strong>——它适合看长周期，不适合算日频的波动率或年化收益。
+      </p>
+
+      ${metricsHtml([
+        { label: "覆盖区间", value: `${cov.from}–${cov.to}`, sub: `${cov.to - cov.from + 1} 个年度` },
+        {
+          label: "国家",
+          value: `${Object.keys(payload.countries).length} 个`,
+          sub: Object.keys(payload.countries).map((iso) => LONGRUN_COUNTRY_LABEL[iso] || iso).join(" / "),
+        },
+        { label: "观测值", value: total.toLocaleString("zh-CN"), sub: "5 项指标合计" },
+        { label: "美国 CPI 累计", value: pct(at("cpi", 2020) / at("cpi", 1870) - 1, { signed: false, digits: 0 }), sub: "1870 → 2020" },
+      ])}
+
+      <div class="chart tall" id="chart-longrun-cpi" style="margin-top:1rem"></div>
+      <p class="caption">
+        美国物价指数（1870 = 1）。三个明显的段落：
+        1870–1913 的<strong>缓慢通缩</strong>、1913–1980 的<strong>持续通胀</strong>、
+        1980 之后又趋于平缓。这种「几十年一个方向」的形态，
+        就是「长波」讨论在价格层面的原始证据。
+      </p>
+
+      <div class="chart tall" id="chart-longrun-rate" style="margin-top:1rem"></div>
+      <p class="caption">
+        美国长期国债收益率。1929 年约 3.3%、1981 年峰值 <strong>13.91%</strong>、2020 年 0.89%。
+        利率站在 40 年尺度上也是「单向走几十年再掉头」——这比物价更直观地显示了长周期。
+      </p>
+
+      <h4 class="section-title" style="font-size:1rem;margin-top:1.2rem">用公认史实核对这份数据</h4>
+      ${tableHtml({
+        columns: [
+          { label: "事件", align: "left" },
+          { label: "区间" },
+          { label: "本数据的数值" },
+          { label: "公认史实" },
+        ],
+        rows: [
+          {
+            cells: [
+              { html: "<strong>一战通胀</strong>" },
+              { html: "1913 → 1920" },
+              { html: `${at("cpi", 1913).toFixed(2)} → ${at("cpi", 1920).toFixed(2)}（${pct(at("cpi", 1920) / at("cpi", 1913) - 1)}）` },
+              { html: "物价翻倍以上", cls: "small muted" },
+            ],
+          },
+          {
+            cells: [
+              { html: "<strong>大萧条通缩</strong>" },
+              { html: "1929 → 1933" },
+              { html: `${at("cpi", 1929).toFixed(2)} → ${at("cpi", 1933).toFixed(2)}（${pct(at("cpi", 1933) / at("cpi", 1929) - 1)}）` },
+              { html: "物价下跌约四分之一", cls: "small muted" },
+            ],
+          },
+          {
+            cells: [
+              { html: "<strong>大通胀</strong>" },
+              { html: "1973 → 1980" },
+              { html: `${at("cpi", 1973).toFixed(2)} → ${at("cpi", 1980).toFixed(2)}（${pct(at("cpi", 1980) / at("cpi", 1973) - 1)}）` },
+              { html: "油价冲击后的高通胀", cls: "small muted" },
+            ],
+          },
+          {
+            cells: [
+              { html: "<strong>沃尔克峰值</strong>" },
+              { html: "1981 长端利率" },
+              { html: `${num(at("ltrate", 1981))}%` },
+              { html: "约 13%–15%", cls: "small muted" },
+            ],
+          },
+          {
+            cells: [
+              { html: "<strong>二战债务峰值</strong>" },
+              { html: "1945 债务/GDP" },
+              { html: pct(at("debtgdp", 1945), { signed: false }) },
+              { html: "超过 100%", cls: "small muted" },
+            ],
+          },
+        ],
+        caption:
+          "这些数字全部与公认史实对得上，所以可以相信其余年份。" +
+          "同一套核对也写进了 scripts/import_jst.py 与 tests/test_jst.py——" +
+          "数据源换了或解析写错，测试会立刻失败。",
+      })}
+
+      <div class="notice" data-tone="info" style="margin-top:0.9rem">
+        <span>
+          <strong>它能说什么、不能说什么：</strong>
+          151 年足够<strong>描述</strong>「物价与利率有几十年一轮的方向性阶段」，
+          但一轮康波 50–60 年，这里只有约 2.5 轮——
+          <strong>不够做统计推断</strong>。所以本站不会用它给任何「周期定位」或拐点日期，
+          只用它把长周期画出来、并说明为什么「看得见」不等于「算得出」。
+        </span>
+      </div>
+
+      <p class="caption">
+        来源：${payload.source.name} · <a href="${payload.source.page}" target="_blank" rel="noopener">数据主页</a> ·
+        引用：${payload.source.citation}
+      </p>
+    </div>`;
+
+  // 物价（对数感的线性展示即可——151 个点不至于看不清）
+  lineChart(document.getElementById("chart-longrun-cpi"), {
+    labels: toLabels(usa.cpi),
+    series: [{ name: "美国 CPI", values: usa.cpi.values, color: "var(--il-chart-1)" }],
+    formatter: (v) => `${v.toFixed(0)}`,
+    tipFormatter: (v) => v.toFixed(2),
+    tipDateFormatter: (d) => `${d} 年`,
+    ariaLabel: "美国物价指数 1870 至 2020",
+  });
+
+  lineChart(document.getElementById("chart-longrun-rate"), {
+    labels: toLabels(usa.ltrate),
+    series: [{ name: "美国长期国债收益率", values: usa.ltrate.values, color: "var(--il-chart-3)" }],
+    formatter: (v) => `${v.toFixed(1)}%`,
+    tipFormatter: (v) => `${v.toFixed(2)}%`,
+    tipDateFormatter: (d) => `${d} 年`,
+    ariaLabel: "美国长期国债收益率 1870 至 2020",
+  });
+
+  // 英国作为对照，仅在有数据时补一条
+  if (gbr?.cpi) {
+    const host2 = document.getElementById("chart-longrun-cpi");
+    if (host2) {
+      lineChart(host2, {
+        labels: toLabels(usa.cpi),
+        series: [
+          { name: "美国 CPI", values: usa.cpi.values, color: "var(--il-chart-1)" },
+          { name: "英国 CPI", values: gbr.cpi.values, color: "var(--il-chart-3)", fill: false, width: 1.4 },
+        ],
+        formatter: (v) => `${v.toFixed(0)}`,
+        tipFormatter: (v) => v.toFixed(2),
+        tipDateFormatter: (d) => `${d} 年`,
+        ariaLabel: "美国与英国物价指数 1870 至 2020",
+      });
+    }
+  }
+}
+
 async function main() {
   initShell({ active: "data" });
   const host = document.getElementById("data-summary");
@@ -271,6 +472,14 @@ async function main() {
 
     renderSummary(meta, quality, assets);
     renderCalendars(quality);
+
+    // 长历史宏观数据（独立于资产体系，年度频率）
+    const longrunHost = document.getElementById("longrun-section");
+    if (longrunHost) {
+      const payload = await loadLongrun();
+      renderLongrun(longrunHost, payload);
+    }
+
     renderGaps(quality);
     renderGroups(assets, meta, quality);
     renderTable(assets, quality);
