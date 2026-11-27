@@ -31,6 +31,7 @@ export function mountWavePanel(host, config) {
     note = "",
     valueLabel = "价格",
     formatter = (v) => (Math.abs(v) >= 1000 ? v.toFixed(0) : v.toFixed(1)),
+    defaultLog = true,
   } = config;
 
   const [minH, maxH] = harmonicsRange;
@@ -73,6 +74,9 @@ export function mountWavePanel(host, config) {
         <button class="wave-btn" data-act="left">←</button>
         <button class="wave-btn" data-act="right">→</button>
         <button class="wave-btn" data-act="reset">全览</button>
+        <button class="wave-btn" data-act="scale" id="wscale-${uid}">
+          ${defaultLog ? "对数纵轴" : "线性纵轴"}
+        </button>
         <span class="small muted" id="wview-${uid}"></span>
       </div>
       <p class="caption" id="wcap-${uid}"></p>
@@ -93,6 +97,7 @@ export function mountWavePanel(host, config) {
   const capHost = host.querySelector(`#wcap-${uid}`);
 
   let chart = null;
+  let useLog = defaultLog;
 
   const updateView = () => {
     if (!viewHost || !chart) return;
@@ -111,7 +116,14 @@ export function mountWavePanel(host, config) {
     ];
 
     if (chart) {
-      chart.setState({ labels, series, formatter, tipFormatter: (v) => v.toFixed(2), ariaLabel: title });
+      chart.setState({
+        labels,
+        series,
+        formatter,
+        tipFormatter: (v) => v.toFixed(2),
+        ariaLabel: title,
+        logScale: useLog,
+      });
       chart.draw();
     } else {
       chart = lineChart(priceHost, {
@@ -120,6 +132,7 @@ export function mountWavePanel(host, config) {
         formatter,
         tipFormatter: (v) => v.toFixed(2),
         ariaLabel: title,
+        logScale: useLog,
       });
       if (chart) chart.onViewChange = updateView;
     }
@@ -140,7 +153,11 @@ export function mountWavePanel(host, config) {
     if (capHost) {
       capHost.innerHTML =
         `细线是实际${valueLabel}，紫线是<strong>三角趋势</strong>（只含常数 + 半周期余弦项），` +
-        `粗线是 ${harmonics} 项三角拟合。<strong>所有曲线都由 sin/cos 构成</strong>，没有线性项。`;
+        `粗线是 ${harmonics} 项三角拟合。<strong>所有曲线都由 sin/cos 构成</strong>，没有线性项。` +
+        (useLog
+          ? `<br /><strong>纵轴是对数尺度</strong>——这样 1871 年的 4.44 和今天的 4516 能同时看清；` +
+            `线性尺度下早期 100 年会被压成一条贴底的平线。`
+          : `<br /><strong>纵轴是线性尺度</strong>——适合看绝对涨跌，但早期数据会被压扁。`);
     }
 
     if (tableHost) {
@@ -221,4 +238,13 @@ export function mountWavePanel(host, config) {
     c.panBy(Math.max(1, Math.round((to - from) * 0.25)));
   });
   bind("reset", (c) => c.setView(null, null));
+
+  // 对数 / 线性纵轴切换
+  const scaleBtn = host.querySelector(`#wscale-${uid}`);
+  scaleBtn?.addEventListener("click", () => {
+    useLog = !useLog;
+    scaleBtn.textContent = useLog ? "对数纵轴" : "线性纵轴";
+    const current = slider ? Number(slider.value) : defaultHarmonics;
+    draw(current);
+  });
 }

@@ -72,6 +72,44 @@ export function niceTicks(min, max, count = 5) {
   return { min: niceMin, max: niceMax, ticks };
 }
 
+/**
+ * 对数刻度的刻度值：按 10 的幂次与 2/5 倍数生成。
+ *
+ * 例如 4.4 → 4500 的范围会给出 1, 10, 100, 1000（以及可选 2/5 中间档）。
+ * 这是对数坐标的标准做法——刻度间距在屏幕上相等，但数值按比例增长。
+ */
+export function logTicks(min, max, target = 5) {
+  if (!(min > 0) || !(max > 0) || max <= min) return { min, max, ticks: [min, max] };
+
+  const lo = Math.floor(Math.log10(min));
+  const hi = Math.ceil(Math.log10(max));
+
+  const candidates = [];
+  for (let e = lo; e <= hi; e += 1) {
+    const base = 10 ** e;
+    for (const mult of [1, 2, 5]) {
+      const v = mult * base;
+      if (v >= min * 0.999 && v <= max * 1.001) candidates.push(v);
+    }
+  }
+
+  // 候选太多时只保留 10 的幂次
+  let ticks = candidates;
+  if (ticks.length > target + 4) {
+    ticks = candidates.filter((v) => {
+      const mantissa = v / 10 ** Math.floor(Math.log10(v));
+      return Math.abs(mantissa - 1) < 1e-9;
+    });
+  }
+
+  if (ticks.length < 2) {
+    // 范围太窄，退化成线性
+    return { min, max, ticks: [min, max] };
+  }
+
+  return { min, max, ticks };
+}
+
 export function withAlpha(color, alpha) {
   const value = String(color || "").trim();
   if (value.startsWith("#")) {
@@ -319,13 +357,29 @@ class CanvasChart {
       }
     }
     if (!Number.isFinite(min) || !Number.isFinite(max)) return;
-    if (this.state.includeZero) {
+    // 对数纵轴：适合「涨了几百倍」的序列，否则早期数据会被压成一条平线
+    const useLog = Boolean(this.state.logScale) && min > 0;
+    if (!useLog && this.state.includeZero) {
       min = Math.min(min, 0);
       max = Math.max(max, 0);
     }
-    const scale = niceTicks(min, max, 5);
-    const yFor = (value) =>
-      box.bottom - ((value - scale.min) / (scale.max - scale.min)) * box.height;
+
+    let scale;
+    let yFor;
+    if (useLog) {
+      const logMin = Math.log(min);
+      const logMax = Math.log(max);
+      scale = logTicks(min, max, 5);
+      yFor = (value) => {
+        const v = Math.max(min * 0.5, value);
+        const t = (Math.log(v) - logMin) / (logMax - logMin || 1);
+        return box.bottom - t * box.height;
+      };
+    } else {
+      scale = niceTicks(min, max, 5);
+      yFor = (value) =>
+        box.bottom - ((value - scale.min) / (scale.max - scale.min)) * box.height;
+    }
 
     // 横向网格 + Y 轴刻度
     ctx.strokeStyle = gridColor;
@@ -385,8 +439,8 @@ class CanvasChart {
       ctx.fillText(yLabel, box.left, 8);
     }
 
-    // 零轴
-    if (scale.min < 0 && scale.max > 0) {
+    // 零轴（对数尺度下不存在，跳过）
+    if (!useLog && scale.min < 0 && scale.max > 0) {
       const zeroY = Math.round(yFor(0)) + 0.5;
       ctx.strokeStyle = withAlpha(axisColor, 0.35);
       ctx.beginPath();
