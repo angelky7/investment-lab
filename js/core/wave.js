@@ -136,6 +136,10 @@ export function fitContinuousWave(years, values, options = {}) {
   const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
 
   const K = segments + 1;
+  // 节点按**年份**均分（不是按索引）。
+  // 日频数据里一年有 250 个点、年频只有 1 个点，
+  // 按索引均分会让日频数据每段有几百个点，正弦几乎能完美穿过噪声（R²→1），
+  // 那是假拟合。按年份均分才能保证「每段覆盖相同的真实时间跨度」。
   const nodes = [];
   for (let k = 0; k < K; k += 1) {
     nodes.push(years[0] + ((years[n - 1] - years[0]) * k) / segments);
@@ -158,8 +162,24 @@ export function fitContinuousWave(years, values, options = {}) {
       continue;
     }
 
-    const ts = idx.map((i) => t[i]);
-    const ys = idx.map((i) => logs[i]);
+    // 日频数据一段可能有几百个点。4 个参数的模型配几百个点会「完美拟合」，
+    // 但那是把噪声也拟合进去了。这里做等距抽稀，把每段压到最多 ~40 个点。
+    const MAX_POINTS_PER_SEGMENT = 40;
+    let useIdx = idx;
+    if (idx.length > MAX_POINTS_PER_SEGMENT) {
+      const stride = idx.length / MAX_POINTS_PER_SEGMENT;
+      useIdx = [];
+      for (let j = 0; j < MAX_POINTS_PER_SEGMENT; j += 1) {
+        useIdx.push(idx[Math.min(idx.length - 1, Math.round(j * stride))]);
+      }
+      // 保证包含最后一个点
+      if (useIdx[useIdx.length - 1] !== idx[idx.length - 1]) {
+        useIdx[useIdx.length - 1] = idx[idx.length - 1];
+      }
+    }
+
+    const ts = useIdx.map((i) => t[i]);
+    const ys = useIdx.map((i) => logs[i]);
     const span = to - from;
 
     // 周期网格：段长的 0.4 倍到 6 倍

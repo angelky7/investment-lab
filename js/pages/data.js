@@ -14,6 +14,7 @@ import { metricsHtml, notice, tableHtml } from "../ui/cards.js";
 import { count, dateLabel, num, pct } from "../core/format.js";
 import { lineChart } from "../core/charts.js";
 import { fitContinuousWave, fitTrendOnly, KONDRATIEFF_PHASES } from "../core/wave.js";
+import { mountWavePanel } from "../ui/wave-panel.js";
 
 const MARKET_LABEL = { CN: "A 股", HK: "港股", US: "美股" };
 const TYPE_LABEL = { index: "指数", etf: "ETF", stock: "股票", fund: "基金", fx: "汇率" };
@@ -636,7 +637,8 @@ function mountWaveChart(years, values) {
 
     // ---------- 当前状态 ----------
     const last = fit.segmentInfo[fit.segmentInfo.length - 1];
-    const devNow = fit.waveLog[fit.waveLog.length - 1] - Math.log(trendOnly.trend[trendOnly.trend.length - 1]);
+    // waveLog 已经是「拟合值 − 趋势」，不能再减一次
+    const devNow = fit.waveLog[fit.waveLog.length - 1];
     const above = devNow >= 0;
 
     if (statHost) {
@@ -939,6 +941,81 @@ function renderLongrun(host, payload, options = {}) {
   }
 }
 
+/**
+ * 宽基指数的长波分析。
+ *
+ * 为什么单独一块：物价和股指是两类东西——
+ *   物价是「钱变毛了多少」，股指是「企业赚了多少」。
+ *   两者都能用同一套 A·sin(aπ+b) 拟合，但解释完全不同。
+ *
+ * 选两个代表：
+ *   上证指数（1990 起，35 年）——中国投资者最熟悉的
+ *   沪深300全收益（2005 起，21 年）——含分红，更能代表真实回报
+ */
+async function renderBroadWave(host) {
+  const { loadIndex, loadSeries } = await import("../core/store.js");
+
+  host.innerHTML = `<div class="loading-inline">正在加载宽基指数…</div>`;
+
+  try {
+    const index = await loadIndex();
+    const pick = (symbol) => index.find((a) => a.symbol === symbol);
+
+    // 用标普 500：和上面的英国物价同属「西方市场」，长周期可比
+    const candidates = [
+      { symbol: "us.INX", label: "标普 500", note: "美国大盘，2005 年起" },
+    ]
+      .map((c) => ({ ...c, asset: pick(c.symbol) }))
+      .filter((c) => c.asset);
+
+    if (!candidates.length) {
+      host.innerHTML = notice("没有找到宽基指数数据。", "warn");
+      return;
+    }
+
+    host.innerHTML = `
+      <div class="notice" data-tone="info">
+        <span>
+          下面是<strong>标普 500</strong>的长波分析，方法和上面的英国物价完全一样——
+          两者都是西方市场的长序列，可以对照着看。
+          注意：标普只有 <strong>22 年</strong>数据，最多容得下
+          <strong>不到半个长波</strong>——所以节点上限只给到 7，
+          再细下去每段不足 3 年，正弦就没法辨识了（会给出假的周期）。
+          对比上面英国物价的 <strong>757 年</strong>，差距是数量级的。
+        </span>
+      </div>
+      <div id="broadwave-hosts"></div>`;
+
+    const hostWrap = host.querySelector("#broadwave-hosts");
+
+    for (const [i, cand] of candidates.entries()) {
+      const series = await loadSeries(cand.asset).catch(() => null);
+      if (!series?.dates?.length) continue;
+
+      const panel = document.createElement("div");
+      panel.id = `broadwave-${i}`;
+      panel.style.marginTop = "1rem";
+      hostWrap.appendChild(panel);
+
+      mountWavePanel(panel, {
+        title: `${cand.label}（${cand.note}）`,
+        subtitle: `${series.dates[0]} – ${series.dates[series.dates.length - 1]} · ${series.dates.length} 个交易日`,
+        years: series.dates.map((d) => Number(d.slice(0, 4))),
+        values: series.prices,
+        dateLabels: series.dates.map((d) => d.slice(0, 7)),
+        defaultNodes: 4,
+        nodesRange: [2, 7],
+        note:
+          `这 ${series.dates.length} 个交易日里，指数从 ${series.prices[0].toFixed(0)} 到 ` +
+          `${series.prices[series.prices.length - 1].toFixed(0)}。` +
+          `「长波」在这里只是<strong>趋势线的一种平滑</strong>，不是可预测的周期。`,
+      });
+    }
+  } catch (err) {
+    host.innerHTML = notice(`加载宽基指数失败：${err.message}`, "warn");
+  }
+}
+
 async function main() {
   initShell({ active: "data" });
   const host = document.getElementById("data-summary");
@@ -965,6 +1042,12 @@ async function main() {
       // 优先展示跨 757 年的英国物价；没有就退回 JST 的 151 年展示
       const shown = renderUkPriceIndex(longrunHost, payload);
       renderLongrun(longrunHost, payload, { skipIfShown: shown });
+    }
+
+    // 宽基指数的长波分析（和物价用同一套方法，方便对照）
+    const broadHost = document.getElementById("broadwave-section");
+    if (broadHost) {
+      await renderBroadWave(broadHost);
     }
 
     renderGaps(quality);
