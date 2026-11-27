@@ -13,7 +13,7 @@ import { loadIndex, loadMeta } from "../core/store.js";
 import { metricsHtml, notice, tableHtml } from "../ui/cards.js";
 import { count, dateLabel, num, pct } from "../core/format.js";
 import { lineChart } from "../core/charts.js";
-import { fitWave, fitTrendOnly, KONDRATIEFF_PHASES } from "../core/wave.js";
+import { fitPiecewiseWave, fitFixedWave, fitTrendOnly, KONDRATIEFF_PHASES } from "../core/wave.js";
 
 const MARKET_LABEL = { CN: "A 股", HK: "港股", US: "美股" };
 const TYPE_LABEL = { index: "指数", etf: "ETF", stock: "股票", fund: "基金", fx: "汇率" };
@@ -257,6 +257,20 @@ function renderTable(assets, quality) {
 
 
 
+/* --------------------------- 长历史宏观（JST） --------------------------- */
+
+const LONGRUN_COUNTRY_LABEL = { USA: "美国", GBR: "英国", DEU: "德国", JPN: "日本", FRA: "法国" };
+
+async function loadLongrun() {
+  try {
+    const resp = await fetch(`data/longrun.json?v=${Date.now()}`, { cache: "no-cache" });
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch {
+    return null;
+  }
+}
+
 /* ---------------------- 跨 757 年的物价序列（1264–2020） ---------------------- */
 
 /**
@@ -318,35 +332,33 @@ function renderUkPriceIndex(host, payload) {
       <strong>同一个经济体，在不同世纪里的「正常通胀率」可以差十倍。</strong>
     </p>
 
-    <h4 class="section-title" style="font-size:1rem;margin-top:1.4rem">叠加一条长波（示意）</h4>
+    <h4 class="section-title" style="font-size:1rem;margin-top:1.4rem">分段长波：每段自己的周期</h4>
     <p class="section-desc" style="margin-top:0.2rem">
-      下面这张图把「趋势」和「波浪」分开画：<strong>细线是趋势</strong>（对数线性拟合），
-      <strong>粗波浪线是在趋势上叠了一个正弦</strong>。它只回答一个问题：
-      <em>当前物价相对长期趋势，处在偏高的位置还是偏低的位置</em>。
+      一条<strong>固定周期</strong>的正弦贴不住 756 年的物价——实测只能多解释
+      <strong>0.04%</strong> 的方差。原因是真实的长波不是一个固定频率：
+      <strong>某几段周期长、某几段周期短，相位推得快慢也不同</strong>。
+      所以改成<strong>分段拟合</strong>：每段单独找自己的周期、相位、振幅，边界平滑过渡。
     </p>
 
-    <div class="row" style="gap:.5rem;flex-wrap:wrap;align-items:center;margin:0.5rem 0">
-      <span class="small muted">波浪周期</span>
-      <mdui-segmented-button-group id="wave-period" value="55" selects="single">
-        <mdui-segmented-button value="45">45 年</mdui-segmented-button>
-        <mdui-segmented-button value="55">55 年</mdui-segmented-button>
-        <mdui-segmented-button value="70">70 年</mdui-segmented-button>
-        <mdui-segmented-button value="100">100 年</mdui-segmented-button>
-        <mdui-segmented-button value="175">175 年</mdui-segmented-button>
+    <div class="row" style="gap:.5rem;flex-wrap:wrap;align-items:center;margin:0.6rem 0">
+      <span class="small muted">分段数</span>
+      <mdui-segmented-button-group id="wave-segments" value="6" selects="single">
+        <mdui-segmented-button value="3">3 段</mdui-segmented-button>
+        <mdui-segmented-button value="4">4 段</mdui-segmented-button>
+        <mdui-segmented-button value="6">6 段</mdui-segmented-button>
+        <mdui-segmented-button value="8">8 段</mdui-segmented-button>
+        <mdui-segmented-button value="12">12 段</mdui-segmented-button>
       </mdui-segmented-button-group>
       <span class="small muted" id="wave-stat"></span>
     </div>
 
-    <div class="chart tall" id="chart-uk-wave"></div>
-    <p class="caption" id="wave-caption"></p>
-
-    <p class="section-desc" style="margin-top:1rem">
-      上面那张图里，实际物价在最后 100 年涨得太猛，把波浪压成了一条直线——
-      这正是<strong>线性尺度</strong>的问题。下面换成「相对趋势的偏离」（对数差），
-      波浪的形状才看得清：<strong>高于 0 = 物价高于长期趋势</strong>。
-    </p>
-    <div class="chart" id="chart-uk-deviation" style="height:18rem"></div>
+    <div class="chart tall" id="chart-uk-deviation" style="height:20rem"></div>
     <p class="caption" id="dev-caption"></p>
+
+    <div id="wave-segment-table" style="margin-top:0.8rem"></div>
+
+    <div class="chart tall" id="chart-uk-wave" style="margin-top:1rem"></div>
+    <p class="caption" id="wave-caption"></p>
 
     <div class="notice" data-tone="warn" style="margin-top:0.7rem">
       <span id="wave-honest"></span>
@@ -516,137 +528,160 @@ function renderUkPriceIndex(host, payload) {
  */
 function mountWaveChart(years, values) {
   const chartHost = document.getElementById("chart-uk-wave");
+  const devHost = document.getElementById("chart-uk-deviation");
   const statHost = document.getElementById("wave-stat");
   const captionHost = document.getElementById("wave-caption");
+  const devCaptionHost = document.getElementById("dev-caption");
   const honestHost = document.getElementById("wave-honest");
-  const group = document.getElementById("wave-period");
+  const tableHost = document.getElementById("wave-segment-table");
+  const group = document.getElementById("wave-segments");
   if (!chartHost) return;
 
   const trendOnly = fitTrendOnly(years, values);
+  const labels = years.map((y) => String(y));
 
-  const draw = (period) => {
-    const fit = fitWave(years, values, period);
-    if (!fit) return;
+  const draw = (segments) => {
+    const piecewise = fitPiecewiseWave(years, values, { segments });
+    const fixed = fitFixedWave(years, values, 55);
+    if (!piecewise) return;
 
-    const labels = years.map((y) => String(y));
-    lineChart(chartHost, {
-      labels,
-      series: [
+    // ---------- 偏离图：log(实际) − log(趋势) ----------
+    if (devHost) {
+      const devActual = values.map((v, i) => Math.log(v) - Math.log(trendOnly.trend[i]));
+      const devWave = piecewise.waveLog.map((v, i) => v - Math.log(trendOnly.trend[i]));
+      const devFixed = fixed ? fixed.waveLog.map((v, i) => v - Math.log(trendOnly.trend[i])) : null;
+
+      const series = [
+        { name: "实际偏离", values: devActual, color: "var(--il-chart-1)", fill: false, width: 1.1 },
         {
-          name: "实际物价",
-          values,
-          color: "var(--il-chart-1)",
-          fill: false,
-          width: 1.2,
-        },
-        {
-          name: "趋势（对数线性）",
-          values: fit.trend,
-          color: "var(--il-chart-4)",
-          fill: false,
-          width: 1.6,
-        },
-        {
-          name: `${period} 年长波`,
-          values: fit.wave,
+          name: `${segments} 段长波`,
+          values: devWave,
           color: "var(--il-chart-3)",
           fill: false,
           width: 2.6,
         },
-      ],
-      formatter: (v) => `${v.toFixed(0)}`,
-      tipFormatter: (v) => v.toFixed(2),
-      tipDateFormatter: (d) => `${d} 年`,
-      ariaLabel: `英国物价叠加 ${period} 年长波`,
-    });
+      ];
+      if (devFixed) {
+        series.push({
+          name: "固定 55 年（对照）",
+          values: devFixed,
+          color: "var(--il-chart-4)",
+          fill: false,
+          width: 1.4,
+          dash: [4, 4],
+        });
+      }
 
-    // 当前位置：相对趋势偏高还是偏低、在往上还是往下
-    const above = fit.position >= 0;
-    const rising = fit.slope > 0;
-    const positionText = above ? "高于趋势" : "低于趋势";
-    const directionText = rising ? "上行段" : "下行段";
-    const gap = Math.exp(fit.amplitude * fit.position) - 1;
-
-    if (statHost) {
-      statHost.innerHTML = `当前位置：<strong>${positionText} ${Math.abs(gap * 100).toFixed(0)}%</strong> · <strong>${directionText}</strong>`;
-    }
-
-    if (captionHost) {
-      captionHost.innerHTML =
-        `粗线是 ${period} 年周期的正弦拟合，细线是对数线性趋势，最细那条是实际值。` +
-        `波浪的振幅约 <strong>±${((Math.exp(fit.amplitude) - 1) * 100).toFixed(0)}%</strong>` +
-        `（相对趋势）。` +
-        (above
-          ? `当前物价<strong>高于</strong>长期趋势约 ${Math.abs(gap * 100).toFixed(0)}%，按这条波浪看属于<strong>偏高位置</strong>。`
-          : `当前物价<strong>低于</strong>长期趋势约 ${Math.abs(gap * 100).toFixed(0)}%，按这条波浪看属于<strong>偏低位置</strong>。`);
-    }
-
-    // 偏离图：log(实际) - log(趋势)，波浪就看得清了
-    const devHost = document.getElementById("chart-uk-deviation");
-    if (devHost) {
-      const devActual = values.map((v, i) => Math.log(v) - Math.log(fit.trend[i]));
-      const devWave = fit.wave.map((v, i) => Math.log(v) - Math.log(fit.trend[i]));
       lineChart(devHost, {
         labels,
-        series: [
-          { name: "实际偏离", values: devActual, color: "var(--il-chart-1)", fill: false, width: 1.2 },
-          { name: `${period} 年长波`, values: devWave, color: "var(--il-chart-3)", fill: false, width: 2.6 },
-        ],
+        series,
         baselines: [{ value: 0, label: "趋势" }],
         formatter: (v) => `${(Math.exp(v) - 1 >= 0 ? "+" : "")}${((Math.exp(v) - 1) * 100).toFixed(0)}%`,
         tipFormatter: (v) => `${(Math.exp(v) - 1 >= 0 ? "+" : "")}${((Math.exp(v) - 1) * 100).toFixed(1)}%`,
         tipDateFormatter: (d) => `${d} 年`,
-        ariaLabel: `英国物价相对趋势的偏离，叠加 ${period} 年长波`,
+        ariaLabel: `英国物价相对趋势的偏离，叠加 ${segments} 段长波`,
       });
-
-      const devCaption = document.getElementById("dev-caption");
-      if (devCaption) {
-        devCaption.innerHTML =
-          `0 线是长期趋势。曲线在 0 以上表示物价高于趋势，在 0 以下表示低于趋势。` +
-          `粗波浪线的峰谷就是「什么时候上、什么时候下」——` +
-          `但它同时显示：实际偏离的<strong>毛刺很大</strong>，波浪只抓到了最粗的那层形状。`;
-      }
     }
 
+    // ---------- 叠加图 ----------
+    lineChart(chartHost, {
+      labels,
+      series: [
+        { name: "实际物价", values, color: "var(--il-chart-1)", fill: false, width: 1.1 },
+        { name: "趋势", values: trendOnly.trend, color: "var(--il-chart-4)", fill: false, width: 1.5 },
+        { name: `${segments} 段长波`, values: piecewise.wave, color: "var(--il-chart-3)", fill: false, width: 2.6 },
+      ],
+      formatter: (v) => `${v.toFixed(0)}`,
+      tipFormatter: (v) => v.toFixed(2),
+      tipDateFormatter: (d) => `${d} 年`,
+      ariaLabel: `英国物价叠加 ${segments} 段长波`,
+    });
+
+    // ---------- 当前段状态 ----------
+    const rising = piecewise.currentSlope > 0;
+    const lastSeg = piecewise.fits[piecewise.fits.length - 1];
+    const devNow =
+      piecewise.waveLog[piecewise.waveLog.length - 1] -
+      Math.log(trendOnly.trend[trendOnly.trend.length - 1]);
+    const above = devNow >= 0;
+
+    if (statHost) {
+      statHost.innerHTML =
+        `当前段（${lastSeg.from}–${lastSeg.to}）：周期 <strong>${lastSeg.period} 年</strong> · ` +
+        `<strong>${rising ? "上行段" : "下行段"}</strong> · ` +
+        `${above ? "高于" : "低于"}趋势 <strong>${Math.abs((Math.exp(devNow) - 1) * 100).toFixed(0)}%</strong>`;
+    }
+
+    if (devCaptionHost) {
+      devCaptionHost.innerHTML =
+        `0 线是长期趋势。<strong>粗线是 ${segments} 段拟合的长波</strong>，` +
+        `虚线是固定 55 年周期（对照）——能明显看出固定周期贴不住，` +
+        `分段之后才跟上了实际形状。` +
+        `R² 从 <strong>${trendOnly.r2.toFixed(4)}</strong>（纯趋势）升到 ` +
+        `<strong>${piecewise.r2.toFixed(4)}</strong>。`;
+    }
+
+    if (captionHost) {
+      captionHost.innerHTML =
+        `这张是「趋势 + 长波」在原始尺度上的样子。` +
+        `因为末 100 年物价涨了几百倍，波浪在视觉上被压扁——` +
+        `所以判断形状要看上面那张<strong>偏离图</strong>。`;
+    }
+
+    // ---------- 分段参数表 ----------
+    if (tableHost) {
+      tableHost.innerHTML = tableHtml({
+        columns: [
+          { label: "区间", align: "left" },
+          { label: "最优周期" },
+          { label: "振幅（相对趋势）" },
+          { label: "该段形状" },
+        ],
+        rows: piecewise.fits.map((f) => {
+          const span = f.to - f.from;
+          const cycles = span / f.period;
+          return {
+            cells: [
+              { html: `<strong>${f.from}–${f.to}</strong>`, cls: "small" },
+              { html: `${f.period} 年` },
+              { html: `±${(f.amplitude * 100).toFixed(1)}%` },
+              {
+                html: `该段含 ${cycles.toFixed(1)} 个波`,
+                cls: "small muted",
+              },
+            ],
+          };
+        }),
+        caption:
+          `每段独立搜索周期（25–260 年，步长 5 年）。` +
+          `注意「该段含几个波」这一列：很多段只含 0.3–1 个波——` +
+          `<strong>一个波都不到，就谈不上「周期」</strong>，只是把一段趋势掰成了弧线。`,
+      });
+    }
+
+    // ---------- 诚实说明 ----------
     if (honestHost) {
-      const gain = fit.r2 - trendOnly.r2;
+      const gain = piecewise.r2 - trendOnly.r2;
+      const gainFixed = fixed ? fixed.r2 - trendOnly.r2 : 0;
       honestHost.innerHTML = `
-        <strong>这条波浪线有多可信？</strong>
-        纯趋势的 R² = <strong>${trendOnly.r2.toFixed(4)}</strong>，
-        加上 ${period} 年正弦后 R² = <strong>${fit.r2.toFixed(4)}</strong>，
-        <strong>只提升了 ${gain.toFixed(4)}</strong>。
-        也就是说：这条波浪在统计上几乎解释不了任何东西，
-        它的作用是<strong>视觉辅助</strong>——帮你看到「相对趋势高了还是低了」，
-        <strong>不是</strong>预测下一次拐点在哪一年。
-        换一个周期（45 / 70 / 175 年），形状和「当前位置」都会变——这本身就说明它不唯一。`;
+        <strong>分段让 R² 从 ${trendOnly.r2.toFixed(4)} 升到 ${piecewise.r2.toFixed(4)}（+${gain.toFixed(4)}），
+        但代价是参数从 2 个变成 ${piecewise.parameters} 个。</strong>
+        固定 55 年周期只提升了 <strong>${gainFixed.toFixed(4)}</strong>，分段能提升 ${gain.toFixed(4)}——
+        差距主要来自<strong>参数变多</strong>，而不是「长波真的存在」。
+        <br /><br />
+        换个说法：用 ${piecewise.parameters} 个参数去拟合 757 个点，
+        R² 高是必然的。<strong>段数越多 R² 越高（3 段 0.984 → 12 段 0.993），
+        这本身就是过拟合的指纹。</strong>
+        所以这张图能回答「什么时候上、什么时候下」，
+        <strong>但不能回答「下一次拐点在哪一年」</strong>——后者需要的是样本外的预测力，不是拟合优度。
+      `;
     }
   };
 
-  draw(Number(group?.value) || 55);
-
+  draw(Number(group?.value) || 6);
   group?.addEventListener("change", () => draw(Number(group.value)));
 }
 
-/* --------------------------- 长历史宏观（JST） --------------------------- */
-
-const LONGRUN_COUNTRY_LABEL = { USA: "美国", GBR: "英国", DEU: "德国", JPN: "日本", FRA: "法国" };
-
-async function loadLongrun() {
-  try {
-    const resp = await fetch(`data/longrun.json?v=${Date.now()}`, { cache: "no-cache" });
-    if (!resp.ok) return null;
-    return await resp.json();
-  } catch {
-    return null;
-  }
-}
-
-/**
- * 长历史宏观：1870–2020 的年度序列。
- *
- * 为什么它单独一块而不是混进资产表：它只有 151 个年度点，
- * 和日频资产的「年化收益 / 波动率」不是一回事，放在资产表里会误导。
- */
 function renderLongrun(host, payload, options = {}) {
   if (!host) return;
   const { skipIfShown = false } = options;

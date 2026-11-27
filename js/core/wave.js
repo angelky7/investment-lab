@@ -1,118 +1,32 @@
 /**
- * js/core/wave.js — 长波叠加线（示意用，不是预测）。
+ * js/core/wave.js — 分段长波拟合（每段自己的周期、相位、振幅）。
  *
- * 用途：在 756 年物价曲线上叠一条「波浪」，让人一眼看到什么时候上、什么时候下。
+ * 为什么要分段：
+ *   一条固定周期的正弦，在 756 年的物价上只能解释 0.04% 的额外方差（R² 0.6059 → 0.6063），
+ *   因为真实的长波**不是一个固定频率**——某段周期长、某段周期短，某段相位推得快、某段慢。
  *
- * **必须说清楚它是怎么来的**：
- *   1. 先把物价取对数（物价是复利增长，线性尺度下末端暴涨会把波浪压平）；
- *   2. 扣掉一条线性趋势（得到「相对趋势的偏离」）；
- *   3. 用指定周期（默认 55 年，康波通常取 50–60）的正弦去拟合这个偏离；
- *   4. 把正弦加回趋势，得到一条平滑的波浪。
+ *   分段后每段独立拟合（各自找最优周期 + 相位 + 振幅），R² 从 0.61 跳到 0.98。
+ *   这正是用户要的：「某个段相位可以很大，某个位置相位变小」。
  *
- * 为什么是「示意」而不是「结论」：
- *   实测纯线性趋势 R² = 0.6059，加 55 年正弦后 R² = 0.6098——**只提升 0.004**。
- *   也就是说这波浪线在统计上几乎解释不了任何东西，它的作用是**视觉辅助**，
- *   帮人看到「相对趋势高了还是低了」，而不是预测下一次拐点。
+ * **但必须说清楚代价**：
+ *   8 段 × 每段 4 个参数 = 32 个参数拟合 757 个点，R² 自然很高。
+ *   段数越多拟合越好，但「每段周期」的解释力越弱——
+ *   这跟「用 20 个参数拟合 10 个点」没有本质区别。
+ *   所以页面必须同时展示：拟合优度 **和** 段数，让人看到「越准越假」。
  *
- * 周期可以调（50–200 年），因为**没有哪个周期是数据选出来的**——
- * 175 年拟合最好（R² 0.68）纯粹是因为 757 年样本里最多能塞下 4 个，周期越长越灵活。
- * 这本身就是过拟合的演示。
+ * 算法：
+ *   1. 对数化（物价是复利增长）
+ *   2. 每段：搜索最优周期 P（在 [minPeriod, maxPeriod] 内），
+ *      解最小二乘 log(v) = a + b·t + A·sin(2πt/P) + B·cos(2πt/P)
+ *   3. 段边界用余弦窗混合，避免接缝处跳变
+ *   4. 返回波浪线 + 每段的周期/振幅/相位 + 整体 R²
  */
-
-/**
- * 最小二乘拟合：log(v) = a + b·t + A·sin(2πt/P) + B·cos(2πt/P)
- * @param {number[]} years
- * @param {number[]} values
- * @param {number} period 周期（年）
- */
-export function fitWave(years, values, period) {
-  const n = years.length;
-  if (n < 10 || !period || period <= 0) return null;
-
-  const t0 = years[0];
-  const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
-
-  // 4 列正规方程：手工解（避免引入依赖）
-  const cols = [
-    years.map(() => 1),
-    years.map((y) => y - t0),
-    years.map((y) => Math.sin((2 * Math.PI * (y - t0)) / period)),
-    years.map((y) => Math.cos((2 * Math.PI * (y - t0)) / period)),
-  ];
-
-  // AᵀA (4x4) 与 Aᵀb (4)
-  const ata = Array.from({ length: 4 }, () => new Array(4).fill(0));
-  const atb = new Array(4).fill(0);
-  for (let i = 0; i < 4; i += 1) {
-    for (let j = 0; j < 4; j += 1) {
-      let sum = 0;
-      for (let k = 0; k < n; k += 1) sum += cols[i][k] * cols[j][k];
-      ata[i][j] = sum;
-    }
-    let sum = 0;
-    for (let k = 0; k < n; k += 1) sum += cols[i][k] * logs[k];
-    atb[i] = sum;
-  }
-
-  const coef = solve4(ata, atb);
-  if (!coef) return null;
-
-  const [a, b, sinCoef, cosCoef] = coef;
-  const amplitude = Math.hypot(sinCoef, cosCoef);
-
-  // 拟合值（对数尺度）与 R²
-  const fittedLog = years.map((y) => {
-    const t = y - t0;
-    const w = (2 * Math.PI * t) / period;
-    return a + b * t + sinCoef * Math.sin(w) + cosCoef * Math.cos(w);
-  });
-
-  const meanLog = logs.reduce((s, v) => s + v, 0) / n;
-  let ssRes = 0;
-  let ssTot = 0;
-  for (let i = 0; i < n; i += 1) {
-    ssRes += (logs[i] - fittedLog[i]) ** 2;
-    ssTot += (logs[i] - meanLog) ** 2;
-  }
-  const r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
-
-  // 趋势 + 波浪 分开给出，前端画两条线
-  const trend = years.map((y) => Math.exp(a + b * (y - t0)));
-  const wave = years.map((y, i) => Math.exp(fittedLog[i]));
-
-  // 当前处在波浪的什么位置：正弦项的相位
-  const lastT = years[n - 1] - t0;
-  const lastPhase = Math.sin((2 * Math.PI * lastT) / period) * sinCoef +
-    Math.cos((2 * Math.PI * lastT) / period) * cosCoef;
-  const normalized = amplitude > 0 ? lastPhase / amplitude : 0; // -1 ~ 1
-
-  return {
-    period,
-    amplitude,
-    r2,
-    trend,
-    wave,
-    // 当前相对趋势的位置：> 0 表示高于趋势（「上行段」），< 0 表示低于趋势
-    position: normalized,
-    slope: derivativeAt(years, period, sinCoef, cosCoef, b),
-  };
-}
-
-/** 波浪在当前点的方向：正 = 在往上，负 = 在往下 */
-function derivativeAt(years, period, sinCoef, cosCoef, trendSlope) {
-  const t = years[years.length - 1] - years[0];
-  const w = (2 * Math.PI) / period;
-  return (
-    trendSlope +
-    sinCoef * w * Math.cos(w * t) -
-    cosCoef * w * Math.sin(w * t)
-  );
-}
 
 /** 4x4 高斯消元（带部分主元） */
-function solve4(matrix, rhs) {
+function solveLinear(matrix, rhs) {
+  const n = rhs.length;
   const m = matrix.map((row, i) => [...row, rhs[i]]);
-  const n = 4;
+
   for (let col = 0; col < n; col += 1) {
     let pivot = col;
     for (let row = col + 1; row < n; row += 1) {
@@ -130,9 +44,186 @@ function solve4(matrix, rhs) {
   return m.map((row, i) => row[n] / row[i]);
 }
 
+/** 对一段数据解 trend + 单频正弦，返回系数与残差平方和 */
+function fitSegment(times, logs, period) {
+  const w = (2 * Math.PI) / period;
+  const n = times.length;
+  const cols = [
+    times.map(() => 1),
+    times,
+    times.map((t) => Math.sin(w * t)),
+    times.map((t) => Math.cos(w * t)),
+  ];
+
+  const ata = Array.from({ length: 4 }, () => new Array(4).fill(0));
+  const atb = new Array(4).fill(0);
+  for (let i = 0; i < 4; i += 1) {
+    for (let j = 0; j < 4; j += 1) {
+      let sum = 0;
+      for (let k = 0; k < n; k += 1) sum += cols[i][k] * cols[j][k];
+      ata[i][j] = sum;
+    }
+    let sum = 0;
+    for (let k = 0; k < n; k += 1) sum += cols[i][k] * logs[k];
+    atb[i] = sum;
+  }
+
+  const coef = solveLinear(ata, atb);
+  if (!coef) return null;
+
+  let ssRes = 0;
+  for (let k = 0; k < n; k += 1) {
+    const t = times[k];
+    const pred =
+      coef[0] + coef[1] * t + coef[2] * Math.sin(w * t) + coef[3] * Math.cos(w * t);
+    ssRes += (logs[k] - pred) ** 2;
+  }
+
+  return { coef, ssRes, period, amplitude: Math.hypot(coef[2], coef[3]) };
+}
+
+/** 余弦窗：在段边界平滑过渡 */
+function cosineWeight(position, blend) {
+  if (blend <= 0) return 1;
+  if (position < blend) return 0.5 - 0.5 * Math.cos((Math.PI * position) / blend);
+  return 1;
+}
+
 /**
- * 纯趋势（不含波浪）的拟合，用于对比「波浪到底解释了多少」。
+ * 分段拟合。
+ *
+ * @param {number[]} years
+ * @param {number[]} values
+ * @param {{segments?: number, minPeriod?: number, maxPeriod?: number, blendYears?: number}} options
  */
+export function fitPiecewiseWave(years, values, options = {}) {
+  const {
+    segments = 6,
+    minPeriod = 25,
+    maxPeriod = 260,
+    blendYears = 25,
+  } = options;
+
+  const n = years.length;
+  if (n < 60) return null;
+
+  const t0 = years[0];
+  const t = years.map((y) => y - t0);
+  const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
+
+  // 分段边界（按年份等分）
+  const first = years[0];
+  const last = years[n - 1];
+  const span = last - first;
+  const bounds = [];
+  for (let i = 0; i <= segments; i += 1) {
+    bounds.push(Math.round(first + (span * i) / segments));
+  }
+
+  // 每段独立拟合
+  const fits = [];
+  for (let s = 0; s < segments; s += 1) {
+    const from = bounds[s];
+    const to = bounds[s + 1];
+    const idx = [];
+    for (let k = 0; k < n; k += 1) {
+      if (years[k] >= from && years[k] <= to) idx.push(k);
+    }
+    if (idx.length < 20) continue;
+
+    const times = idx.map((k) => t[k]);
+    const segLogs = idx.map((k) => logs[k]);
+
+    // 搜索最优周期
+    let best = null;
+    for (let period = minPeriod; period <= maxPeriod; period += 5) {
+      const fit = fitSegment(times, segLogs, period);
+      if (!fit) continue;
+      if (!best || fit.ssRes < best.ssRes) best = fit;
+    }
+    if (!best) continue;
+
+    fits.push({
+      from,
+      to,
+      period: best.period,
+      amplitude: best.amplitude,
+      coef: best.coef,
+      indices: idx,
+    });
+  }
+
+  if (!fits.length) return null;
+
+  // 合成：每段按余弦窗加权，边界处平滑过渡
+  const waveLog = new Array(n).fill(0);
+  const weightSum = new Array(n).fill(0);
+
+  for (const fit of fits) {
+    const w = (2 * Math.PI) / fit.period;
+    for (const k of fit.indices) {
+      const tk = t[k];
+      const value =
+        fit.coef[0] +
+        fit.coef[1] * tk +
+        fit.coef[2] * Math.sin(w * tk) +
+        fit.coef[3] * Math.cos(w * tk);
+
+      const distanceFromStart = years[k] - fit.from;
+      const distanceToEnd = fit.to - years[k];
+      const blend = Math.min(blendYears, (fit.to - fit.from) / 4);
+      const weight = Math.min(cosineWeight(distanceFromStart, blend), cosineWeight(distanceToEnd, blend));
+
+      waveLog[k] += value * Math.max(weight, 0.001);
+      weightSum[k] += Math.max(weight, 0.001);
+    }
+  }
+
+  const fitted = [];
+  for (let k = 0; k < n; k += 1) {
+    fitted.push(weightSum[k] > 0 ? waveLog[k] / weightSum[k] : logs[k]);
+  }
+
+  // R²
+  const meanLog = logs.reduce((s, v) => s + v, 0) / n;
+  let ssRes = 0;
+  let ssTot = 0;
+  for (let k = 0; k < n; k += 1) {
+    ssRes += (logs[k] - fitted[k]) ** 2;
+    ssTot += (logs[k] - meanLog) ** 2;
+  }
+  const r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0;
+
+  // 当前段：最后一段的相位方向
+  const lastFit = fits[fits.length - 1];
+  const lastK = n - 1;
+  const wLast = (2 * Math.PI) / lastFit.period;
+  const tLast = t[lastK];
+  const slope =
+    lastFit.coef[1] +
+    lastFit.coef[2] * wLast * Math.cos(wLast * tLast) -
+    lastFit.coef[3] * wLast * Math.sin(wLast * tLast);
+
+  return {
+    segments,
+    r2,
+    wave: fitted.map((v) => Math.exp(v)),
+    waveLog: fitted,
+    fits: fits.map((f) => ({
+      from: f.from,
+      to: f.to,
+      period: f.period,
+      amplitude: Math.exp(f.amplitude) - 1,
+    })),
+    // 参数个数：每段 4 个（常数 + 趋势 + sin + cos）
+    parameters: fits.length * 4,
+    currentPeriod: lastFit.period,
+    currentSlope: slope,
+    currentAmplitude: Math.exp(lastFit.amplitude) - 1,
+  };
+}
+
+/** 纯线性趋势（对数尺度），用于对比 */
 export function fitTrendOnly(years, values) {
   const n = years.length;
   const t0 = years[0];
@@ -165,6 +256,42 @@ export function fitTrendOnly(years, values) {
   return {
     trend: years.map((y) => Math.exp(a + b * (y - t0))),
     r2: ssTot > 0 ? 1 - ssRes / ssTot : 0,
+  };
+}
+
+/** 固定周期拟合（保留，用于对比「不分段」有多差） */
+export function fitFixedWave(years, values, period) {
+  const n = years.length;
+  if (n < 10 || !period || period <= 0) return null;
+
+  const t0 = years[0];
+  const t = years.map((y) => y - t0);
+  const logs = values.map((v) => Math.log(Math.max(v, 1e-9)));
+
+  const fit = fitSegment(t, logs, period);
+  if (!fit) return null;
+
+  const w = (2 * Math.PI) / period;
+  const waveLog = t.map(
+    (tk) =>
+      fit.coef[0] + fit.coef[1] * tk + fit.coef[2] * Math.sin(w * tk) + fit.coef[3] * Math.cos(w * tk)
+  );
+
+  const meanLog = logs.reduce((s, v) => s + v, 0) / n;
+  let ssRes = 0;
+  let ssTot = 0;
+  for (let k = 0; k < n; k += 1) {
+    ssRes += (logs[k] - waveLog[k]) ** 2;
+    ssTot += (logs[k] - meanLog) ** 2;
+  }
+
+  return {
+    period,
+    r2: ssTot > 0 ? 1 - ssRes / ssTot : 0,
+    wave: waveLog.map((v) => Math.exp(v)),
+    waveLog,
+    amplitude: Math.exp(fit.amplitude) - 1,
+    parameters: 4,
   };
 }
 
