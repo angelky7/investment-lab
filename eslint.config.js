@@ -59,6 +59,7 @@ export default [
         setInterval: "readonly",
         clearInterval: "readonly",
         requestAnimationFrame: "readonly",
+        cancelAnimationFrame: "readonly",
         ResizeObserver: "readonly",
         MutationObserver: "readonly",
         IntersectionObserver: "readonly",

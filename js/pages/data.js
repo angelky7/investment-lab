@@ -340,17 +340,35 @@ function renderUkPriceIndex(host, payload) {
       改 a 的增量就能改那一段的周期——某段走得快、某段走得慢，都行。
     </p>
 
-    <div class="row" style="gap:.5rem;flex-wrap:wrap;align-items:center;margin:0.6rem 0">
-      <span class="small muted">节点数</span>
-      <mdui-segmented-button-group id="wave-segments" value="12" selects="single">
-        <mdui-segmented-button value="6">6</mdui-segmented-button>
-        <mdui-segmented-button value="12">12</mdui-segmented-button>
-        <mdui-segmented-button value="18">18</mdui-segmented-button>
-        <mdui-segmented-button value="24">24</mdui-segmented-button>
-        <mdui-segmented-button value="36">36</mdui-segmented-button>
-        <mdui-segmented-button value="48">48</mdui-segmented-button>
-      </mdui-segmented-button-group>
-      <span class="small muted" id="wave-stat"></span>
+    <div class="wave-slider-wrap">
+      <div class="wave-slider-head">
+        <label for="wave-segments">节点数</label>
+        <strong id="wave-segments-out">12</strong>
+      </div>
+      <input
+        type="range"
+        id="wave-segments"
+        min="6"
+        max="80"
+        step="1"
+        value="12"
+        aria-label="分段节点数"
+        aria-valuemin="6"
+        aria-valuemax="80"
+        aria-valuenow="12"
+      />
+      <div class="wave-slider-scale">
+        <span>6 个节点 · 只看大趋势</span>
+        <span>80 个节点 · 每段约 9.5 年</span>
+      </div>
+      <div class="row" style="gap:.4rem;flex-wrap:wrap;margin-top:.35rem">
+        <button class="wave-preset" data-nodes="6">6</button>
+        <button class="wave-preset" data-nodes="12">12</button>
+        <button class="wave-preset" data-nodes="24">24</button>
+        <button class="wave-preset" data-nodes="48">48</button>
+        <button class="wave-preset" data-nodes="80">80</button>
+      </div>
+      <div class="small muted" id="wave-stat"></div>
     </div>
 
     <div class="chart tall" id="chart-uk-deviation" style="height:22rem"></div>
@@ -545,7 +563,8 @@ function mountWaveChart(years, values) {
   const honestHost = document.getElementById("wave-honest");
   const tableHost = document.getElementById("wave-segment-table");
   const viewLabel = document.getElementById("wave-view-label");
-  const group = document.getElementById("wave-segments");
+  const slider = document.getElementById("wave-segments");
+  const sliderOut = document.getElementById("wave-segments-out");
   if (!chartHost) return;
 
   const trendOnly = fitTrendOnly(years, values);
@@ -621,10 +640,17 @@ function mountWaveChart(years, values) {
     const above = devNow >= 0;
 
     if (statHost) {
+      const validPeriods = fit.segmentInfo.filter((seg) => seg.period).length;
+      const totalSegs = fit.segmentInfo.length;
+      const periodNote =
+        validPeriods === totalSegs
+          ? ""
+          : ` · <span class="muted">${totalSegs - validPeriods} 段周期不可辨识</span>`;
       statHost.innerHTML =
         `${segments} 个节点 · R² <strong>${fit.r2.toFixed(4)}</strong> · ` +
-        `末段周期 <strong>${last.period ? `${last.period.toFixed(0)} 年` : "—"}</strong> · ` +
-        `${above ? "高于" : "低于"}趋势 <strong>${Math.abs((Math.exp(devNow) - 1) * 100).toFixed(0)}%</strong>`;
+        `末段周期 <strong>${last.period ? `${last.period.toFixed(0)} 年` : "不可辨识"}</strong> · ` +
+        `${above ? "高于" : "低于"}趋势 <strong>${Math.abs((Math.exp(devNow) - 1) * 100).toFixed(0)}%</strong>` +
+        periodNote;
     }
 
     if (devCaptionHost) {
@@ -644,7 +670,7 @@ function mountWaveChart(years, values) {
       const rows = fit.segmentInfo.slice(0, 24).map((seg) => ({
         cells: [
           { html: `${seg.from}–${seg.to}`, cls: "small" },
-          { html: seg.period ? `${seg.period.toFixed(0)} 年` : "—" },
+          { html: seg.period ? `${seg.period.toFixed(0)} 年` : '<span class="muted">—</span>' },
           { html: `${seg.A >= 0 ? "+" : ""}${seg.A.toFixed(3)}` },
           { html: `${seg.deltaA >= 0 ? "+" : ""}${seg.deltaA.toFixed(2)}` },
           { html: seg.segmentR2.toFixed(2), cls: "small muted" },
@@ -680,9 +706,31 @@ function mountWaveChart(years, values) {
     }
   };
 
-  draw(Number(group?.value) || 12);
+  // 滑条：input 事件实时响应，用 rAF 合并连续拖动
+  let pending = null;
+  const schedule = (nodes) => {
+    if (sliderOut) sliderOut.textContent = String(nodes);
+    slider?.setAttribute("aria-valuenow", String(nodes));
+    if (pending) cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(() => {
+      pending = null;
+      draw(nodes);
+    });
+  };
 
-  group?.addEventListener("change", () => draw(Number(group.value)));
+  const initial = Number(slider?.value) || 12;
+  if (sliderOut) sliderOut.textContent = String(initial);
+  draw(initial);
+
+  slider?.addEventListener("input", () => schedule(Number(slider.value)));
+
+  document.querySelectorAll(".wave-preset").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nodes = Number(button.dataset.nodes);
+      if (slider) slider.value = String(nodes);
+      schedule(nodes);
+    });
+  });
 
   // ---------- 缩放控制 ----------
   const bindZoom = (id, action) => {

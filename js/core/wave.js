@@ -150,7 +150,10 @@ export function fitContinuousWave(years, values, options = {}) {
     for (let i = 0; i < n; i += 1) {
       if (years[i] >= from && years[i] <= to) idx.push(i);
     }
-    if (idx.length < 12) {
+    // 每段至少要 8 个点才可能拟合出有意义的周期。
+    // 少于 8 个点时，4 个参数的模型几乎能完美穿过所有点（R²=1、周期退化），
+    // 那是拟合噪声，不是找到周期。
+    if (idx.length < 8) {
       fits.push(null);
       continue;
     }
@@ -256,7 +259,11 @@ export function fitContinuousWave(years, values, options = {}) {
     segInfo.push({
       from: Math.round(nodes[k]),
       to: Math.round(nodes[k + 1]),
-      period: fit ? fit.period : null,
+      // 周期超过段长 6 倍 = 这段连半个波都没走完，不可辨识
+      period:
+        fit && Number.isFinite(fit.period) && fit.period <= (nodes[k + 1] - nodes[k]) * 12
+          ? fit.period
+          : null,
       A: fit ? Math.min(fit.amplitude, MAX_AMPLITUDE) : 0,
       deltaA: aList[k + 1] - aList[k],
       b: fit ? fit.phase : 0,
@@ -331,6 +338,11 @@ function fitSingleSegment(ts, ys, period, lambda) {
 
   const amplitude = Math.hypot(sol[2], sol[3]);
   const phase = Math.atan2(sol[3], sol[2]);
+
+  // 退化检测：R² 接近 1 且点数很少，说明是拟合噪声而不是周期。
+  // 另外振幅几乎为 0 时，相位没有意义（周期不可辨识）。
+  const degenerate = r2 > 0.9999 || amplitude < 1e-4;
+  if (degenerate) return null;
 
   return { amplitude, phase, r2, c0: sol[0], c1: sol[1] };
 }

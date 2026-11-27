@@ -361,11 +361,18 @@ class CanvasChart {
       }
     }
     {
+      // 末尾标签：如果最后一个刻度离右边界太近，就不画（否则会和右端重叠）
       const last = labelFormatter(labels[viewTo], viewTo);
       if (last) {
-        ctx.textAlign = "right";
-        ctx.fillText(last, box.right, this.height - 12);
-        ctx.textAlign = "center";
+        const lastDrawnIndex = viewFrom + Math.floor(spanCount / step) * step;
+        const distance = viewTo - lastDrawnIndex;
+        // 用估算的文字宽度判断：约 0.6em/字符
+        const approxWidth = String(last).length * 7;
+        if (distance * (box.width / Math.max(1, spanCount)) > approxWidth) {
+          ctx.textAlign = "right";
+          ctx.fillText(last, box.right, this.height - 12);
+          ctx.textAlign = "center";
+        }
       }
     }
 
